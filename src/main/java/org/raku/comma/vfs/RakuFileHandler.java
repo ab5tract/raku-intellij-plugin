@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.impl.ArchiveHandler;
 import org.raku.comma.sdk.RakuSdkUtil;
 import org.raku.comma.services.application.RakuSdkStore;
+import org.raku.comma.services.application.RakuSdkStoreEntry;
 import org.raku.comma.utils.RakuCommandLine;
 import org.raku.comma.utils.RakuUtils;
 import org.jetbrains.annotations.NotNull;
@@ -36,16 +37,18 @@ public class RakuFileHandler extends ArchiveHandler {
     protected Map<String, EntryInfo> createEntriesMap() {
         HashMap<String, EntryInfo> entries = new HashMap<>();
 
-        var service = ApplicationManager.getApplication().getService(RakuSdkStore.class);
-        var sdk = service.getSdks().getLast();
+        var rakuSdkStore = ApplicationManager.getApplication().getService(RakuSdkStore.class);
+        RakuSdkStoreEntry sdk = null;
 
-        if (sdk == null) {
+        try {
+            sdk = rakuSdkStore.getSdks().getLast();
+        } catch (Exception ignored) {
             LOG.warn("There is no sdk available in RakuSdkStore");
-            return entries;
+            return entries; // empty
         }
 
-        String sdkHome = service.getSdks().getLast().getPath();
-        String sdkVersion = service.getSdks().getLast().getVersion();
+        String sdkHome = rakuSdkStore.getSdks().getLast().getPath();
+        String sdkVersion = rakuSdkStore.getSdks().getLast().getVersion();
 
         try {
             Matcher matcher = pathPattern.matcher(myPath);
