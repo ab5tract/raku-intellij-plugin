@@ -18,7 +18,7 @@ resolve this issue, however _it is a good idea for any Comma users to clear thei
 
 ### Install
 
-1) Download `raku-plugin.zip` from the latest [release](https://github.com/ab5tract/comma-plugin/releases)
+1) Download `raku-plugin.zip` from the latest [release](https://github.com/ab5tract/raku-intellij-plugin/releases)
 2) Open `Settings > Plugins` in IntelliJ IDEA and find the gear icon
    - select `Install plugin from disk` from the subsequent menu.
    - navigate to where `raku-plugin.zip` was downloaded (no need to extract or copy the file anywhere)
