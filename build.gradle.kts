@@ -189,10 +189,10 @@ plugins {
     // Java support
     id("java")
     // Gradle IntelliJ Plugin
-    id("org.jetbrains.intellij.platform") version "2.6.0"
+    id("org.jetbrains.intellij.platform") version "2.16.0"
 
-    kotlin("jvm") version "2.1.10"
-    kotlin("plugin.serialization") version "2.0.20"
+    kotlin("jvm") version "2.3.20"
+    kotlin("plugin.serialization") version "2.3.20"
 }
 
 group   = properties("pluginGroup")
@@ -236,8 +236,7 @@ intellijPlatform {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity(ideaBuildVersion)
-//        create("IC", "251.26094.121")
+        intellijIdeaUltimate(ideaBuildVersion)
         bundledPlugin("com.intellij.java")
 
         pluginVerifier()
