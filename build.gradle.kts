@@ -236,8 +236,7 @@ intellijPlatform {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity(ideaBuildVersion)
-//        create("IC", "251.26094.121")
+        intellijIdea(ideaBuildVersion)
         bundledPlugin("com.intellij.java")
 
         pluginVerifier()
