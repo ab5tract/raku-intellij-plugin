@@ -147,7 +147,7 @@ public class RakuRoutineDeclImpl extends RakuMemberStubBasedPsi<RakuRoutineDeclS
 
     @Override
     public boolean isStubbed() {
-        RakuBlockoid blockoid = (RakuBlockoid)findChildByFilter(TokenSet.create(BLOCKOID));
+        RakuBlockoid blockoid = findChildByType(BLOCKOID);
         if (blockoid == null) return false;
         PsiElement statementList = PsiTreeUtil.getChildOfType(blockoid, RakuStatementList.class);
         if (statementList == null || statementList.getChildren().length != 1) return false;

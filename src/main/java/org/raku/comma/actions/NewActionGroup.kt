@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NonNls
 import java.util.*
 
 class NewActionGroup : ActionGroup() {
-    override fun getChildren(event: AnActionEvent?): Array<AnAction?> {
+    override fun getChildren(event: AnActionEvent?): Array<out AnAction> {
         val actions =
             (ActionManager.getInstance().getAction(IdeActions.GROUP_WEIGHING_NEW) as ActionGroup).getChildren(event)
         if (event == null || ActionPlaces.isMainMenuOrActionSearch(event.place)) {
@@ -19,7 +19,7 @@ class NewActionGroup : ActionGroup() {
                     Collections.addAll<AnAction?>(mergedActions, *newProjectActions)
                     mergedActions.add(Separator.getInstance())
                     Collections.addAll<AnAction?>(mergedActions, *actions)
-                    return mergedActions.toArray<AnAction?>(EMPTY_ARRAY)
+                    return mergedActions.toArray<AnAction?>(EMPTY_ARRAY) as Array<out AnAction>
                 }
             }
         }

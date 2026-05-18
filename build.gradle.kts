@@ -245,6 +245,7 @@ dependencies {
     implementation(files("libs/xchart-3.8.0.jar"))
     implementation(files("libs/moarvmremote.jar"))
 
+    implementation("com.jetbrains.intellij.spellchecker:spellchecker:261.23567.145")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
     implementation("io.airlift:aircompressor:2.0.2")

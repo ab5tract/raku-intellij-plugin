@@ -71,7 +71,7 @@ public class RakuParameterVariableImpl extends RakuASTWrapperPsiElement implemen
                         String.valueOf(sigil);
         RakuVariable variable =
             RakuElementFactory.createVariable(getProject(), prefix + name);
-        PsiElement keyNode = findChildByFilter(TokenSet.create(RakuTokenTypes.VARIABLE));
+        PsiElement keyNode = findChildByType(RakuTokenTypes.VARIABLE);
         if (keyNode != null) {
             ASTNode newKeyNode = variable.getNode();
             getNode().replaceChild(keyNode.getNode(), newKeyNode);
