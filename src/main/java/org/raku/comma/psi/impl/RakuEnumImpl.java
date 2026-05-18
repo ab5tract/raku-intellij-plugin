@@ -44,7 +44,7 @@ public class RakuEnumImpl extends RakuTypeStubBasedPsi<RakuEnumStub> implements 
         }
 
         List<String> values = new ArrayList<>();
-        PsiElement literal = findChildByFilter(TokenSet.create(STRING_LITERAL));
+        PsiElement literal = findChildByType(STRING_LITERAL);
         if (literal != null) {
             String text = literal.getText();
             if (text.length() < 3)

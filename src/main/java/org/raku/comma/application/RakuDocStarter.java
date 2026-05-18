@@ -34,10 +34,10 @@ public class RakuDocStarter implements ApplicationStarter {
     public static final String RAKU_DOC_COMMAND_NAME = "raku-doc";
 
     // TODO: Deal with nonsensical advice in super-class for replacing deprecation
-    @Override
-    public @NonNls String getCommandName() {
-        return RAKU_DOC_COMMAND_NAME;
-    }
+//    @Override
+//    public @NonNls String getCommandName() {
+//        return RAKU_DOC_COMMAND_NAME;
+//    }
 
     @SuppressWarnings("AssignmentToForLoopParameter")
     @Override
