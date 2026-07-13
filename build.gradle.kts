@@ -1,5 +1,6 @@
 
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import kotlin.io.path.Path
 import kotlin.io.path.exists
@@ -219,7 +220,7 @@ intellijPlatform {
         version = versionFromPropertyPossibly()
 
         ideaVersion {
-            sinceBuild = "242.0"
+            sinceBuild = "261"
         }
     }
 
@@ -228,28 +229,46 @@ intellijPlatform {
             select {
                 types = listOf(IntelliJPlatformType.values().toList().random())
                 channels = listOf(ProductRelease.Channel.RELEASE)
-                sinceBuild = "242.0"
+                sinceBuild = "261"
             }
         }
     }
+}
+
+// The platform provides the Kotlin stdlib to every plugin; keep transitive
+// copies (e.g. via kotlinx-serialization) out of the shipped distribution.
+configurations.runtimeClasspath {
+    exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
 }
 
 dependencies {
     intellijPlatform {
         intellijIdeaUltimate(ideaBuildVersion)
         bundledPlugin("com.intellij.java")
+        bundledModule("intellij.spellchecker")
 
         pluginVerifier()
         zipSigner()
+        testFramework(TestFrameworkType.Platform)
     }
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.opentest4j:opentest4j:1.3.0")
+    // kotlin.stdlib.default.dependency=false keeps the stdlib out of the shipped
+    // zip, but the in-process test IDE still needs one that matches the Kotlin
+    // compiler version; otherwise coroutine debug metadata (v2) fails to load.
+    testRuntimeOnly(kotlin("stdlib"))
     implementation(files("libs/xchart-3.8.0.jar"))
     implementation(files("libs/moarvmremote.jar"))
 
-    implementation("com.jetbrains.intellij.spellchecker:spellchecker:261.23567.145")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
     implementation("io.airlift:aircompressor:2.0.2")
     implementation("org.json:json:20240303")
     // TODO: Remove this due to multiple unpatch CVEs
     implementation("org.tap4j:tap4j:4.4.2")
+}
+
+tasks.test {
+    // Run with -Didea.tests.overwrite.data=true to regenerate golden test data.
+    systemProperty("idea.tests.overwrite.data", System.getProperty("idea.tests.overwrite.data", "false"))
 }
