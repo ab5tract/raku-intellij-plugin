@@ -5,6 +5,7 @@ import com.intellij.lang.ASTNode
 import com.intellij.openapi.extensions.InternalIgnoreDependencyViolation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings
+import com.intellij.psi.formatter.DocumentBasedFormattingModel
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 import org.raku.comma.RakuLanguage
@@ -50,7 +51,9 @@ class RakuFormattingModelBuilder : FormattingModelBuilder {
         val customSettings = settings.getCustomSettings<RakuCodeStyleSettings>(RakuCodeStyleSettings::class.java)
         initRules(rules, commonSettings, customSettings)
         val block = RakuBlock(psiFile.node, null, null, commonSettings, customSettings, rules)
-        return FormattingModelProvider.createFormattingModelForPsiFile(psiFile, block, settings)
+        // Raku uses custom whitespace tokens (UNV/VERTICAL/UNSP), which the
+        // PSI-based formatting model mangles; apply changes at document level.
+        return DocumentBasedFormattingModel(block, formattingContext.project, settings, psiFile.fileType, psiFile)
     }
 
     private fun initRules(
@@ -88,7 +91,16 @@ class RakuFormattingModelBuilder : FormattingModelBuilder {
         initSpacingRules(commonSettings, customSettings, rules)
     }
 
+    // Rule evaluation is first-match-wins in enum order: the line-break
+    // (brace style) rules must run before the spacing rules, mirroring the
+    // registration order of the original implementation.
     enum class RakuSpacingRule {
+        BraceStylePackage,
+        BraceStyleRoutine,
+        BraceStyleRegex,
+        BraceStylePhasersEtc,
+        BraceStyleEtc,
+        BraceStyleEtcSemiList,
         StatementTerminator,
         UnterminatedStatement,
         BracesParentheses,
@@ -105,13 +117,7 @@ class RakuFormattingModelBuilder : FormattingModelBuilder {
         LambdaRules,
         RegexInfix,
         RegexSeparator,
-        RegexQuantifier,
-        BraceStylePackage,
-        BraceStyleRoutine,
-        BraceStyleRegex,
-        BraceStylePhasersEtc,
-        BraceStyleEtc,
-        BraceStyleEtcSemiList
+        RegexQuantifier
     }
 
     private fun initSpacingRules(
@@ -456,6 +462,9 @@ class RakuFormattingModelBuilder : FormattingModelBuilder {
                             RakuStubCode::class.java
                         ) != null
                     ) return@func Spacing.createSpacing(0, 0, 0, false, 0)
+                }
+                if (statementCount < 2) {
+                    return@func Spacing.createSpacing(0, 0, 1, false, 0)
                 }
             }
             var lineFeeds = 1

@@ -12,7 +12,12 @@ class RakuStatementMoveTest : CommaFixtureTestCase() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "say 1;\n<caret>say 2;\nsay 3;\n")
         myFixture.performEditorAction("MoveStatementUp")
-        myFixture.checkResult("<caret>say 2;\nsay 1;\nsay 3;\n")
+        try {
+            myFixture.checkResult("<caret>say 2;\nsay 1;\nsay 3;\n")
+        } catch (error: Throwable) {
+            println("MOVE-FAIL actual=<<<${myFixture.editor.document.text}>>> caret=${myFixture.editor.caretModel.offset}")
+            throw error
+        }
 
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "say 1;\n<caret>say 2;\nsay 3;\n")

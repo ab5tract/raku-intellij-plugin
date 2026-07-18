@@ -289,7 +289,12 @@ class FormatterTest : CommaFixtureTestCase() {
     private fun reformatTest(input: String, output: String, config: StyleConfig = { _, _ -> }) {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, input)
         reformat(config)
-        myFixture.checkResult(output)
+        try {
+            myFixture.checkResult(output)
+        } catch (error: Throwable) {
+            println("REFORMAT-FAIL input=<<<${input}>>> expected=<<<${output}>>> actual=<<<${myFixture.editor.document.text}>>>")
+            throw error
+        }
     }
 
     private fun reformatTest(filename: String, config: StyleConfig = { _, _ -> }) {
