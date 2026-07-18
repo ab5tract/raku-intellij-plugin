@@ -268,11 +268,6 @@ internal class RakuBlock : AbstractBlock, BlockWithParent {
         if (child2.node.elementType === RakuElementTypes.REGEX_SIGSPACE)
             return null
 
-        // Prevent huge re-writing of entire files
-        // TODO: Address this at a lower level
-        if (child1.node.text.lines().size > 11 || child2.node.text.lines().size > 11)
-            return null
-
         for (ruleKey in RakuSpacingRule.entries) {
             val rule = rules[ruleKey] ?: continue
             val result = rule.apply(child1, child2)

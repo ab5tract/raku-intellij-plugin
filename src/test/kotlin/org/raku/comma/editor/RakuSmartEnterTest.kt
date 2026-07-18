@@ -19,7 +19,7 @@ class RakuSmartEnterTest : CommaFixtureTestCase() {
                 processor.process(myFixture.project, editor, myFixture.file)
             }
         }
-        myFixture.checkResultByFile(getTestName(false) + "_after.p6", true)
+        checkResultByFileDumpable(getTestName(false) + "_after.p6")
     }
 
     fun testStatementAfterCall() = doTest()

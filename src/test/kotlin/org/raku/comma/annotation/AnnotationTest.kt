@@ -813,7 +813,7 @@ class AnnotationTest : CommaFixtureTestCase() {
 
     fun testSubmethodBUILDAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "class A {\n<warning descr=\"BUILD should be declared as a submethod\">method</warning> BUILD {};\n<error descr=\"Re-declaration of BUILD from aaa.rakuidea:2\">submethod BUILD</error> {} };\nclass B {\n<warning descr=\"TWEAK should be declared as a submethod\">method</warning> TWEAK {};\n<error descr=\"Re-declaration of TWEAK from aaa.rakuidea:5\">submethod TWEAK</error> {} };\nsub BUILD {};\nsub TWEAK {}; BUILD(); TWEAK();")
+                                  "class A {\n<warning descr=\"BUILD should be declared as a submethod\">method</warning> BUILD {};\n<error descr=\"Re-declaration of BUILD from aaa.raku:2\">submethod BUILD</error> {} };\nclass B {\n<warning descr=\"TWEAK should be declared as a submethod\">method</warning> TWEAK {};\n<error descr=\"Re-declaration of TWEAK from aaa.raku:5\">submethod TWEAK</error> {} };\nsub BUILD {};\nsub TWEAK {}; BUILD(); TWEAK();")
         myFixture.checkHighlighting()
     }
 

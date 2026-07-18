@@ -51,6 +51,25 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
         }
     }
 
+    // Like checkResultByFile, but when -Draku.test.dump.actual=true also writes
+    // the actual editor contents next to build/actual-dumps/ so behavior drift
+    // in golden-file tests can be reviewed (the platform's overwrite flag does
+    // not cover fixture-based comparisons).
+    protected fun checkResultByFileDumpable(expectedFile: String, ignoreTrailingWhitespace: Boolean = true) {
+        try {
+            myFixture.checkResultByFile(expectedFile, ignoreTrailingWhitespace)
+        } catch (error: Throwable) {
+            if (java.lang.Boolean.getBoolean("raku.test.dump.actual")) {
+                val dump = File("build/actual-dumps/${testDataPath.removePrefix("testData/")}/$expectedFile")
+                dump.parentFile.mkdirs()
+                val text = myFixture.editor.document.text
+                val offset = myFixture.editor.caretModel.offset
+                dump.writeText(text.substring(0, offset) + "<caret>" + text.substring(offset))
+            }
+            throw error
+        }
+    }
+
     companion object {
         private const val LOAD_TIMEOUT_MS = 120_000L
     }
