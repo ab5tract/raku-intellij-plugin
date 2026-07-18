@@ -1,7 +1,7 @@
 package org.raku.comma.editor;
 
+import com.intellij.codeInsight.editorActions.moveUpDown.LineMover;
 import com.intellij.codeInsight.editorActions.moveUpDown.LineRange;
-import com.intellij.codeInsight.editorActions.moveUpDown.StatementUpDownMover;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.ex.EditorEx;
@@ -18,12 +18,15 @@ import org.jetbrains.annotations.NotNull;
 import static org.raku.comma.parsing.RakuTokenTypes.*;
 
 @InternalIgnoreDependencyViolation
-public class RakuStatementMover extends StatementUpDownMover {
+public class RakuStatementMover extends LineMover {
     private boolean down;
 
     @Override
     public boolean checkAvailable(@NotNull Editor editor, @NotNull PsiFile file, @NotNull MoveInfo info, boolean down) {
-        return file instanceof RakuFile;
+        // The platform no longer pre-populates the default line ranges before
+        // beforeMove runs; LineMover.checkAvailable supplies them (toMove =
+        // selection lines, toMove2 = adjacent line) exactly as beforeMove expects.
+        return file instanceof RakuFile && super.checkAvailable(editor, file, info, down);
     }
 
     @Override
