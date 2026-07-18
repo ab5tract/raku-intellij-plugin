@@ -271,4 +271,7 @@ dependencies {
 tasks.test {
     // Run with -Didea.tests.overwrite.data=true to regenerate golden test data.
     systemProperty("idea.tests.overwrite.data", System.getProperty("idea.tests.overwrite.data", "false"))
+    // Run with -Draku.test.dump.actual=true to dump actual output of failing
+    // golden-file comparisons under build/actual-dumps for review.
+    systemProperty("raku.test.dump.actual", System.getProperty("raku.test.dump.actual", "false"))
 }

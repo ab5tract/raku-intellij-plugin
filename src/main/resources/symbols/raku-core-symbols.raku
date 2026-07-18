@@ -670,7 +670,13 @@ sub describe-OOP(@elems, $name, $kind, Mu \object) {
         try @privates = object.^private_method_table.values;
     }
 
-    my @methods = (try object.^methods(:local, :implementation-detail)) // try object.^methods(:local);
+    # Newer Rakudo (observed on 2025.08) returns ONLY the hidden methods when
+    # the :implementation-detail adverb is passed, where older releases
+    # returned the ordinary methods plus the hidden ones. Take the union of
+    # both calls so the full list is captured either way.
+    # (identity comparator: NQP-level routines in the list lack .WHICH)
+    my @methods = ( |((try object.^methods(:local, :implementation-detail)) // ()),
+                    |((try object.^methods(:local)) // ()) ).unique(:with(&[=:=]));
 
     try for @methods -> $method {
         if $kind eq 'mm' {

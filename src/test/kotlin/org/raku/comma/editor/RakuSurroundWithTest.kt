@@ -73,6 +73,6 @@ class RakuSurroundWithTest : CommaFixtureTestCase() {
         assertFalse(elements!!.isEmpty())
         assertTrue(surrounder.isApplicable(elements))
         SurroundWithHandler.invoke(project, myFixture.editor, myFixture.file, surrounder)
-        myFixture.checkResultByFile(getTestName(true) + ".p6")
+        checkResultByFileDumpable(getTestName(true) + ".p6")
     }
 }

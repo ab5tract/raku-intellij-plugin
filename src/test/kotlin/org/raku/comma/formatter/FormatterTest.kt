@@ -295,13 +295,17 @@ class FormatterTest : CommaFixtureTestCase() {
     private fun reformatTest(filename: String, config: StyleConfig = { _, _ -> }) {
         myFixture.configureByFiles("$filename.in.p6")
         reformat(config)
-        myFixture.checkResultByFile("$filename.out.p6", true)
+        checkResultByFileDumpable("$filename.out.p6")
     }
 
     private fun reformat(config: StyleConfig) {
         WriteCommandAction.runWriteCommandAction(null) {
             val settingsManager = CodeStyleSettingsManager.getInstance(myFixture.project)
             val temp = CodeStyle.createTestSettings(CodeStyle.getSettings(myFixture.project))
+            val common = temp.getCommonSettings(RakuLanguage.INSTANCE)
+            println("DIAG margin=${common.RIGHT_MARGIN} effective=${temp.getRightMargin(RakuLanguage.INSTANCE)} " +
+                    "indent=${common.indentOptions?.INDENT_SIZE} cont=${common.indentOptions?.CONTINUATION_INDENT_SIZE} " +
+                    "keepLineBreaks=${common.KEEP_LINE_BREAKS}")
             config(
                 temp.getCommonSettings(RakuLanguage.INSTANCE),
                 temp.getCustomSettings(RakuCodeStyleSettings::class.java)

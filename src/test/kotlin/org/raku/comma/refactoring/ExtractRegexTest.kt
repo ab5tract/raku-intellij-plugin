@@ -26,7 +26,7 @@ class ExtractRegexTest : CommaFixtureTestCase() {
         myFixture.configureByFile("$filename-before.p6")
         val handler = RakuExtractRegexPartHandlerMock(type, isCapture)
         handler.invoke(myFixture.project, myFixture.editor, myFixture.file, null)
-        myFixture.checkResultByFile("$filename.p6", true)
+        checkResultByFileDumpable("$filename.p6")
     }
 
     private class RakuExtractRegexPartHandlerMock(

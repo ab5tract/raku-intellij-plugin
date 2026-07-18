@@ -139,12 +139,12 @@ class RakuFormattingModelBuilder : FormattingModelBuilder {
                 || right!!.node.elementType === RakuTokenTypes.PARENTHESES_CLOSE) {
                 val parent = left.node.treeParent.psi
                 if (parent is RakuSubCall || parent is RakuMethodCall)
-                    if (customSettings.CALL_PARENS_SPACING)
-                         SINGLE_SPACE_SPACING
-                    else EMPTY_SPACING
-                if (customSettings.GROUPING_PARENS_SPACING)
-                     SINGLE_SPACE_SPACING
-                else EMPTY_SPACING
+                    return@func if (customSettings.CALL_PARENS_SPACING)
+                                    SINGLE_SPACE_SPACING
+                                else EMPTY_SPACING
+                return@func if (customSettings.GROUPING_PARENS_SPACING)
+                                SINGLE_SPACE_SPACING
+                            else EMPTY_SPACING
             }
             null
         })
@@ -156,7 +156,7 @@ class RakuFormattingModelBuilder : FormattingModelBuilder {
                 if (customSettings.ARRAY_LITERAL_PARENS_SPACING)
                      SINGLE_SPACE_SPACING
                 else EMPTY_SPACING
-            null
+            else null
         })
 
         // Regex group
@@ -166,7 +166,7 @@ class RakuFormattingModelBuilder : FormattingModelBuilder {
                 if (customSettings.REGEX_GROUP_PARENS_SPACING)
                      SINGLE_SPACE_SPACING
                 else EMPTY_SPACING
-            null
+            else null
         })
 
 
@@ -176,7 +176,7 @@ class RakuFormattingModelBuilder : FormattingModelBuilder {
             || right!!.node.elementType === RakuTokenTypes.REGEX_CAPTURE_PARENTHESES_CLOSE)
                 if (customSettings.REGEX_POSITIONAL_PARENS_SPACING) SINGLE_SPACE_SPACING
                 else EMPTY_SPACING
-            null
+            else null
         })
 
         // Nothing inside different types of braces, parens etc. (block ones are handled in line break rules set
