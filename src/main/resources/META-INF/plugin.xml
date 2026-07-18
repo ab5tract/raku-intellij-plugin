@@ -63,10 +63,10 @@
 
   <extensions defaultExtensionNs="com.intellij">
 
-<!--  Deliberately unregistered: its whole-file second pass reverts concurrent
-      document edits (e.g. statement moves). Wrapped-element indentation is
-      instead declared up front in RakuBlock.getIndent().
-      <postFormatProcessor implementation="org.raku.comma.formatter.RakuFormatPostprocessor"/> -->
+    <!-- The second pass this runs is what gives freshly wrapped elements
+         their continuation indent (the wrap only breaks the line; the indent
+         is computed from the now multi-line PSI on the next pass). -->
+    <postFormatProcessor implementation="org.raku.comma.formatter.RakuFormatPostprocessor"/>
     <fileType name="Raku Script" language="Raku" implementationClass="org.raku.comma.filetypes.RakuScriptFileType"
               fieldName="INSTANCE"
               extensions="p6;pl6;raku"/>
