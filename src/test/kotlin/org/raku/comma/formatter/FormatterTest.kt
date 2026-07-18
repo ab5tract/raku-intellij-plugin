@@ -308,9 +308,6 @@ class FormatterTest : CommaFixtureTestCase() {
             val settingsManager = CodeStyleSettingsManager.getInstance(myFixture.project)
             val temp = CodeStyle.createTestSettings(CodeStyle.getSettings(myFixture.project))
             val common = temp.getCommonSettings(RakuLanguage.INSTANCE)
-            println("DIAG margin=${common.RIGHT_MARGIN} effective=${temp.getRightMargin(RakuLanguage.INSTANCE)} " +
-                    "indent=${common.indentOptions?.INDENT_SIZE} cont=${common.indentOptions?.CONTINUATION_INDENT_SIZE} " +
-                    "keepLineBreaks=${common.KEEP_LINE_BREAKS}")
             config(
                 temp.getCommonSettings(RakuLanguage.INSTANCE),
                 temp.getCustomSettings(RakuCodeStyleSettings::class.java)

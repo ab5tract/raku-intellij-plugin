@@ -1,6 +1,6 @@
 sub foobar($one,
-		 $two,
-		 $three) {
+           $two,
+           $three) {
     my $x = 0;
     my $y = 0;
     my $t = '';
