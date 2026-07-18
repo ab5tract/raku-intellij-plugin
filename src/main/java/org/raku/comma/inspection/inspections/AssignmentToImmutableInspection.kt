@@ -49,7 +49,7 @@ class AssignmentToImmutableInspection : RakuInspection() {
 
                             // Ensure it's readonly.
                             if (parameter.isCopy || parameter.isRW || parameter.isRaw) return
-                            yieldValue.append("a parameter")
+                            yieldValue.append("a readonly parameter")
                         }
 
                         is RakuConstant -> {
