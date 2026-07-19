@@ -69,8 +69,8 @@ class MissingThingsInspection : RakuInspection() {
 
         if (errorReport != null) {
             val description = DESCRIPTION_FORMAT.format(errorReport.char)
-            val end = element.textLength - errorReport.pos
-            holder.registerProblem(element, TextRange(errorReport.pos, end), description)
+            // Highlight just the unclosed opener, as the annotator always did.
+            holder.registerProblem(element, TextRange(errorReport.pos, errorReport.pos + 1), description)
         }
     }
 

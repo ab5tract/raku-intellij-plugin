@@ -18,6 +18,10 @@ class NoncomposableDoesInspection : RakuInspection() {
     override fun provideVisitFunction(holder: ProblemsHolder, element: PsiElement) {
         if (element !is RakuTrait && element !is RakuAlso) return
 
+        // A trait inside an `also` is reached through both the RakuAlso visit
+        // and its own visit; report it once, from the RakuAlso side.
+        if (element is RakuTrait && element.parent is RakuAlso) return
+
         val trait = if (element is RakuTrait) element else (element as RakuAlso).trait
         if (trait == null) return
         if (trait.traitModifier != "does") return

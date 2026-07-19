@@ -29,7 +29,11 @@ class IdiomaticLoopInspection : RakuInspection() {
         }
         if (statement == null) return
 
-        val condition = (statement as? RakuParenthesizedExpr)?.firstChild?.nextSibling?.firstChild?.firstChild
+        // The condition may be parenthesized (`while (True)`) or bare (`while True`).
+        val condition = if (statement is RakuParenthesizedExpr)
+                            statement.firstChild?.nextSibling?.firstChild?.firstChild
+                        else
+                            statement
         val trueOr1 = when (condition) {
             is RakuIntLiteral -> true
             is RakuTypeName -> "True" == condition.text
@@ -37,7 +41,13 @@ class IdiomaticLoopInspection : RakuInspection() {
         }
 
         if (trueOr1) {
-            holder.registerProblem(element, description, IdiomaticLoopFix())
+            // Highlight only the `while` keyword, not the whole statement.
+            holder.registerProblem(
+                element,
+                com.intellij.openapi.util.TextRange(0, keyword.textLength),
+                description,
+                IdiomaticLoopFix()
+            )
         }
     }
 }

@@ -66,7 +66,9 @@ class SignatureInspection : RakuInspection() {
                 return
             }
 
-            val problem: Problem =
+            // A problem-free parameter must not abort the scan of the rest
+            // of the signature.
+            val problem: Problem? =
                 when {
                     param.isExplicitlyOptional && param.isNamed
                         -> Problem(ProblemHighlightType.WARNING, DESCRIPTION_NAMED_ARE_OPTIONAL)
@@ -78,8 +80,10 @@ class SignatureInspection : RakuInspection() {
                         -> Problem(ProblemHighlightType.WARNING, DESCRIPTION_DEFAULTS_ARE_OPTIONAL)
                     else
                         -> null
-                } ?: return
-            holder.registerProblem(param, problem.description.format(param.variableName), problem.level)
+                }
+            if (problem != null) {
+                holder.registerProblem(param, problem.description.format(param.variableName), problem.level)
+            }
 
             state = when {
                 param.isNamed    -> SignatureState.NAMED

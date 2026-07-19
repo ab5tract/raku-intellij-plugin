@@ -19,11 +19,15 @@ class UselessUseInspection : RakuInspection() {
             var i = 0
             val lastElement = statements.size - (if (lastSunk) 0 else 1)
             while (i < lastElement) {
-                val effect = statements[i].inferEffects()
-                if (!effect.`is`(Effect.IMPURE) && !effect.`is`(Effect.DECLARATION)) {
-                    holder.registerProblem(statements[i], DESCRIPTION, ProblemHighlightType.WARNING)
-                }
+                val statement = statements[i]
                 i++
+                // Zero-length statements come from parser error recovery;
+                // flagging them just decorates a stray brace.
+                if (statement.textLength == 0) continue
+                val effect = statement.inferEffects()
+                if (!effect.`is`(Effect.IMPURE) && !effect.`is`(Effect.DECLARATION)) {
+                    holder.registerProblem(statement, DESCRIPTION, ProblemHighlightType.WARNING)
+                }
             }
         }
     }

@@ -70,6 +70,53 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
         }
     }
 
+    private var highlightCheckIndex = 0
+
+    // With -Draku.test.dump.actual=true, prints the source annotated with the
+    // ACTUAL highlighting before every check (sequence-indexed per test) and
+    // swallows comparison failures so later checks in the test still dump.
+    protected fun checkHighlightingDumpable() {
+        val dumping = java.lang.Boolean.getBoolean("raku.test.dump.actual")
+        if (!dumping) {
+            myFixture.checkHighlighting()
+            return
+        }
+        // Run the check FIRST: it strips the expectation markup out of the
+        // document, so the post-check dump reflects real source offsets.
+        var failure: Throwable? = null
+        try {
+            myFixture.checkHighlighting()
+        } catch (error: Throwable) {
+            failure = error
+        }
+        val text = myFixture.editor.document.text
+        data class Mark(val offset: Int, val closing: Boolean, val order: Int, val tag: String)
+        val marks = ArrayList<Mark>()
+        for ((n, hi) in myFixture.doHighlighting().withIndex()) {
+            val tag = when (hi.severity) {
+                com.intellij.lang.annotation.HighlightSeverity.ERROR -> "error"
+                com.intellij.lang.annotation.HighlightSeverity.WARNING -> "warning"
+                com.intellij.lang.annotation.HighlightSeverity.WEAK_WARNING -> "weak_warning"
+                else -> continue
+            }
+            val descr = hi.description ?: continue
+            marks += Mark(hi.startOffset, false, n, "<$tag descr=\"$descr\">")
+            marks += Mark(hi.endOffset, true, -n, "</$tag>")
+        }
+        val builder = StringBuilder(text)
+        // Insert from the end; at equal offsets closing tags go after
+        // opening ones in the final text (they are inserted first).
+        marks.sortedWith(compareByDescending<Mark> { it.offset }
+                             .thenBy { it.closing }
+                             .thenBy { it.order })
+            .forEach { builder.insert(it.offset, it.tag) }
+        println("HIGHLIGHT-ACTUAL ${getTestName(false).trim()}#${highlightCheckIndex} <<<$builder>>>")
+        if (failure != null) {
+            println("HIGHLIGHT-FAILED ${getTestName(false).trim()}#${highlightCheckIndex}")
+        }
+        highlightCheckIndex++
+    }
+
     companion object {
         private const val LOAD_TIMEOUT_MS = 120_000L
     }

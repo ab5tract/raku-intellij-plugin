@@ -44,6 +44,7 @@ import org.raku.comma.inspection.inspections.UnusedRoutineInspection
 import org.raku.comma.inspection.inspections.UnusedVariableInspection
 import org.raku.comma.inspection.inspections.UsedModuleInspection
 import org.raku.comma.inspection.inspections.UselessMethodDeclarationInspection
+import org.raku.comma.inspection.inspections.UselessUseInspection
 import org.raku.comma.inspection.inspections.WheneverOutsideOfReactInspection
 import org.raku.comma.inspection.inspections.WithConstructionInspection
 import org.raku.comma.inspection.inspections.ZeroArgSubInspection
@@ -95,6 +96,7 @@ val ALL_RAKU_INSPECTIONS = arrayOf(
         UnusedVariableInspection::class.java,
         UsedModuleInspection::class.java,
         UselessMethodDeclarationInspection::class.java,
+        UselessUseInspection::class.java,
         WheneverOutsideOfReactInspection::class.java,
         WithConstructionInspection::class.java,
         ZeroArgSubInspection::class.java

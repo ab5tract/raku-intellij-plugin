@@ -51,7 +51,8 @@ class MissingRoleMethodInspection : RakuInspection() {
             val names = methodsToImplement.keys.joinToString(", ")
             // Get the end position of the declaration statement itself, rather than highlighting the entire class
             val lastChild = element.children.stream().filter { it !is RakuBlockoid }.toList().lastOrNull() ?: return
-            val end = lastChild.textOffset + lastChild.textLength
+            // rangeInElement is relative to the element, not the file
+            val end = lastChild.textRange.endOffset - element.textRange.startOffset
             // Block is not yet typed
 
             val description = DESCRIPTION_FORMAT.format(names)

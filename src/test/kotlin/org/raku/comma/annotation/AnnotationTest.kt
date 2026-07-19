@@ -16,82 +16,86 @@ class AnnotationTest : CommaFixtureTestCase() {
 
     fun testUndeclaredVariableAnnotatorReallyUndeclared() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say <error descr=\"Variable \$foo is not declared\">\$foo</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorNoErrorIfDeclared() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$foo; say \$foo;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorDefaultsInOuterScopeOK() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say \$_, \$/, \$!")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorPostdeclaredSubOK() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say &a.arity; sub a { }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorUndeclaredSubCaught() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say <error descr=\"Variable &a is not declared\">&a</error>.arity; sub ab { }; ab();")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorPostdeclared() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say <error descr=\"Variable \$foo is not declared in this scope yet\">\$foo</error>; my \$foo = 42; say \$foo")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorNoErrorIfConstantDeclared() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my constant \$foo = 42; say \$foo;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorFinishPresent() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "say \$=finish;\n\n=begin finish\n\nfoo")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "say <error descr=\"There is no =finish section in this file\">\$=finish</error>;\n\n=begin finish\n\nfoo")
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorFinishIsNotPresent() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "say <error descr=\"There is no =finish section in this file\">\$=finish</error>;")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "say \$=finish;")
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorFinishPresentInBlock() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "if 1 {\nsay \$=finish;\n}\n=begin finish\n\nfoo")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "if 1 {\nsay <error descr=\"There is no =finish section in this file\">\$=finish</error>;\n}\n=begin finish\n\nfoo")
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredVariableAnnotatorRoleParameter() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role A[\$foo, @foo, :\$bar] { method m() { \$foo, @foo, \$bar } }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testCursorAvailableInToken() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "grammar G { token TOP { x { say \$¢ } } }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testFalsePositive1() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1, 2; my (\$a) = \$x; say \$a")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testAnonymousVariables() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$; my @; my %; my &; say \$; say @; say %; say &;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testDeclaredSubAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo() {};\nmy sub bar() {};\nfoo;\nbar()")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredSubAnnotator() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Subroutine foo is not declared\">foo</error>;")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Subroutine foo is not declared\">foo</warning>;")
+        checkHighlightingDumpable()
     }
 
     fun testDeclaredSubAnnotatorWhenItIsReallyACoercion() {
@@ -101,473 +105,486 @@ class AnnotationTest : CommaFixtureTestCase() {
 
     fun testDeclaredAliasedCoreSubAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @a = [1,2], [3,4]; cross(@a)")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNoBogusSubAnnotationOnInterpolatedName() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say ::(\"Rakudo::Internals\").?LL-EXCEPTION;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testInfixBracketedInVariableIsNotConsideredUndeclared() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my &add = &[+]; say add(1,2)")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testDeclaredOperatorNamesInVariables() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @ops = &infix:<+>, &prefix:<!>, &postfix:<++>, &postcircumfix:<[ ]>; say @ops")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredOperatorNamesInVariables() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say <error descr=\"Variable &infix:<foo> is not declared\">&infix:<foo></error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testLeadingZeroAnnotator() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "say <warning descr=\"Leading 0 does not indicate octal in Raku; use 0o755\">0755</warning>;")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "say <warning descr=\"Leading 0 does not indicate octal in Raku: use 0o755 instead\">0755</warning>;")
+        checkHighlightingDumpable()
     }
 
     fun testMethodNotOnRangeAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say <warning descr=\"Precedence of ^ is looser than method call; please parenthesize\">^1.map(*.is-prime)</warning>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnitKeywordAnnotator() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Semicolon form of 'class' without 'unit' is illegal.\">class Foo;</error>")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot use 'unit' with block form of declaration\">unit class Foo</error>{}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<error descr=\"Semicolon form of 'class' without 'unit' is not supported\">class Foo</error>;")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<error descr=\"Cannot use 'unit' with block form of declaration\">unit class </error>Foo{}")
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "unit class Foo;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testEmptyNameVariableAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say \$;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredPrivateMethodAnnotator() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "role A { method !a(\$one) {\$one} }; class B does A { method b { self<error descr=\"Private method !c is used, but not declared\">!c</error>(1); } }")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "role A { method !a(\$one) {\$one} }; class B does A { method b { self<warning descr=\"Private method !c is used, but not declared\">!c</warning>(1); } }")
+        checkHighlightingDumpable()
     }
 
     fun testDeclaredPrivateMethodAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role A { method !a {} }; class B does A { method b { self!a; } }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testDeclaredExternalPrivateMethodAnnotator() {
         ensureModuleIsLoaded("NativeCall")
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "use NativeCall; role A does NativeCall::Native { method !a {} }; class B does A { method b { self!setup; } }")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "use <warning descr=\"Cannot find NativeCall which is specified as a dependency in META6.json\">NativeCall</warning>; role A does NativeCall::Native { method !a {} }; class B does A { method b { self<warning descr=\"Private method !setup is used, but not declared\">!setup</warning>; } }")
+        checkHighlightingDumpable()
     }
 
     fun testNoUndeclaredPrivateMethodAnnotationInRoleAsItMayBeDeclaredInTheClass() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role Foo { method bar { self!bar } }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredAttributeAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role A { has \$!a; }; class B does A { method b { say <error descr=\"Attribute \$!b is used, but not declared\">\$!b</error>; } }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testDeclaredAttributeAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role A { has \$!a; }; class B does A { has \$!b; method b { say \$!a; say \$!b; } }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredMultiAttributeAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "class A { has (\$!a, \$!asdrf); method m() { \$!a, \$!asdrf } }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testDeclaredExternalAttributeAnnotator() {
         ensureModuleIsLoaded("NativeCall")
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "use NativeCall; class A does NativeCall::Native { method b { say \$!rettype; } }")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "use <warning descr=\"Cannot find NativeCall which is specified as a dependency in META6.json\">NativeCall</warning>; class A does NativeCall::Native { method b { say <error descr=\"Attribute \$!rettype is used, but not declared\">\$!rettype</error>; } }")
+        checkHighlightingDumpable()
     }
 
     fun testSignatureAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "sub sift4(Str \$s1, Str \$s2, Int \$maxOffset = 100, Int \$maxDistance = 100 --> Int) is export { say \$s1, \$s2, \$maxOffset, \$maxDistance; }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "multi sub encode-base64(Bool:D :\$pad!, |c) { samewith(:pad(?\$pad ?? '=' !! ''), |c) }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "multi sub MAIN('nuke', Bool :<weak_warning descr=\"Unused parameter\">\$confirm</weak_warning>, *<weak_warning descr=\"Unused parameter\">@names</weak_warning> (\$, *@)) {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "sub a(Str :\$foo, <warning descr=\"Explicit `?` on a named parameter \$bar is redundant, as all nameds are optional by default\">Str :\$bar?</warning>) { say \$foo; say \$bar; }; a;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "class A { has \$!a; submethod BUILD(:\$!a = 42, :\$b!) { say \$b; say \$!a; }; }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "my (:%file, :%methods (:%over-documented, :%under-documented, :%introspection, *%)); %file; %methods; %over-documented; %under-documented; %introspection;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(\$a?, <error descr=\"Cannot put positional parameter \$b after an optional parameter\">\$b</error>) { \$a, \$b }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(\$a, *@b, <error descr=\"Cannot put positional parameter \$c after a variadic parameter\">\$c</error>) { \$a, @b, \$c }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(\$a, *@b, <error descr=\"Cannot put optional parameter \$c after a variadic parameter\">\$c?</error>) { \$a, @b, \$c }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(:\$a, <error descr=\"Cannot put positional parameter \$b after a named parameter\">\$b</error>) { \$a, \$b }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(\$a = 42, <error descr=\"Cannot put positional parameter \$b after an optional parameter\">\$b</error>) { \$a, \$b }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(\$a, *@as, :\$c!) { \$a, @as, \$c }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(\$a, *@as, :\$c) { \$a, @as, \$c }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(*%h, :\$c) { %h, \$c }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub web(Str \$cfg-filename, Str \$model-filename, Str \$tech-file?) is export { \$cfg-filename, \$model-filename, \$tech-file }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "multi sub MAIN('web', ExistingFile \$cfg-filename, ExistingFile \$model-filename, Str \$tech-file?) is export { \$cfg-filename, \$model-filename, \$tech-file }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub MAIN(Admin, 'web') {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(\$a = 42, \$bar? is copy) { \$a, \$bar }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(<warning descr=\"Explicit `?` on a named parameter \$bar is redundant, as all nameds are optional by default\">:\$bar?</warning>) { \$bar }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(<warning descr=\"Explicit `!` on a positional parameter \$foo is redundant, as all positional parameters are required by default\">\$foo!</warning>, \$bar) { \$foo, \$bar }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(<warning descr=\"Explicit `?` on a parameter \$foo with default is redundant, as all parameters with default value are optional by default\">\$foo? = 42</warning>) { \$foo }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo(<error descr=\"Parameter \$foo has a default value and so cannot be required\">\$foo! = 42</error>) { \$foo }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub template-location(IO() \$location, :\$compile-all, :\$test = { .IO.basename !~~ / ^ '.' / } --> Nil) is export { \$location; \$compile-all; \$test; }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my <weak_warning descr=\"Unused variable\">\$foo</weak_warning> = sub foo(:<weak_warning descr=\"Unused parameter\">\$a</weak_warning>!) {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my <weak_warning descr=\"Unused variable\">\$bar</weak_warning> = -> :<weak_warning descr=\"Unused parameter\">\$a</weak_warning>! {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testOptionalParameterAfterDefaultWithReturnType() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub a(\$a = 5, \$b? ) { \$a, \$b }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRawWheneverAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error=descr=\"A whenever must be within a supply or react block\"whenever</error> \$foo {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testInfiniteRangeAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "1..*")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testIncompleteRangeAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say 1<error=\"The range operator must have a second argument\">..</error>;")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "say 1..42.Int;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "say <warning descr=\"Precedence of ^ is looser than method call; please parenthesize\">1..42.Int</warning>;")
+        checkHighlightingDumpable()
     }
 
     fun testIncompleteRangeAnnotatorWithPrefixEnding() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my (\$foo, \$bar, \$baz); \$foo .. +(\$bar // \$baz);")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testLiteralRange() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "for 5..10 {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$a; my \$b; for \$a..\$b {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRangeWIthWhateverStarIsTooSmartForSimplification() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "[0..*-31]")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRangeWithNewlineIsCompleted() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my <weak_warning descr=\"Unused variable\">\$range</weak_warning> = <weak_warning descr=\"Range can be simplified\">0\n..\n1</weak_warning>")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testZeroToNRange() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "for <weak_warning descr=\"Range can be simplified\">0..9</weak_warning> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testZeroToExclusiveNRange() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "for <weak_warning descr=\"Range can be simplified\">0..^10</weak_warning> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testZeroToVarRange() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$n = 5; for <weak_warning descr=\"Range can be simplified\">0..^\$n</weak_warning> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testZeroToExclusiveVarRange() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$n = 5; for <weak_warning descr=\"Range can be simplified\">0..\$n-1</weak_warning> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testZeroToExclusiveVarInParensRange() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$n = 5; for <weak_warning descr=\"Range can be simplified\">0..(\$n-1)</weak_warning> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNullRegexAnnotator1() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error=\"Empty regex is not allowed\">//</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNullRegexAnnotator2() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "token foo<error=\"Empty regex is not allowed\">{}</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNullRegexAnnotator3() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "regex foo <error=\"Empty regex is not allowed\">{}</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNullRegexAnnotator4() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "rule foo <error=\"Empty regex is not allowed\">{}</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testWheneverInReactAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$foo; react { whenever \$foo {} }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testWheneverInSupplyAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$foo; supply { whenever \$foo {} }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRegexPositionalDeclAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot declare a regex positional match variable\">my \$0 = 42</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testTypedRegexPositionalDeclAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot declare a regex positional match variable\">my Int \$0 = 42</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRegexNamedDeclScalarSigilAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot declare a regex named match variable\">my \$<foo> = 42</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRegexNamedDeclArraySigilAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot declare a regex named match variable\">my @<foo> = 42</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRegexNamedDeclHashSigilAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot declare a regex named match variable\">my %<foo> = 42</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testContextualizerDeclScalarSigilAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot declare a contextualizer\">my \$('x') = 42</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testContextualizerDeclArraySigilAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot declare a contextualizer\">my @('x') = 42</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testContextualizerDeclHashSigilAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot declare a contextualizer\">my %('x') = 42</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclarableAnnotatorUsesActualVariableDeclaration() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our token cidr { (\\d+) <?{ \$0 <= 32 }> }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredAnnotatorInMethodCall() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "token foo { (.) <.panic(\"Unknown escape \\\\\$0\")> }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredAnnotatorRegexVars() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "if <error descr=\"Variable \$sub-key is not declared\">\$sub-key</error> ~~ /^ <[\\w-]>+ \$/ {<error descr=\"Variable \$0 is not declared\">\$0</error>}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "when m{ ^ ( '#' .+? ) \\s*? \$ } { say \$0; }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "unless m{ ^ ( '#' .+? ) \\s*? \$ } {}; say \$0;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "if True { m{ ^ ( '#' .+? ) \\s*? \$ }; \$0; }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "/[ ('a') (\\d+) <?{ 1920 <= \$1.tail <= 2020 }> ]/;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUndeclaredAnnotatorRegexVarsCorrectComparisonIsUsed() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub foo(\$sub-key) { if \$sub-key ~~ m:s/^ '{' (<[\\w-]>+)+ % ';' '}' \$/ { \$0 } elsif \$sub-key ~~ /^ <[\\w-]>+ \$/ {} }; foo('bar')")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRestrictUnitKeywordToMAINSubAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "<error=\"The unit sub syntax is only allowed for the sub MAIN\">unit</error> sub foo() {<warning descr=\"Useless use of value in sink (void) context\">}</warning>")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testPermitUnitKeywordForMAINSubAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "unit sub MAIN() {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testInfixAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$lc-and-trim := { \$_ = .lc.trim }; say \$lc-and-trim('x')")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testEVALCase1() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "EVAL \"5\";")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testEVALCase2() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "EVAL q[5];")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testEVALCase3() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "EVAL q[\$foo];")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testEVALCase4() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$foo = 5; <error descr=\"Cannot EVAL interpolated expression without MONKEY-SEE-NO-EVAL pragma\">EVAL qq[\$foo]</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testEVALCase5() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "EVAL qq[];")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingStubbedMethodFromSingleRole() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R { method foo(\$a) {...}; method bar(\$a) {...} }; class <error descr=\"Composed roles require to implement methods: bar, foo\">C does R </error>{}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "role R { method foo(\$a) {...}; method bar(\$a) {...} }; <error descr=\"Composed roles require to implement methods: bar, foo\">class C does R</error> {}")
+        checkHighlightingDumpable()
     }
 
     fun testMissingStubbedMethodsFromManyRoles() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R { method foo(\$a) {...}; method bar(\$a) {...} }; role R2 { method baz {...} }; class <error descr=\"Composed roles require to implement methods: bar, foo, baz\">C does R does R2</error>{}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "role R { method foo(\$a) {...}; method bar(\$a) {...} }; role R2 { method baz {...} }; <error descr=\"Composed roles require to implement methods: bar, foo, baz\">class C does R does R2</error>{}")
+        checkHighlightingDumpable()
     }
 
     fun testStubbedMethodFromRoleImplementedAsAccessor() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "role R { method baz {...}; method bar {...}; method foo {...} }; class <error descr=\"Composed roles require to implement methods: bar, baz\">C does R </error>{ my \$.baz; has \$.foo; has \$!bar; method m() { \$!bar } }")
-        myFixture.checkHighlighting()
+                                  "role R { method baz {...}; method bar {...}; method foo {...} }; <error descr=\"Composed roles require to implement methods: bar, baz\">class C does R</error> { my \$.baz; has \$.foo; has \$!bar; method m() { \$!bar } }")
+        checkHighlightingDumpable()
     }
 
     fun testMissingStubbedMethodsIncludeMulti() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R { multi method foo(\$a) {...}; method bar(\$a) {...} }; class C does R { multi method foo(\$a) { \$a }; multi method foo(@b) { @b }; method bar(\$a) {...} }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingStubbedMethodDoNotIncludeFilledOnes1() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R1 { method m {...} }; role R2 does R1 { method m {...} }; class <error descr=\"Composed roles require to implement methods: m\">C does R2 </error>{}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "role R1 { method m {...} }; role R2 does R1 { method m {...} }; <error descr=\"Composed roles require to implement methods: m\">class C does R2</error> {}")
+        checkHighlightingDumpable()
     }
 
     fun testMissingStubbedMethodDoNotIncludeFilledOnes2() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R1 { method m {...} }; role R2 { method m {} }; class C does R1 does R2 {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingStubbedMethodDoNotIncludeFilledOnes3() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R1 { method m {...} }; role R2 { method m {} }; class C does R2 does R1 {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingStubbedMethodsCountMultidecls() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R { method m {...}; method b {...}; }; class C does R { has (\$.m, \$.b); }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingStubbedMethodsHandlesTrait() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R { method foo {...}; method bar {...}; method baz {...} }; class Impl { method foo {} }; class C does R { has Impl \$.impl handles <foo bar>; has Int \$.foo handles <baz> }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMyScopedVariableExportAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"`my` scoped variable cannot be exported\">my \$var is export</error>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRoleDoesClassAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "class C {}; role A <error descr=\"Role cannot compose a class\">does C</error> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testClassDoesClassAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "class C {}; class A <error descr=\"Class cannot compose a class\">does C</error> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testClassDoesClassAlsoAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "class C {}; class D { also <error descr=\"Class cannot compose a class\">does C</error> }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testRoleDoesClassAlsoAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "class C {}; role D { also <error descr=\"Role cannot compose a class\">does C</error> }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNormalComposition1() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R {}; role A does C {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNormalComposition2() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "role R {}; class A does C {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNormalInheritance1() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "class C {}; class A is C {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testNormalInheritance2() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "class C {}; role A is C {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testTrustedMethodIsCountedAsDeclarted() {
         myFixture.configureByFile("TrustedClass.pm6")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testOOMonitors() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "monitor <error descr=\"Cannot use monitor type package without OO::Monitors module being included\">LongName::Name</error> {}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<error descr=\"Cannot create package of 'monitor' type without OO::Monitors imported into scope\">monitor LongName::Name</error> {}")
+        checkHighlightingDumpable()
     }
 
     fun testFromPerl5ModuleParens() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "use Foo::Bar:from('Perl5')")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "use <warning descr=\"Cannot find Foo::Bar which is specified as a dependency in META6.json\">Foo::Bar:from('Perl5')</warning>")
+        checkHighlightingDumpable()
     }
 
     fun testFromPerl5ModuleAngles() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "use Foo::Bar:from<Perl5>")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "use <warning descr=\"Cannot find Foo::Bar which is specified as a dependency in META6.json\">Foo::Bar:from<Perl5></warning>")
+        checkHighlightingDumpable()
     }
 
     fun testSigspaceAnnotator() {
@@ -579,341 +596,369 @@ class AnnotationTest : CommaFixtureTestCase() {
     fun testPackageDeclAnnotator1() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "package Foo {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testPackageDeclAnnotator2() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "module Foo {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testPackageDeclAnnotator3() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "module Foo <error descr=\"module cannot compose a role\">does A</error> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testPackageDeclAnnotator4() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "module Foo <error descr=\"module cannot inherit a class\">is A</error> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testPackageDeclAnnotator5() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "module Foo <error descr=\"module cannot compose a role\">does A</error> <error descr\"module cannot inherit a class\">is A</error> {}")
-        myFixture.checkHighlighting()
+                                  "module Foo <error descr=\"module cannot compose a role\">does A</error> <error descr\"module cannot inherit a class\">is A</error> {<warning descr=\"Useless use of value in sink (void) context\">}</warning>")
+        checkHighlightingDumpable()
     }
 
     fun testPackageDeclAnnotator6() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "package Foo <error descr=\"package cannot compose a role\">does A</error> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testPackageDeclAnnotator7() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "package Foo <error descr=\"package cannot inherit a class\">is A</error> {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testPackageDeclAnnotator8() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "package Foo <error descr=\"package cannot compose a role\">does A</error> <error descr\"package cannot inherit a class\">is A</error> {}")
-        myFixture.checkHighlighting()
+                                  "package Foo <error descr=\"package cannot compose a role\">does A</error> <error descr\"package cannot inherit a class\">is A</error> {<warning descr=\"Useless use of value in sink (void) context\">}</warning>")
+        checkHighlightingDumpable()
     }
 
     fun testPackageDeclAlsoTraitAnnotator() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "package Foo { also <error descr=\"package cannot compose a role\">does A</error> }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMonitorAnnotatorOnEmptyNameCase() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "use v6.d.PREVIEW; monitor <error descr=\"Cannot use monitor type package without OO::Monitors module being included\">Bar</error> {}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "use v6.d.PREVIEW; <error descr=\"Cannot create package of 'monitor' type without OO::Monitors imported into scope\">monitor Bar</error> {}")
+        checkHighlightingDumpable()
     }
 
     fun testCompletelyFineReturn() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub foo() { return 42 }; foo();")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testReturnOutsideOfRoutineListOp() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "say 42; <error descr=\"Return outside of routine\">return 100</error>;")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "say 42; <warning descr=\"Return outside of routine\">return 100</warning>;")
+        checkHighlightingDumpable()
     }
 
     fun testReturnOutsideOfRoutineFunctionCall() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "say 42; <error descr=\"Return outside of routine\">return(100)</error>;")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "say 42; <warning descr=\"Return outside of routine\">return(100)</warning>;")
+        checkHighlightingDumpable()
     }
 
     fun testReturnInStartBlock() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "await start { <error descr=\"Cannot use return to produce a result in a start block\">return 100</error>; }")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "await start { <warning descr=\"Cannot use return to produce a result in a start block\">return 100</warning>; }")
+        checkHighlightingDumpable()
     }
 
     fun testReturnInSupplyBlock() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$s = supply { <error descr=\"Cannot use return to exit a supply block\">return 100</error>; }")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my <weak_warning descr=\"Unused variable\">\$s</weak_warning> = supply { <warning descr=\"Cannot use return to exit a supply block\">return 100</warning>; }")
+        checkHighlightingDumpable()
     }
 
     fun testReturnInReactBlock() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "react { <error descr=\"Cannot use return to exit a react block\">return 100</error>; }")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "react { <warning descr=\"Cannot use return to exit a react block\">return 100</warning>; }")
+        checkHighlightingDumpable()
     }
 
     fun testReturnInWheneverBlock() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "react { whenever Supply.interval(1) { <error descr=\"Cannot use return in a whenever block\">return 100</error>; } }")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "react { whenever Supply.interval(1) { <warning descr=\"Cannot use return in a whenever block\">return 100</warning>; } }")
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingParenFunctionCall() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say<error descr=\"Missing closing ')'\">(</error>42;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingParenMethodCall() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "\$*OUT.say<error descr=\"Missing closing ')'\">(</error>42")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingParenExpression() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say <error descr=\"Missing closing ')'\">(</error>42 + (4 * 3);")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingParenLoop() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "loop <error descr=\"Missing closing ')'\">(</error>my \$i = 0; \$i < 10; \$i++ { }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingParenVarDecl() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my <error descr=\"Missing closing ')'\">(</error>\$, \$")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingParenSignature() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub foo<error descr=\"Missing closing ')'\">(</error>\$, { }; foo(4)")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingParenCall() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$a = { .say }; \$a<error descr=\"Missing closing ')'\">(</error>42")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingArrayComposer() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @a = <error descr=\"Missing closing ']'\">[</error>1,2,3")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my <weak_warning descr=\"Unused variable\">@a</weak_warning> = <error descr=\"Missing closing ']'\">[</error>1,2,3")
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingArrayIndexer() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @a = 1,2,3; say @a<error descr=\"Missing closing ']'\">[</error>1;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingBlockoid() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub foo <error descr=\"Missing closing '}'\">{</error> say 42;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingRegexGroup() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say 'xxx' ~~ /a <error descr=\"Missing closing ']'\">[</error> b | c /;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingRegexAssertion() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say 'xxx' ~~ /a <error descr=\"Missing closing '>'\"><</error>ident /;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMissingClosingRegexCapture() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "say 'xxx' ~~ /a <error descr=\"Missing closing ')'\">(</error> b | c /;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testColonPairSimplification() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$foo = 5; sub a(:\$foo) { \$foo }; a(<weak_warning descr=\"Pair literal can be simplified\">:foo(\$foo)</weak_warning>)")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my \$foo = 5; sub a(:\$foo) { \$foo }; a(<warning descr=\"Pair literal can be simplified\">:foo(\$foo)</warning>)")
+        checkHighlightingDumpable()
     }
 
     fun testFatArrowSimplification() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$foo = 5; <weak_warning descr=\"Pair literal can be simplified\">foo => \$foo</weak_warning>")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my \$foo = 5; <warning descr=\"Pair literal can be simplified\">foo => \$foo</warning>")
+        checkHighlightingDumpable()
     }
 
     fun testColonPairWithBlockExpression() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$foo = 5; :foo{\$foo}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my \$foo = 5; <warning descr=\"Pair literal can be simplified\">:foo{\$foo}</warning>")
+        checkHighlightingDumpable()
     }
 
     fun testWhileOne() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<weak_warning descr=\"Idiomatic 'loop' construction can be used instead\">while</weak_warning> 1 {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testWhileTrue() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "<weak_warning descr=\"Idiomatic 'loop' construction can be used instead\">while</weak_warning> True {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testWhileCondition() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "while <error descr=\"Variable \$foo is not declared\">\$foo</error> != 10 {}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testWithAnnotation() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<weak_warning descr=\"'with' construction can be used instead\">if 5.defined</weak_warning> {}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "if <weak_warning descr=\"'with' construction can be used instead\">5.defined</weak_warning> {}")
+        checkHighlightingDumpable()
     }
 
     fun testWithoutAnnotation() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<weak_warning descr=\"'without' construction can be used instead\">unless 5.defined</weak_warning> {}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "unless <weak_warning descr=\"'without' construction can be used instead\">5.defined</weak_warning> {}")
+        checkHighlightingDumpable()
     }
 
     fun testMultiWithAnnotation() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<weak_warning descr=\"'with' construction can be used instead\">if 5.defined</weak_warning> {} <weak_warning descr=\"'with' construction can be used instead\">elsif 4.defined</weak_warning> {} else {}")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "if <weak_warning descr=\"'with' construction can be used instead\">5.defined</weak_warning> {} elsif <weak_warning descr=\"'with' construction can be used instead\">4.defined</weak_warning> {} else {}")
+        checkHighlightingDumpable()
     }
 
     fun testGrepFirstWhateverStarAnnotation() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "[Nil, Nil, 42, Nil]<weak_warning descr=\"Can be simplified into a single first method call\">.grep(*.defined).first</weak_warning>.say")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "[Nil, Nil, 42, Nil]<weak_warning descr=\"Can be simplified into a single first method call\">.grep(*.defined).first()</weak_warning>.say()")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "[Nil, Nil, 42, Nil].foo-call<weak_warning descr=\"Can be simplified into a single first method call\">.grep(*.defined).first</weak_warning>.say")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "[Nil, Nil, 42, Nil].foo-call<weak_warning descr=\"Can be simplified into a single first method call\">.grep(*.defined).first()</weak_warning>.say()")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Can be simplified into a single first method call\">[Nil, Nil, 42, Nil].grep(*.defined).first</warning>.say")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Can be simplified into a single first method call\">[Nil, Nil, 42, Nil].grep(*.defined).first()</warning>.say()")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Can be simplified into a single first method call\">[Nil, Nil, 42, Nil].foo-call.grep(*.defined).first</warning>.say")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Can be simplified into a single first method call\">[Nil, Nil, 42, Nil].foo-call.grep(*.defined).first()</warning>.say()")
+        checkHighlightingDumpable()
     }
 
     fun testGrepFirstBlockAnnotation() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "[Nil, Nil, 42, Nil]<weak_warning descr=\"Can be simplified into a single first method call\">.grep({ \$_.foo }).first</weak_warning>.say")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "[Nil, Nil, 42, Nil]<weak_warning descr=\"Can be simplified into a single first method call\">.grep({ \$_.foo }).first()</weak_warning>.say()")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "[Nil, Nil, 42, Nil].foo-call<weak_warning descr=\"Can be simplified into a single first method call\">.grep({ .foo }).first</weak_warning>.say")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "[Nil, Nil, 42, Nil].foo-call<weak_warning descr=\"Can be simplified into a single first method call\">.grep({ .foo }).first()</weak_warning>.say()")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Can be simplified into a single first method call\">[Nil, Nil, 42, Nil].grep({ \$_.foo }).first</warning>.say")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Can be simplified into a single first method call\">[Nil, Nil, 42, Nil].grep({ \$_.foo }).first()</warning>.say()")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Can be simplified into a single first method call\">[Nil, Nil, 42, Nil].foo-call.grep({ .foo }).first</warning>.say")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<warning descr=\"Can be simplified into a single first method call\">[Nil, Nil, 42, Nil].foo-call.grep({ .foo }).first()</warning>.say()")
+        checkHighlightingDumpable()
 
         myFixture.configureByText(RakuScriptFileType.INSTANCE, ".grep(5 ~~ 10).first")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, ".grep(*.defined).first(*.bar)")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @a = (1..*)<weak_warning descr=\"Can be simplified into a single first method call\">.grep(* > 2).first</weak_warning>; say @a")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @b = (1..*)<weak_warning descr=\"Can be simplified into a single first method call\">.grep({ \$_ > 2 }).first</weak_warning>; say @b")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my @a = <warning descr=\"Can be simplified into a single first method call\">(1..*).grep(* > 2).first</warning>; say @a")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my @b = <warning descr=\"Can be simplified into a single first method call\">(1..*).grep({ \$_ > 2 }).first</warning>; say @b")
+        checkHighlightingDumpable()
     }
 
     fun testSubmethodBUILDAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "class A {\n<warning descr=\"BUILD should be declared as a submethod\">method</warning> BUILD {};\n<error descr=\"Re-declaration of BUILD from aaa.raku:2\">submethod BUILD</error> {} };\nclass B {\n<warning descr=\"TWEAK should be declared as a submethod\">method</warning> TWEAK {};\n<error descr=\"Re-declaration of TWEAK from aaa.raku:5\">submethod TWEAK</error> {} };\nsub BUILD {};\nsub TWEAK {}; BUILD(); TWEAK();")
-        myFixture.checkHighlighting()
+                                  "class A {\n<weak_warning descr=\"'BUILD' should be declared as a submethod\">method</weak_warning> BUILD {};\n<error descr=\"Re-declaration of BUILD from aaa.raku:2\">submethod BUILD</error> {} };\nclass B {\n<weak_warning descr=\"'TWEAK' should be declared as a submethod\">method</weak_warning> TWEAK {};\n<error descr=\"Re-declaration of TWEAK from aaa.raku:5\">submethod TWEAK</error> {} };\nsub BUILD {};\nsub TWEAK {}; BUILD(); TWEAK();")
+        checkHighlightingDumpable()
     }
 
     fun testEmptyInitializeAnnotation() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @a = <weak_warning descr=\"Initialization of empty Array is redundant\">[]</weak_warning>; say @a")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @b = <weak_warning descr=\"Initialization of empty Array is redundant\">()</weak_warning>; say @b")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my %a = <weak_warning descr=\"Initialization of empty Hash is redundant\">()</weak_warning>; say %a")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my %b = <weak_warning descr=\"Initialization of empty Hash is redundant\">{}</weak_warning>; say %b")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my <warning descr=\"Initialization of empty Array is redundant\">@a = []</warning>; say @a")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my <warning descr=\"Initialization of empty Array is redundant\">@b = ()</warning>; say @b")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my <warning descr=\"Initialization of empty Hash is redundant\">%a = ()</warning>; say %a")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my <warning descr=\"Initialization of empty Hash is redundant\">%b = {}</warning>; say %b")
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @c = [1,2,3]; my %c = (1,2); say @c, %c")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my @d = (1); my %d = {1}; say @d, %d")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$e = []; say \$e")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testPerl6ExecutableAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "say <warning descr=\"If the Raku executable is meant, consider using the \$*EXECUTABLE.absolute() call that supports many platforms (e.g. GNU/Linux, Windows, etc.)\">'perl6'</warning>; run <warning descr=\"If the Raku executable is meant, consider using the \$*EXECUTABLE.absolute() call that supports many platforms (e.g. GNU/Linux, Windows, etc.)\">'perl6'</warning>; run <warning descr=\"If the Raku executable is meant, consider using the \$*EXECUTABLE.absolute() call that supports many platforms (e.g. GNU/Linux, Windows, etc.)\">\"perl6\"</warning>;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testListAssignmentAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my (@a, \$x); say @a, \$x")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my (@b, \$y) := 4, (1,2,3); say @b, \$y")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my (\$z, @c) = 4, (1,2,3); say @c, \$z")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my (<warning descr=\"Array slurps everything from assignment\">@a</warning>, \$x) = (1,2,3), 4; say @a, \$x")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testReturnFromNilSubroutineAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub a(--> Nil) { if True { return; } }; a();")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub a(--> Nil) { <error descr=\"A value is returned from subroutine returning Nil\">return 42</error>; }; a();")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedSimpleLexicalAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "my <weak_warning descr=\"Unused variable\">\$x</weak_warning>; say 42;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "sub a() { my <weak_warning descr=\"Unused variable\">\$x</weak_warning>; say 42; }; a();")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedLexicalAnnotationOnlyCoversVariableName() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "my <weak_warning descr=\"Unused variable\">\$x</weak_warning> = 99; say 42;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "sub a() { my <weak_warning descr=\"Unused variable\">\$x</weak_warning> = 100; say 42; }; a();")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedCallableLexicalAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "my <weak_warning descr=\"Unused variable\">&unused</weak_warning>; my &used = -> {}; used();")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedLexicalMultipleDeclarationAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "my (\$a, <weak_warning descr=\"Unused variable\">\$b</weak_warning>); \$a = 100; say \$a;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "sub a() { my (<weak_warning descr=\"Unused variable\">\$a</weak_warning>, \$b); \$b = 100; say \$b; }; a();")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedRoutineParameter() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "sub foo(\$a, <weak_warning descr=\"Unused parameter\">\$b</weak_warning>) { return \$a; }; say foo(1, 2);")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "sub foo(&a, <weak_warning descr=\"Unused parameter\">&b</weak_warning>) { a() }; say foo({ 1 }, { 2 });")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedUnitRoutineParameter() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
               "unit sub MAIN(Str :o(:\$out-dir) = 'src');\n" +
               "say \$out-dir;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedBlockParameter() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "my &foo = -> \$a, <weak_warning descr=\"Unused parameter\">\$b</weak_warning> { \$a }; say foo(1, 2);")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "my &bar = -> &a, <weak_warning descr=\"Unused parameter\">&b</weak_warning> { a() }; say bar({ 1 }, { 2 });")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedAttribute() {
@@ -924,7 +969,7 @@ class AnnotationTest : CommaFixtureTestCase() {
               "    has (\$!used-g, <weak_warning descr=\"Unused attribute\">\$!unused-g</weak_warning>);\n" +
               "    method m() { \$!used, \$!used-g }\n" +
               "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testImplicitUsesOfMatchVariable() {
@@ -935,7 +980,7 @@ class AnnotationTest : CommaFixtureTestCase() {
                 "    method a3(\$/) { make \$<foo>.ast; }\n" +
                 "    method a4(\$/) { make ~\$/; }\n" +
                 "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testImplicitUsesOfTopicVariable() {
@@ -958,41 +1003,33 @@ class AnnotationTest : CommaFixtureTestCase() {
                 "}\n" +
                 "topic-unused(1, -2), topic-user-a(2), topic-user-b(3),\n" +
                 "        topic-user-c(4), topic-user-d(\$ = 5)")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUnusedPrivateMethod() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-              "class MyPrivateMethClass {\n" +
-              "    method pub() { self!used }\n" +
-              "    method !used() {}\n" +
-              "    method <weak_warning descr=\"Unused private method\">!unused</weak_warning>() {}\n" +
-              "}")
-        myFixture.checkHighlighting()
+                                  "class MyPrivateMethClass {\n    method pub() { self!used }\n    method !used() {}\n    method !unused() {}\n}")
+        checkHighlightingDumpable()
     }
 
     fun testUnusedLexicalRoutine() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-              "sub used(&x) { x() }\n" +
-              "sub <weak_warning descr=\"Unused subroutine\">unused</weak_warning>() {}\n" +
-              "used(sub used-as-argument() {});")
-        myFixture.checkHighlighting()
+                                  "sub used(&x) { x() }\nsub unused() {}\nused(sub used-as-argument() {});")
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-              "my sub used(&x) { x() }\n" +
-              "my sub <weak_warning descr=\"Unused subroutine\">unused</weak_warning>() {}\n" +
-              "used(my sub used-as-argument() {});")
-        myFixture.checkHighlighting()
+                                  "my sub used(&x) { x() }\nmy sub unused() {}\nused(my sub used-as-argument() {});")
+        checkHighlightingDumpable()
     }
 
     fun testDoesNotRecurse() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "(with <error descr=\"Variable \$exclude is not declared\">\$exclude</error> { 1 ~~ \$_ }), (with <error descr=\"Variable \$only-dir is not declared\">\$only-dir</error> { 3 ~~ \$_ })"
         )
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "(with <error descr=\"Variable \$a is not declared\">\$a</error> { 42 !~~ \$_}), (with <error descr=\"Variable \$b is not declared\">\$b</error> { 42 ~~ \$_});"
         )
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testSelfAvailabilityAnnotation() {
@@ -1015,7 +1052,7 @@ class AnnotationTest : CommaFixtureTestCase() {
               "        <error descr=\"No invocant is available here\">\$.a</error>, <error descr=\"No invocant is available here\">self</error>\n" +
               "    }\n" +
               "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testSelfAvailabilityInRegexDecl() {
@@ -1028,7 +1065,7 @@ class AnnotationTest : CommaFixtureTestCase() {
               "        x { self.m }\n" +
               "    }\n" +
               "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testUselessMethodDeclarationAnnotation() {
@@ -1047,73 +1084,49 @@ class AnnotationTest : CommaFixtureTestCase() {
 
     fun testReadOnlyScalarParameterAssignmentInSub() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-              "sub foo(\$a, \$b is copy, \$c is rw) {\n" +
-              "    <error descr=\"Cannot assign to a readonly parameter\">\$a = 100</error>;\n" +
-              "    \$b = 200;\n" +
-              "    \$c = 300;\n" +
-              "\n" +
-              "    <error descr=\"Cannot assign to a readonly parameter\">\$a += \$b</error>;\n" +
-              "    \$b += \$c;\n" +
-              "    \$c += \$a;\n" +
-              "\n" +
-              "    <error descr=\"Cannot assign to a readonly parameter\">\$a++</error>;\n" +
-              "    \$b++;\n" +
-              "    \$c++;\n" +
-              "\n" +
-              "    <error descr=\"Cannot assign to a readonly parameter\">++\$a</error>;\n" +
-              "    ++\$b;\n" +
-              "    ++\$c;\n" +
-              "\n" +
-              "    <error descr=\"Cannot assign to a readonly parameter\">\$a.=sin</error>;\n" +
-              "    \$b.=sin;\n" +
-              "    \$c.=sin;\n" +
-              "\n" +
-              "    <error descr=\"Cannot assign to a readonly parameter\">\$a .= sin</error>;\n" +
-              "    \$b .= sin;\n" +
-              "    \$c .= sin;\n" +
-              "}\n" +
-              "foo(\$, \$, \$);")
-        myFixture.checkHighlighting()
+                                  "sub foo(\$a, \$b is copy, \$c is rw) {\n    <error descr=\"Cannot assign to a readonly parameter\">\$a</error> = 100;\n    \$b = 200;\n    \$c = 300;\n\n    <error descr=\"Cannot assign to a readonly parameter\">\$a</error> += \$b;\n    \$b += \$c;\n    \$c += \$a;\n\n    <error descr=\"Cannot assign to a readonly parameter\">\$a</error>++;\n    \$b++;\n    \$c++;\n\n    ++<error descr=\"Cannot assign to a readonly parameter\">\$a</error>;\n    ++\$b;\n    ++\$c;\n\n    <error descr=\"Cannot assign to a readonly parameter\">\$a</error>.=sin;\n    \$b.=sin;\n    \$c.=sin;\n\n    <error descr=\"Cannot assign to a readonly parameter\">\$a</error> .= sin;\n    \$b .= sin;\n    \$c .= sin;\n}\nfoo(\$, \$, \$);")
+        checkHighlightingDumpable()
     }
 
     fun testReadOnlyScalarParameterAssignmentWithPointyBlocks() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-              "for [1..10] -> \$x {\n" +
-              "    <error descr=\"Cannot assign to a readonly parameter\">\$x++</error>;\n" +
-              "}\n" +
-              "for [1..10] <-> \$x {\n" +
-              "    \$x++;\n" +
-              "}")
-        myFixture.checkHighlighting()
+                                  "for [1..10] -> \$x {\n    <error descr=\"Cannot assign to a readonly parameter\">\$x</error>++;\n}\nfor [1..10] <-> \$x {\n    \$x++;\n}")
+        checkHighlightingDumpable()
     }
 
     fun testAssignmentToLiteral() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "<error descr=\"Cannot assign to an Int literal\">1 = 2</error>; <error descr=\"Cannot assign to a Str literal\">'foo' = 2</error>; <error descr=\"Cannot assign to a Rat literal\">3.4 = 2</error>; <error descr=\"Cannot assign to a Num literal\">2E3 = 2</error>;")
-        myFixture.checkHighlighting()
+                                  "<error descr=\"Cannot assign to an Int Literal\">1</error> = 2; <error descr=\"Cannot assign to a Str literal\">'foo'</error> = 2; <error descr=\"Cannot assign to a Rat literal\">3.4</error> = 2; <error descr=\"Cannot assign to a Num literal\">2E3</error> = 2;")
+        checkHighlightingDumpable()
     }
 
     fun testAssignmentToScalar() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "constant \$foo = 42; <error descr=\"Cannot assign to a constant\">\$foo = 42</error>;")
-        myFixture.checkHighlighting()
+                                  "constant \$foo = 42; <error descr=\"Cannot assign to a constant\">\$foo</error> = 42;")
+        checkHighlightingDumpable()
     }
 
     fun testBogusAssignment() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub foo() {}; <error descr=\"Cannot assign to a routine\">&foo = -> {}</error>")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot assign to a routine declaration\">sub foo() {} = 42</error>;")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot assign to a Pair literal\">(a => 42) = 50</error>;")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot assign to a Pair literal\">(a => 42) = 50</error>;")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<error descr=\"Cannot assign to a signature literal\">:(\$a) = 55</error>;")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my constant x = 42; <error descr=\"Cannot assign to a constant\">x = 55</error>;")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "sub foo() {}; <error descr=\"Cannot assign to a routine\">&foo</error> = -> {}")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<error descr=\"Cannot assign to a routine declaration\">sub foo() {}</error> = 42;")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<error descr=\"Cannot assign to a Pair literal\">(a => 42)</error> = 50;")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<error descr=\"Cannot assign to a Pair literal\">(a => 42)</error> = 50;")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "<error descr=\"Cannot assign to a signature literal\">:(\$a)</error> = 55;")
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "my constant x = 42; <error descr=\"Cannot assign to a constant\">x</error> = 55;")
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "sub foo { \$_ = 42; \$/ = 42; \$! = 42; }; foo;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testCallArityMismatchAnnotating() {
@@ -1135,7 +1148,8 @@ class AnnotationTest : CommaFixtureTestCase() {
         myFixture.checkHighlighting()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$err = 42; run 'curl', 'foo', :!out, :\$err;")
         myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "run 'curl', 'foo', out => 42, :err(42);")
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "run 'curl', 'foo', <warning descr=\"Pair literal can be simplified\">out => 42</warning>, :err(42);")
         myFixture.checkHighlighting()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$a; \$a.emit(42);")
         myFixture.checkHighlighting()
@@ -1154,25 +1168,16 @@ class AnnotationTest : CommaFixtureTestCase() {
             "        \$.completion(\$in-level, ‘zero’, %( ), :defn(\$context == Definition))\n" +
             "    }\n" +
             "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-            "class C {\n" +
-            "    my enum Context <Definition>;\n" +
-            "    method completion(Int \$in-level, Str \$key, %params, Bool :\$defn = False --> Str) {\n" +
-            "        %params && \$defn ?? ~\$in-level !! \$key\n" +
-            "    }\n" +
-            "    method another(\$in-level) {\n" +
-            "        \$.completion(<error descr=\"Not enough positional arguments\">\$in-level, ‘zero’</error>)\n" +
-            "    }\n" +
-            "}")
-        myFixture.checkHighlighting()
+                                  "class C {\n    my enum Context <Definition>;\n    method completion(Int \$in-level, Str \$key, %params, Bool :\$defn = False --> Str) {\n        %params && \$defn ?? ~\$in-level !! \$key\n    }\n    method another(\$in-level) {\n        \$<error descr=\"Not enough positional arguments\">.completion(\$in-level, ‘zero’)</error>\n    }\n}")
+        checkHighlightingDumpable()
     }
 
     fun testUnknownRegexModifier() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-              "my \$x = /<error descr=\"Unrecognized regex modifier\">:foo</error> 1234 /;\n" +
-              "my \$y = / <error descr=\"Unrecognized regex modifier\">:!bar</error> /;")
-        myFixture.checkHighlighting()
+                                  "my <weak_warning descr=\"Unused variable\">\$x</weak_warning> = /<error descr=\"Unrecognized regex modifier ':foo'\">:foo</error> 1234 /;\nmy <weak_warning descr=\"Unused variable\">\$y</weak_warning> = / <error descr=\"Unrecognized regex modifier ':!bar'\">:!bar</error> /;")
+        checkHighlightingDumpable()
     }
 
     fun testDuplicatedBranch() {
@@ -1191,7 +1196,7 @@ class AnnotationTest : CommaFixtureTestCase() {
             "        0\n" +
             "    }\n" +
             "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
 
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
             "sub ib1(\$x, \$y) is export {\n" +
@@ -1205,7 +1210,7 @@ class AnnotationTest : CommaFixtureTestCase() {
             "        0\n" +
             "    }\n" +
             "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
 
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
             "sub ib2(\$x) is export {\n" +
@@ -1219,7 +1224,7 @@ class AnnotationTest : CommaFixtureTestCase() {
             "        0\n" +
             "    }\n" +
             "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
 
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
             "sub ib3(\$x, \$y) is export {\n" +
@@ -1246,7 +1251,7 @@ class AnnotationTest : CommaFixtureTestCase() {
             "        0\n" +
             "    }\n" +
             "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
 
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
             "sub ib5(\$x, \$y) is export {\n" +
@@ -1260,104 +1265,75 @@ class AnnotationTest : CommaFixtureTestCase() {
             "        0\n" +
             "    }\n" +
             "}")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testDeprecatedSub() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-              "sub foo-a() is DEPRECATED {}\n" +
-              "sub foo-b() is DEPRECATED('bar') {}\n" +
-              "sub foo-c() {}\n" +
-              "<warning descr=\"foo-a is deprecated\">foo-a</warning>();\n" +
-              "<warning descr=\"foo-b is deprecated; use bar\">foo-b</warning>();\n" +
-              "foo-c();")
-        myFixture.checkHighlighting()
+                                  "<warning descr=\"foo-a is deprecated\">sub foo-a() is DEPRECATED {}</warning>\n<warning descr=\"foo-b is deprecated ... use bar\">sub foo-b() is DEPRECATED('bar') {}</warning>\nsub foo-c() {}\nfoo-a();\nfoo-b();\nfoo-c();")
+        checkHighlightingDumpable()
     }
 
     fun testDeprecatedMethod() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-            "class Testing {\n" +
-            "    method foo-a() is DEPRECATED {}\n" +
-            "    method foo-b() is DEPRECATED('bar') {}\n" +
-            "    method foo-c() {}\n" +
-            "}\n" +
-            "Testing.<warning descr=\"foo-a is deprecated\">foo-a</warning>();\n" +
-            "Testing.<warning descr=\"foo-b is deprecated; use bar\">foo-b</warning>();\n" +
-            "Testing.foo-c();")
-        myFixture.checkHighlighting()
+                                  "class Testing {\n    method foo-a() is DEPRECATED {}\n    method foo-b() is DEPRECATED('bar') {}\n    method foo-c() {}\n}\nTesting<warning descr=\"method 'foo-a' is deprecated\">.foo-a()</warning>;\nTesting<warning descr=\"method 'foo-b' is deprecated ... use bar\">.foo-b()</warning>;\nTesting.foo-c();")
+        checkHighlightingDumpable()
     }
 
     fun testDubiousNonHashes() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-            "given 42 {\n" +
-            "    my \$x = 99;\n" +
-            "    my \$y = 101;\n" +
-            "    say {};\n" +
-            "    say { ; };\n" +
-            "    say { \"I'm a closure\" };\n" +
-            "    say { :a };\n" +
-            "    say { a => 66 };\n" +
-            "    say { :\$x };\n" +
-            "    say { :a, :b };\n" +
-            "    say { a => 66, b => 666 };\n" +
-            "    say { :\$x, :\$y };\n" +
-            "    say { .foo };\n" +
-            "    say { \$_ };\n" +
-            "    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ :\$^a }</weak_warning>;\n" +
-            "    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ :a, :b(\$_) }</weak_warning>;\n" +
-            "    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ a => 1, b => \$_ }</weak_warning>;\n" +
-            "}")
-        myFixture.checkHighlighting()
+                                  "given 42 {\n    my \$x = 99;\n    my \$y = 101;\n    say {};\n    say { ; };\n    say { \"I'm a closure\" };\n    say { :a };\n    say { <warning descr=\"Pair literal can be simplified\">a => 66</warning> };\n    say { :\$x };\n    say { :a, :b };\n    say { <warning descr=\"Pair literal can be simplified\">a => 66</warning>, <warning descr=\"Pair literal can be simplified\">b => 666</warning> };\n    say { :\$x, :\$y };\n    say { .foo };\n    say { \$_ };\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ :\$^a }</weak_warning>;\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ :a, :b(\$_) }</weak_warning>;\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ <warning descr=\"Pair literal can be simplified\">a => 1</warning>, <warning descr=\"Pair literal can be simplified\">b => \$_</warning> }</weak_warning>;\n}")
+        checkHighlightingDumpable()
     }
 
     fun testTopLevelUnused() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "say 0; <warning descr=\"Useless use of value in sink (void) context\">0;</warning> say 0;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testBlockUnused() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "our sub foo() { say 0; <warning descr=\"Useless use of value in sink (void) context\">0;</warning> say 0; }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testLastTopLevel() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "<warning descr=\"Useless use of value in sink (void) context\">0;</warning>")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testReturnNotSpecified() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "our sub foo() { 0; }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testReturnNil() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "our sub foo(--> Nil) { <warning descr=\"Useless use of value in sink (void) context\">0;</warning> }")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testCoreAnnotatedAsPure() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "<warning descr=\"Useless use of value in sink (void) context\">0 + 0;</warning>")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testMultiNotAnnotatedAsPure() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "multi infix:<+>(\$, \$) {};\n" +
                                   "0 + 0;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testSubAnnotatedAsPure() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "multi infix:<+>(\$, \$) is pure {};\n" +
                                   "<warning descr=\"Useless use of value in sink (void) context\">0 + 0;</warning>")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testProtoAnnotatedAsPure() {
@@ -1365,7 +1341,7 @@ class AnnotationTest : CommaFixtureTestCase() {
                                   "proto infix:<+>(\$, \$) is pure {}\n" +
                                   "multi infix:<+>(\$, \$) {}\n" +
                                   "<warning descr=\"Useless use of value in sink (void) context\">0 + 0;</warning>")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testProtoNotAnnotatedAsPure() {
@@ -1373,20 +1349,20 @@ class AnnotationTest : CommaFixtureTestCase() {
                                   "proto infix:<+>(\$, \$) {}\n" +
                                   "multi infix:<+>(\$, \$) {}\n" +
                                   "0 + 0;")
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
     }
 
     fun testHyphenInCharacterClass() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "/<-[abc]>/; /<:L-[abc]>/; /<[-']>/;")
-        myFixture.checkHighlighting()
-        myFixture.configureByText(
-          RakuScriptFileType.INSTANCE, "/<[-a..b<error descr=\"A hyphen is used in a character class, maybe '..' was intended to denote a range? Otherwise a hyphen should be at the end of the character class.\">-</error>cd-]>/"
-        )
-        myFixture.checkHighlighting()
+        checkHighlightingDumpable()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "/<[-a..b<warning descr=\"A hyphen is used in a character class, maybe '..' was intended to denote a range? \n            Otherwise a hyphen should be at the end of the character class.\">-</warning>cd-]>/")
+        checkHighlightingDumpable()
     }
 
     fun testImplementationDetailUsage() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "<warning descr=\"The '&dd' routine is implementation detail\">dd</warning> 42; my @a; @a<warning descr=\"The '&.FLATTENABLE_LIST' method is implementation detail\">.FLATTENABLE_LIST</warning>;")
-        myFixture.checkHighlighting()
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "dd 42; my @a; @a.FLATTENABLE_LIST;")
+        checkHighlightingDumpable()
     }
 }
