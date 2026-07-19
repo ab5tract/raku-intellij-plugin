@@ -342,7 +342,13 @@ sub describe-OOP(@elems, $name, $kind, Mu \object) {
         try @privates = object.^private_method_table.values;
     }
 
-    my @methods = (try object.^methods(:local, :implementation-detail)) // try object.^methods(:local);
+    # Newer Rakudo (observed on 2025.08) returns ONLY the hidden methods when
+    # the :implementation-detail adverb is passed, where older releases
+    # returned the ordinary methods plus the hidden ones. Take the union of
+    # both calls so the full list is captured either way.
+    # (identity comparator: NQP-level routines in the list lack .WHICH)
+    my @methods = ( |((try object.^methods(:local, :implementation-detail)) // ()),
+                    |((try object.^methods(:local)) // ()) ).unique(:with(&[=:=]));
 
     try for @methods -> $method {
         if $kind eq 'mm' {
@@ -357,7 +363,13 @@ sub describe-OOP(@elems, $name, $kind, Mu \object) {
     try for @privates -> $method {
         try %class<m>.push: pack-code($_, $_.multi ?? 1 !! 0, '!' ~ $method.name, :is-method) for $method.candidates;
     }
-    try for object.^attributes -> $a {
+    # A parametric role group answers ^attributes with an empty list; ask a
+    # candidate for the real attribute set (mirrors the @privates handling).
+    my @attributes = (try object.^attributes) // ();
+    if $kind eq 'ro' && !@attributes {
+        @attributes = (try object.^candidates[0].^attributes) // ();
+    }
+    try for @attributes -> $a {
         next if $a.type.^name eq 'Junction';
         try %class<a>.push: pack-variable($a.has_accessor ?? $a.name.subst('!', '.') !! $a.name, $a, :is-attribute);
     }

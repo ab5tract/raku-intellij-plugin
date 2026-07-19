@@ -29,32 +29,28 @@ class ClassRoleCompletionTest : CommaFixtureTestCase() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "class Foo { has \$!foo; has \$!bar; }; class A is Foo { method test { say \$!<caret> } }")
         myFixture.complete(CompletionType.BASIC, 1)
-        val vars = myFixture.getLookupElementStrings()!!
-        assertNull(vars)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testRoleIntoRoleComposiitonInternals() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "role Foo { has \$!foo; has \$!bar; }; role A does Foo { method test { say \$!<caret> } }")
         myFixture.complete(CompletionType.BASIC, 1)
-        val vars = myFixture.getLookupElementStrings()!!
-        assertNull(vars)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testClassIntoClassInheritanceInternals() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "class Foo { has \$!foo; has \$!bar; }; class A is Foo { method test { say \$!<caret> } }")
         myFixture.complete(CompletionType.BASIC, 1)
-        val vars = myFixture.getLookupElementStrings()!!
-        assertNull(vars)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testRoleInMiddleDoesNotHaveAttrs1() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "role A { has \$!foo }; role B does A { method test { say \$!<caret> } }; class C does B {}")
         myFixture.complete(CompletionType.BASIC, 1)
-        val vars = myFixture.getLookupElementStrings()!!
-        assertNull(vars)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testRoleInMiddleDoesNotHaveAttrs2() {
@@ -70,16 +66,14 @@ class ClassRoleCompletionTest : CommaFixtureTestCase() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "role A { method !a {} }; role B does A { method test { self!<caret> } }; class C does B {}")
         myFixture.complete(CompletionType.BASIC, 1)
-        val vars = myFixture.getLookupElementStrings()!!
-        assertNull(vars)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testRoleInMiddleHasMethods2() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "role A { method !a {} }; role B does A {}; class C does B { method test { self!<caret> } }")
         myFixture.complete(CompletionType.BASIC, 1)
-        val vars = myFixture.getLookupElementStrings()!!
-        assertNull(vars)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testAlsoTraitComposition() {
@@ -104,8 +98,7 @@ class ClassRoleCompletionTest : CommaFixtureTestCase() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "role A { method mmm1 {} }; class B { also doe A; method mmm2 { self.mmm<caret> } }")
         myFixture.complete(CompletionType.BASIC, 1)
-        val methods = myFixture.getLookupElementStrings()!!
-        assertNull(methods)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     // TODO Re-instate this test when we can provide suggestions for trusts

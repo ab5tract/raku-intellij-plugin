@@ -7,6 +7,7 @@ import org.raku.comma.psi.*;
 import org.raku.comma.psi.external.ExternalRakuFile;
 import org.raku.comma.psi.external.ExternalRakuPackageDecl;
 import org.raku.comma.psi.external.RakuExternalPsiElement;
+import org.raku.comma.services.project.ProjectSdkSymbolCache;
 import org.raku.comma.utils.RakuUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -70,7 +71,7 @@ public class RakuDocumentationProvider implements DocumentationProvider {
             if (parent instanceof ExternalRakuPackageDecl)
                 parent = parent.getParent();
             if (parent instanceof ExternalRakuFile &&
-                Objects.equals(((ExternalRakuFile)parent).getName(), "SETTINGS.pm6")) {
+                Objects.equals(((ExternalRakuFile)parent).getName(), ProjectSdkSymbolCache.SETTING_FILE_NAME)) {
                 if (element instanceof RakuPackageDecl)
                     return Collections.singletonList("https://docs.raku.org/type/" + name);
                 else if (element instanceof RakuRoutineDecl)

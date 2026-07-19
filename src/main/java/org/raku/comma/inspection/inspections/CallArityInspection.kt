@@ -107,7 +107,9 @@ class CallArityInspection : RakuInspection() {
                                                                                               an.text)
                                             }
                                             .collect(Collectors.joining(", ")))
-            holder.registerProblem(annotations[0]!!.signature, message, ProblemHighlightType.ERROR)
+            // Anchor on the call being inspected: the offending signature may
+            // live in a non-physical external file (e.g. CORE symbols).
+            holder.registerProblem(element, message, ProblemHighlightType.ERROR)
         }
     }
 

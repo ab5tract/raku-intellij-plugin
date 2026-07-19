@@ -74,7 +74,12 @@ class RakuModuleReference(moduleName: RakuModuleName) :
             }
         })
 
-        reallyInThisProject.addAll(project.service<RakuDependencyService>().allProvides())
+        // Ecosystem-wide provides only once the dependency service is up
+        // (mirrors the old RakuModuleListFetcher.isReady() gate).
+        val dependencyService = project.service<RakuDependencyService>()
+        if (dependencyService.isInitialized) {
+            reallyInThisProject.addAll(dependencyService.allProvides())
+        }
         reallyInThisProject.addAll(RakuServiceConstants.PREINSTALLED_MODULES)
         reallyInThisProject.addAll(RakuServiceConstants.PRAGMAS)
 

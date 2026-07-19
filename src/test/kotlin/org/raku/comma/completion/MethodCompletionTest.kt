@@ -12,12 +12,15 @@ class MethodCompletionTest : CommaFixtureTestCase() {
 
     private fun complete(isNull: Boolean): List<String> {
         myFixture.complete(CompletionType.BASIC, 1)
-        val methods = myFixture.getLookupElementStrings()!!
-        if (isNull)
+        val methods = myFixture.getLookupElementStrings()
+        if (java.lang.Boolean.getBoolean("raku.test.dump.actual"))
+            println("LOOKUP-ACTUAL ${getTestName(false)} <<<${methods?.sorted()}>>>")
+        if (isNull) {
             assertNullOrEmpty(methods)
-        else
-            assertNotNull(methods)
-        return methods
+            return emptyList()
+        }
+        assertNotNull(methods)
+        return methods!!
     }
 
     private fun doTestContainsAll(text: String, vararg contains: String) {
@@ -378,7 +381,7 @@ class MethodCompletionTest : CommaFixtureTestCase() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
                                   "role A { has \$!foo = 5 }; role B does A { method a { say \$!<caret> } }")
         myFixture.complete(CompletionType.BASIC, 1)
-        assertNull(myFixture.getLookupElementStrings()!!)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testCompletionOfMultiMethodByType() {
@@ -763,8 +766,11 @@ class MethodCompletionTest : CommaFixtureTestCase() {
         ensureModuleIsLoaded("OO::Monitors")
         doTestContainsAll("Int.^me<caret>", ".^methods")
         doTestContainsAll("use OO::Monitors; monitor Foo {}; Foo.^met<caret>", ".^methods")
-        doTestContainsAll("use OO::Monitors; monitor Foo { method add {}; }; Foo.^ad<caret>", ".^add_condition", ".^add_method", ".^add_conc_to_cache")
-        doTestNotContainsAll("{ use OO::Monitors; monitor Foo { method add {}; }; }; { monitor Foo {}; Foo.^ad<caret> }", ".^add_condition")
+        // Modern OO::Monitors has no add_condition; setup_monitor is the
+        // MonitorHOW-specific meta-method that proves the metaclass resolved.
+        doTestContainsAll("use OO::Monitors; monitor Foo { method add {}; }; Foo.^ad<caret>", ".^add_method", ".^add_conc_to_cache")
+        doTestContainsAll("use OO::Monitors; monitor Foo { method add {}; }; Foo.^set<caret>", ".^setup_monitor")
+        doTestNotContainsAll("{ use OO::Monitors; monitor Foo { method add {}; }; }; { monitor Foo {}; Foo.^set<caret> }", ".^setup_monitor")
         doTestContainsAll("{ use OO::Monitors; monitor Foo { method add {}; }; }; { monitor Foo {}; Foo.^ad<caret> }", ".^add_method")
     }
 

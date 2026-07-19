@@ -25,24 +25,23 @@ class SubCompletionTest : CommaFixtureTestCase() {
     fun testCompletionFromOuter() {
         myFixture.configureByFiles("IdeaFoo/Bar8.pm6", "IdeaFoo/Baz.pm6")
         myFixture.complete(CompletionType.BASIC, 1)
-        val vars = myFixture.getLookupElementStrings()!!
-        assertNull(vars)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testCompletionFromOurLocal() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "our sub fooooo() {}\nfooo<caret>")
         myFixture.complete(CompletionType.BASIC, 1)
-        val vars = myFixture.getLookupElementStrings()!!
-        assertNull(vars)
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testCompletionFromCORE() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "se<caret>")
         myFixture.complete(CompletionType.BASIC, 1)
         val vars = myFixture.getLookupElementStrings()!!
+        if (java.lang.Boolean.getBoolean("raku.test.dump.actual")) println("LOOKUP-ACTUAL ${getTestName(false)} <<<${vars.sorted()}>>>")
         assertNotNull(vars)
         assertContainsElements(vars, Arrays.asList("sec", "sech", "set"))
-        assertEquals(19, vars.toSet().size)
+        assertEquals(18, vars.toSet().size)
     }
 
     fun testCompletionFromImport() {

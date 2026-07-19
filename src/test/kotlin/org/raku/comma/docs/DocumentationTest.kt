@@ -126,19 +126,19 @@ class DocumentationTest : CommaFixtureTestCase() {
     fun testExternalTypeFromCORE() {
         testQuickDoc("class IntStr")
         testGeneratedDoc("<p><pre><code>class IntStr is Int is Str { }</code></pre></p><p>The dual value types (often referred to as allomorphs) allow for the representation of a value as both a string and a numeric type. Typically they will be created for you when the context is \"stringy\" but they can be determined to be numbers, such as in some quoting constructs:</p><p><pre><code>my \$f = &lt;42&gt;; say \$f.^name; # OUTPUT: «IntStr␤»</code></pre></p><p>As a subclass of both Int and Str, an IntStr will be accepted where either is expected. However, IntStr does not share object identity with Int- or Str-only variants:</p><p><pre><code>my \$int-str = &lt;42&gt;;<br>my Int \$int = \$int-str; # OK!<br>my Str \$str = \$int-str; # OK!<br>say 42 ∈ &lt;42  55  1&gt;;   # False; ∈ operator cares about object identity</code></pre></p>")
-        testURL("https://docs.perl6.org/type/IntStr")
+        testURL("https://docs.raku.org/type/IntStr")
     }
 
     fun testMethodExternalFromCORE() {
         testQuickDoc("method Capture(Mu *%_ --&gt; Mu)")
         testGeneratedDoc("<p>Defined as:</p><p><pre><code>method Capture()</code></pre></p><p>Throws X::Cannot::Capture.</p>")
-        testURL("https://docs.perl6.org/routine/Capture")
+        testURL("https://docs.raku.org/routine/Capture")
     }
 
     fun testMethodExternalFromCORERole() {
         testQuickDoc("method roots(Cool \$n, Mu *%_ --&gt; Mu)")
         testGeneratedDoc("<p><pre><code>multi method roots(Numeric:D: Int:D \$n --&gt; Positional)</code></pre></p><p>Returns a list of the \$n complex roots, which evaluate to the original number when raised to the \$nth power.</p>")
-        testURL("https://docs.perl6.org/routine/roots")
+        testURL("https://docs.raku.org/routine/roots")
     }
 
     fun testMethodExternalFromCOREClass() {
@@ -150,7 +150,7 @@ class DocumentationTest : CommaFixtureTestCase() {
         assertTrue(decls.isNotEmpty())
         assertEquals("method end(Mu *%_ --&gt; Int)", provider.getQuickNavigateInfo(decls[0].element, null))
         assertEquals("<p><pre><code>multi method end(Any:U: --&gt; 0)<br>multi method end(Any:D:)</code></pre></p><p>Interprets the invocant as a list, and returns the last index of that list.</p><p><pre><code>say 6.end;                      # OUTPUT: «0␤»<br>say &lt;a b c&gt;.end;                # OUTPUT: «2␤»</code></pre></p>",  provider.generateDoc(decls[0].element, element))
-        assertContainsElements(provider.getUrlFor(decls[0].element, element)!!, "https://docs.perl6.org/routine/end")
+        assertContainsElements(provider.getUrlFor(decls[0].element, element)!!, "https://docs.raku.org/routine/end")
     }
 
     fun testOperatorDocs() {

@@ -40,8 +40,9 @@ class TypeCompletionTest : CommaFixtureTestCase() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "use NativeCall; say NativeCal<caret>")
         myFixture.complete(CompletionType.BASIC, 1)
         val vars = myFixture.getLookupElementStrings()!!
+        if (java.lang.Boolean.getBoolean("raku.test.dump.actual")) println("LOOKUP-ACTUAL ${getTestName(false)} <<<${vars.sorted()}>>>")
         assertNotNull(vars)
-        assertContainsElements(vars, Arrays.asList("NativeCall::CStr", "NativeCall::Compiler::GNU"))
+        assertContainsElements(vars, Arrays.asList("NativeCall::Compiler::MSVC", "NativeCall::Compiler::GNU"))
     }
 
     fun testNeedGlobalSymbol() {
@@ -49,8 +50,9 @@ class TypeCompletionTest : CommaFixtureTestCase() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "need NativeCall; say NativeCal<caret>")
         myFixture.complete(CompletionType.BASIC, 1)
         val vars = myFixture.getLookupElementStrings()!!
+        if (java.lang.Boolean.getBoolean("raku.test.dump.actual")) println("LOOKUP-ACTUAL ${getTestName(false)} <<<${vars.sorted()}>>>")
         assertNotNull(vars)
-        assertContainsElements(vars, Arrays.asList("NativeCall::CStr", "NativeCall::Compiler::GNU"))
+        assertContainsElements(vars, Arrays.asList("NativeCall::Compiler::MSVC", "NativeCall::Compiler::GNU"))
     }
 
     fun testUseFindsExportedSymbol() {

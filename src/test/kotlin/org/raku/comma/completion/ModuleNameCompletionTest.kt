@@ -9,8 +9,9 @@ class ModuleNameCompletionTest : CommaFixtureTestCase() {
     fun testPragmaCompletion() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "use exp<caret>")
         myFixture.complete(CompletionType.BASIC, 1)
-        val names = myFixture.getLookupElementStrings()!!
-        assertNull(names)
+        if (java.lang.Boolean.getBoolean("raku.test.dump.actual"))
+            println("LOOKUP-ACTUAL ${getTestName(false)} <<<${myFixture.getLookupElementStrings()?.sorted()}>>>")
+        assertNull(myFixture.getLookupElementStrings())
     }
 
     fun testVersionCompletion() {

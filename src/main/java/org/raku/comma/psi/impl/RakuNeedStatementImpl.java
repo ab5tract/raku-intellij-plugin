@@ -32,7 +32,16 @@ public class RakuNeedStatementImpl extends StubBasedPsiElementBase<RakuNeedState
         if (DumbService.isDumb(getProject())) return;
         for (String name : getModuleNames().stream().map(RakuUtils::stripAuthVerApi).toList()) {
             Project project = getProject();
-            RakuFile found = project.getService(RakuDependencyService.class).provideToRakuFile(name);
+            RakuFile found = com.intellij.psi.stubs.StubIndex
+                .getElements(org.raku.comma.psi.stub.index.ProjectModulesStubIndex.getInstance().getKey(),
+                             name,
+                             project,
+                             com.intellij.psi.search.GlobalSearchScope.projectScope(project),
+                             RakuFile.class)
+                .stream().findFirst().orElse(null);
+            if (found == null) {
+                found = project.getService(RakuDependencyService.class).provideToRakuFile(name);
+            }
             if (found != null) {
                 Set<String> seen = new HashSet<>();
                 seen.add(name);

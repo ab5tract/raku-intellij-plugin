@@ -1,8 +1,8 @@
-multi m1<error descr="No multi candidates match (($): Not enough positional arguments, ($, $): Not enough positional arguments)">($x)</error> { $x }
+multi m1($x) { $x }
 multi m1($x, $y) { $x, $y }
 
 sub test-multi() {
-    m1();
+    <error descr="No multi candidates match (($): Not enough positional arguments, ($, $): Not enough positional arguments)">m1()</error>;
 }
 
 sub slurpy($a, +@as) { $a, @as }

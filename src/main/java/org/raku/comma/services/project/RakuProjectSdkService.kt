@@ -202,7 +202,9 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
     private var settingJson: String? = null
     private val settingsStarted = AtomicBoolean(false)
 
-    val SETTING_FILE_NAME: String = "SETTINGS.rakumod"
+    companion object {
+        const val SETTING_FILE_NAME: String = "SETTINGS.rakumod"
+    }
 
     fun getCoreSettingFile(): RakuFile? {
         if (projectSymbolCache.setting != null) return projectSymbolCache.setting
