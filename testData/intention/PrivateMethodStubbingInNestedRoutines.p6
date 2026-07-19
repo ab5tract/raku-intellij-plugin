@@ -4,7 +4,5 @@ class Bar {
             self!mmm;
         }
     }
-    method !mmm() {
-
-    }
+    method !mmm() {...}
 }

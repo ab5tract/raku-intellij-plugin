@@ -17,9 +17,16 @@ class WithConstructionInspection : RakuInspection() {
             if (TERMS.contains(branch.term.text) && checkIfReplaceable((branch.condition))) {
                 val start = branch.term.textOffset
                 val end = branch.term.textOffset + branch.term.textLength
-                holder.registerProblem(branch.condition!!,
+                // Cover the keyword through the condition so the fix is
+                // offered where the user actually invokes it (on `if`).
+                val range = com.intellij.openapi.util.TextRange(
+                    start - element.textRange.startOffset,
+                    branch.condition!!.textRange.endOffset - element.textRange.startOffset
+                )
+                // Severity comes from the registered inspection level.
+                holder.registerProblem(element,
+                                       range,
                                        description,
-                                       ProblemHighlightType.WEAK_WARNING,
                                        UseWithSyntaxFix(branch.term.text, start, end))
             }
         }

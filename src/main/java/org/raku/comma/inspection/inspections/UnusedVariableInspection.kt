@@ -83,10 +83,18 @@ class UnusedVariableInspection : RakuInspection() {
                 val toAnnotate = if (expectedUsed is RakuVariableDecl) expectedUsed.variables[0] else expectedUsed
 
                 customHighlight(toAnnotate, RakuHighlighter.UNUSED)
+                // Deleting is only safe for standalone variables: removing a
+                // parameter changes the signature, and removing one variable
+                // of a multi-declaration mangles the declaration.
+                val enclosingDecl = expectedUsed as? RakuVariableDecl
+                    ?: PsiTreeUtil.getParentOfType(expectedUsed, RakuVariableDecl::class.java)
+                val deletable = (error == "Unused variable" || error == "Unused attribute")
+                        && (enclosingDecl == null || enclosingDecl.variables.size == 1)
+                val fixes = if (deletable) arrayOf<com.intellij.codeInspection.LocalQuickFix>(DeleteUnusedVariableFix(toAnnotate.text)) else emptyArray()
                 holder.registerProblem(toAnnotate,
                                        error!!,
                                        ProblemHighlightType.LIKE_UNUSED_SYMBOL,
-                                       DeleteUnusedVariableFix(toAnnotate.text))
+                                       *fixes)
             }
         }
     }

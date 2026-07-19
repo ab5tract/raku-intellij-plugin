@@ -41,11 +41,11 @@ class IntentionTest : CommaFixtureTestCase() {
     }
 
     fun testEVALOfVariable() {
-        executeIntention("Add MONKEY")
+        executeIntention("Add 'MONKEY-SEE-NO-EVAL'")
     }
 
     fun testEVALOfInterpolation() {
-        executeIntention("Add MONKEY")
+        executeIntention("Add 'MONKEY-SEE-NO-EVAL'")
     }
 
     fun testRoleMethodsStubbing() {
@@ -73,59 +73,59 @@ class IntentionTest : CommaFixtureTestCase() {
     }
 
     fun testPrivateMethodStubbing() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingWithoutEnclosingRoutine() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingInNestedRoutines() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingSignatureGeneration() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingSignatureGenerationForSingleArg() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingSignatureGenerationColonpair() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingSignatureGenerationForSingleArgColonpair() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingSignatureGenerationForNamedParameters() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingFromUnfinishedVariable() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testOrderOfNamedVariablesInCallIsFixed() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testConflictResolutionAfterMoveSolved() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodStubbingReformatsOnlyAddedBlock() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testPrivateMethodHasPrivateVariableArgumentUpdated() {
-        executeIntention("Create")
+        executeIntention("Stub private method")
     }
 
     fun testColonPairSimplification() {
-        executeIntention("Convert")
+        executeIntention("Simplify colon pair")
     }
 
     fun testFatArrowSimplification() {
@@ -243,7 +243,7 @@ class IntentionTest : CommaFixtureTestCase() {
     }
 
     fun testMakeMethodSubmethod() {
-        executeIntention("Make submethod")
+        executeIntention("Convert 'BUILD' to submethod")
     }
 
     fun testArrayInitializationRemoval() {
@@ -374,7 +374,7 @@ class IntentionTest : CommaFixtureTestCase() {
     }
 
     fun testUseDirectAttributeAccess() {
-        executeIntention("Replace with direct access")
+        executeIntention("Fix direct attribute access")
     }
 
     fun testFatarrowToColonpair() {
@@ -398,7 +398,7 @@ class IntentionTest : CommaFixtureTestCase() {
         val availableIntentions = myFixture.filterAvailableIntentions("Create")
         assertSize(1, availableIntentions)
         myFixture.launchAction(availableIntentions.get(0))
-        myFixture.checkResult("sub hehe(\$p, :\$two, :\$bar) {}\nhehe(42, :two, :\$bar);")
+        myFixture.checkResult("sub hehe(\$p, :\$two, :\$bar) { ... }\nhehe(42, :two, :\$bar);")
     }
 
     fun testSubroutineDeletion() {
@@ -416,7 +416,7 @@ class IntentionTest : CommaFixtureTestCase() {
     }
 
     fun testSubroutineExportingQuickfixWithTraits() {
-        executeIntention("Add export")
+        executeIntention("Add export trait to 'unused'")
     }
 
     fun testSubroutineExportingDoesNotWorkOnMethods() {
@@ -433,10 +433,10 @@ class IntentionTest : CommaFixtureTestCase() {
         executeIntention("Safe")
     }
     fun testRemoveUnusedIsNotForParameters() {
-        checkIntentionAbsence("Safe")
+        checkIntentionAbsence("Safe delete unused")
     }
     fun testRemoveUnusedIsNotForMultiAttributes() {
-        checkIntentionAbsence("Safe")
+        checkIntentionAbsence("Safe delete unused")
     }
 
     private fun checkIntentionAbsence(hint: String) {
@@ -447,7 +447,7 @@ class IntentionTest : CommaFixtureTestCase() {
         val intention = prepareIntention(hint)
         assertNotNull(intention)
         myFixture.launchAction(intention!!)
-        myFixture.checkResultByFile(getTestName(false) + ".p6", true)
+        checkResultByFileDumpable(getTestName(false) + ".p6")
     }
 
     private fun prepareIntention(hint: String): IntentionAction? {

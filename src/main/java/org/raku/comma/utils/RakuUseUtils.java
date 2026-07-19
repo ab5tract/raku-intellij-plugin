@@ -38,9 +38,7 @@ public class RakuUseUtils {
     }
 
     public static void addUse(Editor editor, PsiFile file, String useName, String moduleName) {
-//        editor.getDocument().insertString(0, "use " + useName + ";\n");
-//        Module module = ModuleUtilCore.findModuleForFile(file);
-//        assert module != null;
+        editor.getDocument().insertString(0, "use " + useName + ";\n");
         var metaData = file.getProject().getService(RakuMetaDataComponent.class);
         if (! metaData.getDepends().contains(moduleName)) {
             metaData.addDepends(moduleName);
