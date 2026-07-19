@@ -105,8 +105,10 @@ class RakuDependencyService(private val project: Project, private val runScope: 
     }
 
     fun allProvides(): Set<String> {
+        // META6 provides maps module name -> file path; the module names are
+        // the provides.
         return moduleDetailsState.metaFiles.filter { it.provides.isNotEmpty() }
-                                           .flatMap { it.provides.values }
+                                           .flatMap { it.provides.keys }
                                            .toSet()
     }
 

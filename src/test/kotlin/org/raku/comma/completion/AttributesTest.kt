@@ -47,6 +47,7 @@ class AttributesTest : CommaFixtureTestCase() {
                                   "use NativeCall; class A does NativeCall::Native { has \$!a; method a() { say \$!<caret> } }")
         myFixture.complete(CompletionType.BASIC, 1)
         val vars = myFixture.getLookupElementStrings()!!
+        if (java.lang.Boolean.getBoolean("raku.test.dump.actual")) println("LOOKUP-ACTUAL ${getTestName(false)} <<<${vars.sorted()}>>>")
         assertNotNull(vars)
         assertContainsElements(vars, Arrays.asList("\$!", "\$!a", "\$!rettype"))
     }

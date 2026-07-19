@@ -329,9 +329,16 @@ public class RakuFileImpl extends PsiFileBase implements RakuFile {
                         ((RakuRoutineDecl) current).contributeLexicalSymbols(collector);
                     }
                     if (Objects.equals(current.getName(), "EXPORT")) {
-                        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                        // Contributing asynchronously would hand symbols to a
+                        // collector the resolution walk has already abandoned;
+                        // only the cache-warming may happen off-thread.
+                        if (Objects.nonNull(EXPORT_CACHE)) {
                             contributeSymbolsFromEXPORT(collector);
-                        });
+                        } else {
+                            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                                contributeSymbolsFromEXPORT(collector);
+                            });
+                        }
                     }
                 } else if (current instanceof RakuEnum rakuEnum) {
                     String scope = rakuEnum.getScope();
