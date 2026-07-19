@@ -4,7 +4,5 @@ class A {
   method a {
     self!foo($!a);
   }
-  method !foo($a) {
-
-  }
+  method !foo($a) {...}
 }

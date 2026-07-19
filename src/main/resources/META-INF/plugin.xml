@@ -187,12 +187,11 @@
 
     <!--    <statusBarWidgetFactory implementation="org.raku.comma.sdk.chooser.RakuSdkStatusBarWidgetFactory" id="RAKU_SDK_STATUS_BAR_WIDGET" />-->
 
-    <!-- TODO: Fix 'It's unexpected to invoke this method on an intention preview calculating.' -->
-    <!--    <intentionAction>-->
-    <!--      <language>Raku</language>-->
-    <!--      <className>org.raku.comma.intention.ChangePackageTypeIntention</className>-->
-    <!--      <category>Raku intentions</category>-->
-    <!--    </intentionAction>-->
+    <intentionAction>
+      <language>Raku</language>
+      <className>org.raku.comma.intention.ChangePackageTypeIntention</className>
+      <category>Raku intentions</category>
+    </intentionAction>
     <intentionAction>
       <language>Raku</language>
       <className>org.raku.comma.intention.MakeMethodPublicIntention</className>

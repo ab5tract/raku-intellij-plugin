@@ -66,7 +66,7 @@ class UnitKeywordInspection : RakuInspection() {
                     declaratorType = packageDeclarator.text
                 }
                 val errorMessage = if (declaratorType == null) DESCRIPTION_DEFAULT else DESCRIPTION_FORMAT.format(declaratorType)
-                holder.registerProblem(element, TextRange(0, node.startOffset), errorMessage, AddUnitKeywordFix())
+                holder.registerProblem(element, TextRange(0, node.startOffset - element.textRange.startOffset), errorMessage, AddUnitKeywordFix())
             }
         }
     }

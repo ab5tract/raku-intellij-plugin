@@ -34,7 +34,16 @@ class UndeclaredOrDeprecatedRoutineInspection : RakuInspection() {
             if (element.resolvesAsLexicalOperator() ||  element.isValidNqp()) return
 
             val description = "Subroutine %s is not declared".format(subName)
-            holder.registerProblem(element, description, StubMissingSubroutineFix())
+            // `const $x = ...` is a common Raku-ism typo for `constant`; offer
+            // the dedicated fix alongside stubbing (lost in the annotator
+            // migration).
+            val next = com.intellij.psi.util.PsiTreeUtil.skipWhitespacesForward(element)
+            if (subName == "const" && (next is org.raku.comma.psi.RakuVariable || next is org.raku.comma.psi.RakuInfixApplication)) {
+                holder.registerProblem(element, description, StubMissingSubroutineFix(),
+                                       org.raku.comma.inspection.fixes.ConstKeywordFix())
+            } else {
+                holder.registerProblem(element, description, StubMissingSubroutineFix())
+            }
         } else if (results.size == 1) {
             // If it resolves to a type, highlight it as one.
             val resolvedElement = results[0].element

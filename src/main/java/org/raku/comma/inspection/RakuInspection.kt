@@ -53,8 +53,12 @@ abstract class RakuInspection : LocalInspectionTool() {
     }
 
     protected fun highlightTextRange(element: RakuRoutineDecl): TextRange {
-        val end = element.textOffset + element.declaratorNode.textLength + element.signature.length - 2
-        return TextRange(element.declaratorNode.textOffset, end)
+        val start = element.declaratorNode.textOffset
+        // The signature string is not always literally present in the source
+        // (implicit signatures), so clamp to the declaration's own range.
+        val end = (element.textOffset + element.declaratorNode.textLength + element.signature.length - 2)
+            .coerceIn(start + 1, element.textRange.endOffset)
+        return TextRange(start, end)
     }
 
     protected fun highlightTextRange(element: RakuLongName): TextRange {
