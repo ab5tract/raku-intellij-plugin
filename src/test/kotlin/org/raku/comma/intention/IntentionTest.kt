@@ -453,6 +453,10 @@ class IntentionTest : CommaFixtureTestCase() {
     private fun prepareIntention(hint: String): IntentionAction? {
         myFixture.configureByFile(getTestName(false) + "Before.p6")
         val availableIntentions = myFixture.filterAvailableIntentions(hint)
+        if (availableIntentions.size != 1 && java.lang.Boolean.getBoolean("raku.test.dump.actual")) {
+            println("INTENTIONS ${getTestName(false)} hint=[$hint] matched=${availableIntentions.map { it.text }} " +
+                    "all=${myFixture.availableIntentions.map { it.text }}")
+        }
         assertTrue(availableIntentions.size == 1 || availableIntentions.isEmpty())
         return if (availableIntentions.isEmpty()) null else myFixture.findSingleIntention(hint)
     }

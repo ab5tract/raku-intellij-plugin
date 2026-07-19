@@ -85,7 +85,7 @@ class UnusedVariableInspection : RakuInspection() {
                 customHighlight(toAnnotate, RakuHighlighter.UNUSED)
                 holder.registerProblem(toAnnotate,
                                        error!!,
-                                       ProblemHighlightType.INFORMATION,
+                                       ProblemHighlightType.LIKE_UNUSED_SYMBOL,
                                        DeleteUnusedVariableFix(toAnnotate.text))
             }
         }

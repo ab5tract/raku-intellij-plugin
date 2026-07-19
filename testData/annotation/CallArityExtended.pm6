@@ -1,8 +1,8 @@
-multi m1($x) { $x }
+multi m1<error descr="No multi candidates match (($): Not enough positional arguments, ($, $): Not enough positional arguments)">($x)</error> { $x }
 multi m1($x, $y) { $x, $y }
 
 sub test-multi() {
-    <error descr="No multi candidates match (($): Not enough positional arguments, ($, $): Not enough positional arguments)">m1</error>();
+    m1();
 }
 
 sub slurpy($a, +@as) { $a, @as }
@@ -18,7 +18,7 @@ class C {
 }
 
 sub test-class() {
-    C.no-args(); C.no-args(<error descr="Too many positional arguments">1</error>); C.no-args(:a);
-    C.one-arg(42); C<error descr="Not enough positional arguments">.one-arg()</error>; C.one-arg(1, <error descr="Too many positional arguments">2</error>); C.one-arg(1, :b);
-    C.two-args(1, 2); C<error descr="Not enough positional arguments">.two-args()</error>; C.two-args(<error descr="Not enough positional arguments">1</error>); C.two-args(1, 2, <error descr="Too many positional arguments">3</error>);
+    C.no-args(); C<error descr="Too many positional arguments">.no-args(1)</error>; C.no-args(:a);
+    C.one-arg(42); C<error descr="Not enough positional arguments">.one-arg()</error>; C<error descr="Too many positional arguments">.one-arg(1, 2)</error>; C.one-arg(1, :b);
+    C.two-args(1, 2); C<error descr="Not enough positional arguments">.two-args()</error>; C<error descr="Not enough positional arguments">.two-args(1)</error>; C<error descr="Too many positional arguments">.two-args(1, 2, 3)</error>;
 }

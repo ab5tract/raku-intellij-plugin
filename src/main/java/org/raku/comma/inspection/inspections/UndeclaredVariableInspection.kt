@@ -50,7 +50,9 @@ class UndeclaredVariableInspection : RakuInspection() {
         // If it's an implicit variable, ensure that there is either no signature on the containing block
         // or a signature that declares the implicit variable
         if (IMPLICIT_VARIABLES.contains(variableName) && element.parent !is RakuParameterVariable) {
-            val nearestBlockoid = PsiTreeUtil.getParentOfType(element, RakuBlockoid::class.java)!!
+            // At file top level there is no enclosing block, hence no
+            // signature that could shadow the implicit variable.
+            val nearestBlockoid = PsiTreeUtil.getParentOfType(element, RakuBlockoid::class.java) ?: return
 
             // Even Kotlin hasn't fixed this stupidity in Java...
             // I present to you a hand-unrolled loop of class checking

@@ -49,6 +49,7 @@
                          groupPath="Raku"
                          enabledByDefault="true"
                          groupName="General"
+                         level="ERROR"
                          implementationClass="org.raku.comma.inspection.inspections.SelfAvailabilityInspection"/>
 
         <localInspection language="Raku"
@@ -134,7 +135,7 @@
                          groupPath="Raku"
                          enabledByDefault="true"
                          groupName="Idioms"
-                         level="WARNING"
+                         level="WEAK WARNING"
                          implementationClass="org.raku.comma.inspection.inspections.IdiomaticLoopInspection"/>
 
         <localInspection language="Raku"
@@ -185,7 +186,7 @@
                          shortName="RakuMissingRoleMethod"
                          groupPath="Raku"
                          enabledByDefault="true"
-                         level="WARNING"
+                         level="ERROR"
                          groupName="Declarations"
                          implementationClass="org.raku.comma.inspection.inspections.MissingRoleMethodInspection"/>
 
@@ -194,7 +195,7 @@
                          shortName="RakuMissingThings"
                          groupPath="Raku"
                          enabledByDefault="true"
-                         level="WARNING"
+                         level="ERROR"
                          groupName="General"
                          implementationClass="org.raku.comma.inspection.inspections.MissingThingsInspection"/>
 
@@ -314,6 +315,7 @@
                          groupPath="Raku"
                          enabledByDefault="true"
                          groupName="Idioms"
+                         level="WEAK WARNING"
                          implementationClass="org.raku.comma.inspection.inspections.SimplifiedRangeInspection"/>
 
         <localInspection language="Raku"
@@ -370,7 +372,17 @@
                          groupPath="Raku"
                          enabledByDefault="true"
                          groupName="Declarations"
+                         level="WEAK WARNING"
                          implementationClass="org.raku.comma.inspection.inspections.UnusedVariableInspection"/>
+
+        <localInspection language="Raku"
+                         displayName="Useless use of value in sink context"
+                         shortName="RakuUselessUse"
+                         groupPath="Raku"
+                         enabledByDefault="true"
+                         groupName="Statements"
+                         level="WARNING"
+                         implementationClass="org.raku.comma.inspection.inspections.UselessUseInspection"/>
 
         <localInspection language="Raku"
                          displayName="Useless method declaration"
@@ -394,6 +406,7 @@
                          groupPath="Raku"
                          enabledByDefault="true"
                          groupName="Declarations"
+                         level="WEAK WARNING"
                          implementationClass="org.raku.comma.inspection.inspections.WithConstructionInspection"/>
     </extensions>
 </idea-plugin>

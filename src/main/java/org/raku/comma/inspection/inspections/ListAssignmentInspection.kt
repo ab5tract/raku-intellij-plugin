@@ -26,17 +26,19 @@ class ListAssignmentInspection : RakuInspection() {
         val variables = element.variables
         if (variables.size < 2) return
 
-        var i = 0
-        val length = variables.size
-        while (i < length) {
-            val name = variables[i].variableName ?: continue
+        for ((i, variable) in variables.withIndex()) {
+            val name = variable.variableName ?: continue
             val startsWithAt = name.startsWith("@")
-            if (i != length - 1 && (startsWithAt || name.startsWith("%"))) {
+            if (i != variables.size - 1 && (startsWithAt || name.startsWith("%"))) {
                 val description = descriptionFormat.format(if (startsWithAt) "Array" else "Hash")
-                val range = TextRange(variables[i].startOffset, variables[i].endOffset)
-                holder.registerProblem(infix, range, description, UseBindingToDestructureFix())
+                // Anchor on the declaration (it contains both the slurpy
+                // variable to highlight and the infix the fix rewrites).
+                val range = TextRange(
+                    variable.textRange.startOffset - element.textRange.startOffset,
+                    variable.textRange.endOffset - element.textRange.startOffset
+                )
+                holder.registerProblem(element, range, description, UseBindingToDestructureFix())
             }
-            i++
         }
     }
 }
