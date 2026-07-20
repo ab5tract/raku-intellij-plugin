@@ -61,6 +61,7 @@ import org.raku.comma.psi.symbols.RakuSymbolKind
 import org.raku.comma.readerMode.RakuActionProvider
 import org.raku.comma.readerMode.RakuReaderModeState
 import org.raku.comma.repl.RakuReplState
+import org.raku.comma.sdk.RakuSdkUtil
 import org.raku.comma.sdk.RakuSettingTypeId
 import org.raku.comma.services.project.RakuDependencyService
 import org.raku.comma.services.project.RakuProjectSdkService
@@ -68,7 +69,8 @@ import org.raku.comma.utils.RakuUtils
 import java.awt.Color
 import java.util.LinkedList
 import java.util.Queue
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicReference
 
 class RakuFileImpl(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, RakuLanguage.INSTANCE), RakuFile {
 
@@ -76,12 +78,20 @@ class RakuFileImpl(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, R
     private var originalPath: String? = null
     private var dependencyFile: Boolean? = false
 
-    // We may use CacheValue/CachedValueManager mechanism, but a field is easier to try
-    private var EXPORT_CACHE: List<RakuSymbol>? = null
-    private val isCalculatingExport = AtomicBoolean()
+    // Single-flight load of `sub EXPORT` symbols: null until first requested,
+    // then exactly one background computation is in flight or complete. This
+    // replaces an EXPORT_CACHE + AtomicBoolean pair that (a) could hand
+    // symbols to a collector the synchronous resolution walk had already
+    // abandoned, by firing an unconditional executeOnPooledThread callback,
+    // and (b) silently skipped contribution entirely when a concurrent caller
+    // held the flag. Now: a cold/pending load contributes nothing to the
+    // *current* walk (same as before), but the walk that started it always
+    // finishes the computation and re-triggers code analysis so a later,
+    // fresh walk picks the symbols up instead of them going stale forever.
+    private val exportFuture = AtomicReference<CompletableFuture<List<RakuSymbol>>?>()
 
     fun dropExportCache() {
-        EXPORT_CACHE = null
+        exportFuture.set(null)
     }
 
     override fun isReal(): Boolean = true
@@ -260,19 +270,11 @@ class RakuFileImpl(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, R
                     if (facts.exported || facts.scope == "our") {
                         facts.psi().contributeLexicalSymbols(collector)
                     }
-                    // Maybe contribute sub EXPORT. Historically the AST lens
-                    // only; the EXPORT machinery redesign extends it to stubs.
-                    if (current is RakuPsiElement && facts.name == "EXPORT") {
-                        // Contributing asynchronously would hand symbols to a
-                        // collector the resolution walk has already abandoned;
-                        // only the cache-warming may happen off-thread.
-                        if (EXPORT_CACHE != null) {
-                            contributeSymbolsFromEXPORT(collector)
-                        } else {
-                            ApplicationManager.getApplication().executeOnPooledThread {
-                                contributeSymbolsFromEXPORT(collector)
-                            }
-                        }
+                    // Maybe contribute sub EXPORT. Facts come from either
+                    // lens, so this fires for a stubbed dependency's EXPORT
+                    // routine too, not just an AST-parsed one.
+                    if (facts.name == "EXPORT") {
+                        contributeSymbolsFromEXPORT(collector)
                     }
                 }
                 facts is GlobalsFacts.EnumDecl ->
@@ -299,21 +301,38 @@ class RakuFileImpl(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, R
     }
 
     private fun contributeSymbolsFromEXPORT(collector: RakuSymbolCollector) {
-        if (isCalculatingExport.compareAndSet(false, true)) {
-            val cached = EXPORT_CACHE
-            if (cached != null) {
-                cached.forEach(collector::offerSymbol)
+        var future = exportFuture.get()
+        if (future == null) {
+            val created = CompletableFuture<List<RakuSymbol>>()
+            future = if (exportFuture.compareAndSet(null, created)) {
+                startExportLoad(created)
+                created
             } else {
-                val dummy = LightVirtualFile(name)
-                val rakuFile = ExternalRakuFile(project, dummy)
-                val invocation = "use " + getEnclosingRakuModuleName()
-                val symbols = project.getService(RakuProjectSdkService::class.java)
-                    .symbolCache
-                    .loadModuleSymbols(rakuFile, name, invocation, HashMap(), true)
-                EXPORT_CACHE = symbols
-                symbols.forEach(collector::offerSymbol)
+                // Lost the race: someone else is already loading.
+                exportFuture.get()
             }
-            isCalculatingExport.set(false)
+        }
+        if (future != null && future.isDone) {
+            future.getNow(emptyList()).forEach(collector::offerSymbol)
+        }
+        // Else: a load is in flight. Contribute nothing to this walk (its
+        // collector may be abandoned before the load finishes); startExportLoad
+        // re-triggers analysis on completion so a fresh walk picks it up warm.
+    }
+
+    private fun startExportLoad(future: CompletableFuture<List<RakuSymbol>>) {
+        val project = project
+        val name = name
+        val moduleName = getEnclosingRakuModuleName()
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val dummy = LightVirtualFile(name)
+            val rakuFile = ExternalRakuFile(project, dummy)
+            val invocation = "use $moduleName"
+            val symbols = project.getService(RakuProjectSdkService::class.java)
+                .symbolCache
+                .loadModuleSymbols(rakuFile, name, invocation, HashMap(), true)
+            future.complete(symbols)
+            RakuSdkUtil.triggerCodeAnalysis(project)
         }
     }
 

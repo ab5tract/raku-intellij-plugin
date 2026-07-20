@@ -57,13 +57,21 @@ class WalkContributionTest : CommaFixtureTestCase() {
 
     fun testSubExportModuleColdContributesNothing() {
         // sub EXPORT symbols come from an external raku run; with a cold cache
-        // the current walk contributes nothing synchronously (and the stub
-        // branch does not trigger EXPORT at all). Pin the absence; Commit C of
-        // the walk redesign strengthens this into an async-completion test.
+        // the walk contributes nothing synchronously on the very first ask.
+        // (The fixture module here is not on a real raku include path, so this
+        // also pins that a load which can never resolve does not throw, hang
+        // the walk, or otherwise misbehave — only the single-flight future
+        // that starts in the background stays pending indefinitely.)
         myFixture.copyFileToProject("Module/WalkExport.pm6", "../lib/Module/WalkExport.pm6")
         myFixture.configureByText("11-walk.t", "use Module::WalkExport; walk-ex<caret>")
         myFixture.complete(CompletionType.BASIC, 1)
         val vars = myFixture.getLookupElementStrings()
         assertTrue(vars == null || "walk-export-sub" !in vars)
+
+        // A second, immediate ask must not throw or duplicate the background
+        // load; single-flight means it just observes the same pending future.
+        myFixture.complete(CompletionType.BASIC, 1)
+        val varsAgain = myFixture.getLookupElementStrings()
+        assertTrue(varsAgain == null || "walk-export-sub" !in varsAgain)
     }
 }
