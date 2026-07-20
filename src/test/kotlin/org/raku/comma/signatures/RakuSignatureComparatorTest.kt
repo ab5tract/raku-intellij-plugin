@@ -89,6 +89,30 @@ class RakuSignatureComparatorTest : CommaFixtureTestCase() {
         })
     }
 
+    fun testTwoMissingRequiredNamedArgsReportDistinctNames() {
+        // Regression: MatchFailureReason.MISSING_REQUIRED_NAMED used to carry
+        // the missing parameter's name on a mutable field of the shared enum
+        // singleton (MatchFailureReason.MISSING_REQUIRED_NAMED itself, one
+        // instance for the whole JVM). Two missing required named parameters
+        // recorded at different positions would both read back whichever name
+        // was written last, since getArgumentFailureReason(k) for either
+        // position returns that same shared instance. The name is now
+        // tracked per argument index on the result instead.
+        doTest(":\$abc!, \$b, :\$def!", "2", { res ->
+            assertFalse(res.isAccepted())
+            assertEquals(
+                RakuSignature.MatchFailureReason.MISSING_REQUIRED_NAMED,
+                res.getArgumentFailureReason(0),
+            )
+            assertEquals("\$abc", res.getFailureDetail(0))
+            assertEquals(
+                RakuSignature.MatchFailureReason.MISSING_REQUIRED_NAMED,
+                res.getArgumentFailureReason(1),
+            )
+            assertEquals("\$def", res.getFailureDetail(1))
+        })
+    }
+
     fun testSurplus() {
         doTest("\$a, \$b?, *@a", "1, 2, 3, 4", { res ->
             assertTrue(res.isAccepted())

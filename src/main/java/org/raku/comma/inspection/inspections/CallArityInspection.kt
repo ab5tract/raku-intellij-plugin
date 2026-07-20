@@ -84,7 +84,7 @@ class CallArityInspection : RakuInspection() {
                         }
 
                         MatchFailureReason.MISSING_REQUIRED_NAMED -> {
-                            annotations.add(AnnotationBuilderWrap(signature, "This call misses a required named argument: " + reason.name))
+                            annotations.add(AnnotationBuilderWrap(signature, "This call misses a required named argument: " + result.getFailureDetail(i)))
                             continue@MULTI_LOOP
                         }
 
