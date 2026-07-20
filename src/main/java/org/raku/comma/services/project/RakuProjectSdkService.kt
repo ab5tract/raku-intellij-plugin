@@ -367,6 +367,13 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
         if (! packagesStarted.contains(name)) {
             packagesStarted.add(name)
             ApplicationManager.getApplication().executeOnPooledThread {
+                // packagesStarted is on the *application*-level symbol cache
+                // (keyed by module name only, shared across every project), so
+                // a queued pooled-thread task can easily still be pending when
+                // the project that requested it is long gone -- bail out
+                // before spawning the raku subprocess rather than keeping a
+                // disposed project reachable for the duration of that work.
+                if (project.isDisposed) return@executeOnPooledThread
                 try {
                     // if no symbol cache, compute as usual
                     fileCache.compute(name) { n: String, v: RakuFile? ->

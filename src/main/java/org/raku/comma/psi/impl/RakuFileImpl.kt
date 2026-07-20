@@ -325,6 +325,11 @@ class RakuFileImpl(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, R
         val name = name
         val moduleName = getEnclosingRakuModuleName()
         ApplicationManager.getApplication().executeOnPooledThread {
+            // Bail out before spawning the raku subprocess if the owning
+            // project is already gone by the time this queued task actually
+            // runs, rather than keeping a disposed project reachable for the
+            // duration of that work. Nothing will observe the future either way.
+            if (project.isDisposed) return@executeOnPooledThread
             val dummy = LightVirtualFile(name)
             val rakuFile = ExternalRakuFile(project, dummy)
             val invocation = "use $moduleName"
