@@ -117,7 +117,7 @@ class CallArityInspection : RakuInspection() {
         if (! callName.startsWith("nqp::")) return false
         if (defs.size != 1) return false
         val element = defs.first().element as? ExternalRakuRoutineDecl ?: return false
-        return element.parent.containingFile.name == "nqp.rakumod"
+        return element.parent?.containingFile?.name == "nqp.rakumod"
     }
 
     @JvmRecord
