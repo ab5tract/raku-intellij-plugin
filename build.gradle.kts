@@ -213,6 +213,18 @@ java {
     }
 }
 
+kotlin {
+    // Compile Kotlin interface methods-with-bodies as real JVM 8 default
+    // methods (instead of Kotlin's historical $DefaultImpls indirection), so
+    // Java classes implementing a Kotlin interface inherit its defaults the
+    // same way they inherit a Java interface's -- without this, converting
+    // any Java interface with default methods (e.g. RakuPsiElement) to
+    // Kotlin would break every Java implementor that doesn't override them.
+    compilerOptions {
+        freeCompilerArgs.add("-jvm-default=enable")
+    }
+}
+
 intellijPlatform {
     pluginConfiguration {
         id = "org.raku.comma"
