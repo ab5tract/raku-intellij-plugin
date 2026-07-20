@@ -25,7 +25,7 @@ class MissingRoleMethodInspection : RakuInspection() {
         val seen: MutableMap<String, Int> = HashMap()
         gatherRoleStubs(traits, methodsToImplement, seen, 0)
 
-        val declarations = element.declarations
+        val declarations = element.getDeclarations()
         for (decl in declarations) {
             if (decl is RakuRoutineDecl && decl.routineKind == "method") {
                 methodsToImplement.remove(decl.routineName)
@@ -72,7 +72,7 @@ class MissingRoleMethodInspection : RakuInspection() {
                 val type = trait.compositionTypeName ?: continue
                 val ref = type.reference ?: continue
                 val roleDeclaration = ref.resolve() as? RakuPackageDecl ?: continue
-                val declarations = roleDeclaration.declarations
+                val declarations = roleDeclaration.getDeclarations()
                 for (maybeMethod in declarations) {
                     if (maybeMethod !is RakuRoutineDecl) continue
                     if (maybeMethod.routineKind != "method" || maybeMethod.getParent() is RakuMultiDecl) continue
