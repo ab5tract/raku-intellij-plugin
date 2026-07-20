@@ -96,7 +96,7 @@ class RakuModuleReference(moduleName: RakuModuleName) :
     override fun bindToElement(element: PsiElement): PsiElement {
         // Our RakuFile, so can calculate new path
         if (element is RakuPsiElement) {
-            getElement().setName(element.enclosingRakuModuleName)
+            getElement().setName(element.getEnclosingRakuModuleName()!!)
         }
         return element
     }

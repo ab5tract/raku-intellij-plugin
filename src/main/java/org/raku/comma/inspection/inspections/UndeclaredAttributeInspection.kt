@@ -26,7 +26,7 @@ class UndeclaredAttributeInspection : RakuInspection() {
 
         element.getReference() ?: return
 
-        val enclosingPackage = element.selfType
+        val enclosingPackage = element.getSelfType()
         if (enclosingPackage == null) {
             val problemText = String.format("Attribute %s is used where no self is in scope", variableName)
             holder.registerProblem(element, problemText, ProblemHighlightType.ERROR)

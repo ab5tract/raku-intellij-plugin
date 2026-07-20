@@ -25,7 +25,7 @@ class UndeclaredVariableInspection : RakuInspection() {
         val regexVarPatterns = Pattern.compile("\\$\\d+|\\$<[\\w\\d_-]+>")
         if (regexVarPatterns.matcher(variableName).matches()) {
             val symbol = element.resolveLexicalSymbol(RakuSymbolKind.Variable, "$/")
-            if (! symbol.isImplicitlyDeclared) return
+            if (! symbol!!.isImplicitlyDeclared) return
         }
 
         // Check for $=finish section
