@@ -7,8 +7,7 @@ import org.raku.comma.psi.symbols.RakuSymbolKind
 class CoreSettingDiagTest : CommaFixtureTestCase() {
     fun testParserDirectly() {
         val fallback = org.raku.comma.utils.RakuUtils.getResourceAsFile("symbols/CORE.fallback")!!
-        val json = org.json.JSONArray(java.nio.file.Files.readString(fallback.toPath()))
-        println("DIAG fallback json entries=${json.length()}")
+        val json = java.nio.file.Files.readString(fallback.toPath())
         val file = org.raku.comma.psi.external.ExternalRakuFile(
             project, com.intellij.testFramework.LightVirtualFile("SETTINGS.rakumod"))
         val parser = org.raku.comma.sdk.RakuExternalNamesParser(project, file, json).parse()
