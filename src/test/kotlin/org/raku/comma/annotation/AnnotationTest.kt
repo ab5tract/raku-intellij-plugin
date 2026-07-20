@@ -169,9 +169,12 @@ class AnnotationTest : CommaFixtureTestCase() {
     }
 
     fun testDeclaredExternalPrivateMethodAnnotator() {
+        // !setup is a genuine private method NativeCall::Native declares
+        // (confirmed against the SDK's own extracted symbol data), so it must
+        // not be flagged here; !totally-fake-method is guaranteed absent.
         ensureModuleIsLoaded("NativeCall")
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "use <warning descr=\"Cannot find NativeCall which is specified as a dependency in META6.json\">NativeCall</warning>; role A does NativeCall::Native { method !a {} }; class B does A { method b { self<warning descr=\"Private method !setup is used, but not declared\">!setup</warning>; } }")
+                                  "use <warning descr=\"Cannot find NativeCall which is specified as a dependency in META6.json\">NativeCall</warning>; role A does NativeCall::Native { method !a {} }; class B does A { method b { self<warning descr=\"Private method !totally-fake-method is used, but not declared\">!totally-fake-method</warning>; } }")
         checkHighlightingDumpable()
     }
 
@@ -196,9 +199,16 @@ class AnnotationTest : CommaFixtureTestCase() {
     }
 
     fun testDeclaredExternalAttributeAnnotator() {
+        // $!rettype is a genuine attribute NativeCall::Native declares
+        // (confirmed against the SDK's own extracted symbol data), so it must
+        // not be flagged here; $!totally-fake-attr is guaranteed absent.
+        // Note: whether direct $!attr sigil access to a role-flattened
+        // attribute should even be allowed (as opposed to only through
+        // generated/manual accessors) is a separate, open question about
+        // UndeclaredAttributeInspection's own semantics -- not addressed here.
         ensureModuleIsLoaded("NativeCall")
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "use <warning descr=\"Cannot find NativeCall which is specified as a dependency in META6.json\">NativeCall</warning>; class A does NativeCall::Native { method b { say <error descr=\"Attribute \$!rettype is used, but not declared\">\$!rettype</error>; } }")
+                                  "use <warning descr=\"Cannot find NativeCall which is specified as a dependency in META6.json\">NativeCall</warning>; class A does NativeCall::Native { method b { say <error descr=\"Attribute \$!totally-fake-attr is used, but not declared\">\$!totally-fake-attr</error>; } }")
         checkHighlightingDumpable()
     }
 
@@ -794,20 +804,23 @@ class AnnotationTest : CommaFixtureTestCase() {
     }
 
     fun testWithAnnotation() {
+        // WithConstructionInspection deliberately widens the range to cover
+        // the keyword through the condition, so the quick-fix is invocable
+        // with the cursor on `if` (see WithConstructionInspection.kt).
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "if <weak_warning descr=\"'with' construction can be used instead\">5.defined</weak_warning> {}")
+                                  "<weak_warning descr=\"'with' construction can be used instead\">if 5.defined</weak_warning> {}")
         checkHighlightingDumpable()
     }
 
     fun testWithoutAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "unless <weak_warning descr=\"'without' construction can be used instead\">5.defined</weak_warning> {}")
+                                  "<weak_warning descr=\"'without' construction can be used instead\">unless 5.defined</weak_warning> {}")
         checkHighlightingDumpable()
     }
 
     fun testMultiWithAnnotation() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "if <weak_warning descr=\"'with' construction can be used instead\">5.defined</weak_warning> {} elsif <weak_warning descr=\"'with' construction can be used instead\">4.defined</weak_warning> {} else {}")
+                                  "<weak_warning descr=\"'with' construction can be used instead\">if 5.defined</weak_warning> {} <weak_warning descr=\"'with' construction can be used instead\">elsif 4.defined</weak_warning> {} else {}")
         checkHighlightingDumpable()
     }
 
