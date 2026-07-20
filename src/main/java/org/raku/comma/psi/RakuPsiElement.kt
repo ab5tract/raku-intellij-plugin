@@ -89,7 +89,7 @@ interface RakuPsiElement : NavigatablePsiElement {
     fun applyLexicalSymbolCollector(collector: RakuSymbolCollector) {
         var scope = PsiTreeUtil.getParentOfType(this, RakuPsiScope::class.java)
         while (scope != null) {
-            for (cont in scope.symbolContributors) {
+            for (cont in scope.getSymbolContributors()) {
                 cont.contributeLexicalSymbols(collector)
                 if (collector.isSatisfied) return
             }
