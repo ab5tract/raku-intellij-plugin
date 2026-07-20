@@ -2,32 +2,22 @@ package org.raku.comma.psi.external
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import org.json.JSONObject
 import org.raku.comma.psi.RakuParameter
 import org.raku.comma.psi.RakuSignature
 import org.raku.comma.psi.type.RakuType
+import org.raku.comma.sdk.SignatureJson
 
 class ExternalRakuSignature(
     project: Project,
     parent: PsiElement?,
-    signature: JSONObject,
+    signature: SignatureJson,
 ) : RakuExternalPsiElement(project, parent), RakuSignature {
 
-    private val myParameters: Array<RakuParameter>
-
-    init {
-        val params = ArrayList<RakuParameter>()
-        for (param in signature.getJSONArray("p")) {
-            if (param is JSONObject) {
-                params.add(ExternalRakuParameter(
-                    project, parent,
-                    param.getString("n"),
-                    if (param.has("nn")) param.getJSONArray("nn").toList() else null,
-                    param.getString("t")))
-            }
+    private val myParameters: Array<RakuParameter> = signature.p
+        .map<_, RakuParameter> { param ->
+            ExternalRakuParameter(project, parent, param.n, param.nn.ifEmpty { null }, param.t)
         }
-        myParameters = params.toTypedArray()
-    }
+        .toTypedArray()
 
     override fun summary(retType: RakuType): String =
         myParameters.joinToString(", ") { it.summary(false) } + " --> " + retType.name

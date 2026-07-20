@@ -192,6 +192,30 @@ class RakuExternalNamesParserTest : CommaFixtureTestCase() {
         assertEmpty(parsed("""[{"k":"zz","n":"mystery"}]""").second.result())
     }
 
+    fun testNqpStyleStringParamsAreTolerated() {
+        // symbols/nqp.ops emits signature params as strings, not {n,t} objects;
+        // the routine must survive with the string params skipped.
+        val (_, parser) = parsed(
+            """[{"m":0,"k":"r","s":{"p":["int ${'$'}i "],"r":"--> int"},"n":"nqp::abs_i"}]""")
+        val decl = parser.result().single().psi as RakuRoutineDecl
+        assertEquals("nqp::abs_i", decl.name)
+        assertEmpty(decl.params)
+    }
+
+    fun testMalformedElementIsSkippedRestSurvives() {
+        // A structurally broken element (routine without its required "s")
+        // must not take down the entries before or after it.
+        val (_, parser) = parsed(
+            """[
+              {"k":"v","n":"${'$'}before","t":"Any"},
+              {"k":"s","n":"broken","m":0},
+              {"k":"v","n":"${'$'}after","t":"Any"}
+            ]""")
+        assertEquals(
+            listOf("\$before", "\$after"),
+            parser.result().map { (it.psi as RakuVariableDecl).name })
+    }
+
     fun testMultinessRoutingThroughContributeGlobals() {
         val (file, _) = parsed(
             """[

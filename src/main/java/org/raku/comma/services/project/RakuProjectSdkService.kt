@@ -10,8 +10,6 @@ import com.intellij.serviceContainer.AlreadyDisposedException
 import com.intellij.testFramework.LightVirtualFile
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.future
-import org.json.JSONArray
-import org.json.JSONException
 import org.raku.comma.pm.RakuPackageManager
 import org.raku.comma.pm.impl.RakuZefPM
 import org.raku.comma.psi.RakuFile
@@ -325,18 +323,16 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
     private fun makeSettingSymbols(json: String): RakuFile? {
         try {
             settingJson = json
-            return makeSettingSymbols(JSONArray(json))
+            val entries = RakuExternalNamesParser.tryDecode(json)
+                ?: return ExternalRakuFile(project, LightVirtualFile(SETTING_FILE_NAME))
+            if (project.isDisposed) return null
+            val rakuFile = ExternalRakuFile(project, LightVirtualFile(SETTING_FILE_NAME))
+            val parser = RakuExternalNamesParser(project, rakuFile, entries).parse()
+            rakuFile.setSymbols(parser.result())
+            return rakuFile
         } catch (_: Exception) {}
 
         return ExternalRakuFile(project, LightVirtualFile(SETTING_FILE_NAME))
-    }
-
-    private fun makeSettingSymbols(settingJson: JSONArray): RakuFile? {
-        if (project.isDisposed) return null
-        val rakuFile = ExternalRakuFile(project, LightVirtualFile(SETTING_FILE_NAME))
-        val parser = RakuExternalNamesParser(project, rakuFile, settingJson).parse()
-        rakuFile.setSymbols(parser.result())
-        return rakuFile
     }
 
     private fun unmangleTypeId(id: String): String {
@@ -364,7 +360,7 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
                                                       globalCache.myNeedPackagesStarted
         if (symbolCache.containsKey(name)) {
             return fileCache.compute(name) { n: String, v: RakuFile? ->
-                constructExternalPsiFile(project, n, JSONArray(symbolCache[n]))
+                constructExternalPsiFile(project, n, symbolCache[n]!!)
             }
         }
 
@@ -385,7 +381,7 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
         return ExternalRakuFile(project, LightVirtualFile("DUMMY"))
     }
 
-    private fun constructExternalPsiFile(project: Project, name: String, externalsJSON: JSONArray): RakuFile? {
+    private fun constructExternalPsiFile(project: Project, name: String, externalsJSON: String): RakuFile? {
         var rakuFile: ExternalRakuFile? = null
         try {
             val dummy = LightVirtualFile("$name.rakumod")
@@ -430,13 +426,8 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
             }
             cmd.addParameters(moduleSymbols.getPath(), invocation)
             val text = java.lang.String.join("\n", cmd.executeAndRead(moduleSymbols))
-            val symbols: JSONArray
-            try {
-                symbols = JSONArray(text)
-                symbolCache[name] = text
-            } catch (ex: JSONException) {
-                return ArrayList()
-            }
+            val symbols = RakuExternalNamesParser.tryDecode(text) ?: return ArrayList()
+            symbolCache[name] = text
             return RakuExternalNamesParser(project, rakuFile, symbols).parse().result()
         } catch (e: ExecutionException) {
             return ArrayList()

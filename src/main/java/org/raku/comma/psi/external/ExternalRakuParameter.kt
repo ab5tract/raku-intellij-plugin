@@ -15,11 +15,11 @@ class ExternalRakuParameter(
     project: Project,
     parent: PsiElement?,
     private val myName: String,
-    names: List<Any?>?,
+    names: List<String>?,
     private val myType: String,
 ) : RakuExternalPsiElement(project, parent), RakuParameter {
 
-    private val myNames: List<String> = names?.filterIsInstance<String>() ?: emptyList()
+    private val myNames: List<String> = names ?: emptyList()
 
     override fun summary(includeName: Boolean): String = "$myType $myName"
 

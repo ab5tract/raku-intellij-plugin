@@ -3,7 +3,6 @@ package org.raku.comma.psi.external
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.IStubElementType
-import org.json.JSONObject
 import org.raku.comma.psi.RakuParameter
 import org.raku.comma.psi.RakuRoutineDecl
 import org.raku.comma.psi.RakuSignature
@@ -14,6 +13,7 @@ import org.raku.comma.psi.symbols.RakuSymbolCollector
 import org.raku.comma.psi.symbols.RakuSymbolKind
 import org.raku.comma.psi.type.RakuType
 import org.raku.comma.psi.type.RakuUnresolvedType
+import org.raku.comma.sdk.SignatureJson
 
 class ExternalRakuRoutineDecl(
     project: Project,
@@ -23,7 +23,7 @@ class ExternalRakuRoutineDecl(
     private val myName: String,
     private val myIsMulti: String,
     private val myDeprecationMessage: String?,
-    signature: JSONObject,
+    signature: SignatureJson,
     private val myIsPure: Boolean,
 ) : RakuExternalPsiElement(project, parent), RakuRoutineDecl {
 
@@ -33,7 +33,7 @@ class ExternalRakuRoutineDecl(
     var isImplementationDetail: Boolean = false
 
     init {
-        var returnType = signature.get("r") as String
+        var returnType = signature.r
         if (returnType.endsWith(":D") || returnType.endsWith(":U")) {
             returnType = returnType.substring(0, returnType.length - 2)
         }
