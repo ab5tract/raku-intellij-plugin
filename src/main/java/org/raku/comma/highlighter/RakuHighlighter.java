@@ -67,7 +67,7 @@ public final class RakuHighlighter {
     static final String ONLY_STAR_ID = "RAKU_ONLY_STAR";
     public static final TextAttributesKey ONLY_STAR = TextAttributesKey.createTextAttributesKey(
             ONLY_STAR_ID,
-            DefaultLanguageHighlighterColors.BRACES
+            DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL
     );
 
     static final String PARENTHESES_ID = "RAKU_PARENTHESES";
@@ -428,7 +428,7 @@ public final class RakuHighlighter {
     static final String NAMED_PARAMETER_NAME_ALIAS_ID = "RAKU_NAMED_PARAMETER_NAME_ALIAS";
     public static final TextAttributesKey NAMED_PARAMETER_NAME_ALIAS = TextAttributesKey.createTextAttributesKey(
             NAMED_PARAMETER_NAME_ALIAS_ID,
-            DefaultLanguageHighlighterColors.LOCAL_VARIABLE
+            DefaultLanguageHighlighterColors.PARAMETER
     );
 
     static final String REGEX_CAPTURE_ID = "RAKU_REGEX_CAPTURE";
@@ -446,7 +446,7 @@ public final class RakuHighlighter {
     static final String SELF_ID = "RAKU_SELF";
     public static final TextAttributesKey SELF = TextAttributesKey.createTextAttributesKey(
             SELF_ID,
-            DefaultLanguageHighlighterColors.LOCAL_VARIABLE
+            DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL
     );
 
     static final String VARIABLE_ID = "RAKU_VARIABLE";
@@ -482,7 +482,7 @@ public final class RakuHighlighter {
     static final String WHATEVER_ID = "RAKU_WHATEVER";
     public static final TextAttributesKey WHATEVER = TextAttributesKey.createTextAttributesKey(
             WHATEVER_ID,
-            DefaultLanguageHighlighterColors.CLASS_NAME
+            DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL
     );
 
     /* String Literal Escapes
@@ -582,17 +582,20 @@ public final class RakuHighlighter {
 
     static final String POD_TEXT_BOLD_ID = "RAKU_TEXT_BOLD";
     public static final TextAttributesKey POD_TEXT_BOLD = TextAttributesKey.createTextAttributesKey(
-            POD_TEXT_BOLD_ID
+            POD_TEXT_BOLD_ID,
+            DefaultLanguageHighlighterColors.DOC_COMMENT
     );
 
     static final String POD_TEXT_ITALIC_ID = "RAKU_TEXT_ITALIC";
     public static final TextAttributesKey POD_TEXT_ITALIC = TextAttributesKey.createTextAttributesKey(
-            POD_TEXT_ITALIC_ID
+            POD_TEXT_ITALIC_ID,
+            DefaultLanguageHighlighterColors.DOC_COMMENT
     );
 
     static final String POD_TEXT_UNDERLINE_ID = "RAKU_TEXT_UNDERLINE";
     public static final TextAttributesKey POD_TEXT_UNDERLINE = TextAttributesKey.createTextAttributesKey(
-            POD_TEXT_UNDERLINE_ID
+            POD_TEXT_UNDERLINE_ID,
+            DefaultLanguageHighlighterColors.DOC_COMMENT
     );
 
     /* Unused
@@ -608,6 +611,7 @@ public final class RakuHighlighter {
 
     private static final String ALT_WARNING_ID = "RAKU_ALT_WARNING";
     public static final TextAttributesKey ALT_WARNING = TextAttributesKey.createTextAttributesKey(
-        ALT_WARNING_ID
+        ALT_WARNING_ID,
+        CodeInsightColors.WEAK_WARNING_ATTRIBUTES
     );
 }
