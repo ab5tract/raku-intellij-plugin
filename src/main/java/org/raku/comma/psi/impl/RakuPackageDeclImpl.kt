@@ -233,8 +233,8 @@ class RakuPackageDeclImpl : RakuTypeStubBasedPsi<RakuPackageDeclStub>, RakuPacka
         if (stub != null) {
             for (child in stub.childrenStubs) {
                 if (child !is RakuTraitStub) continue
-                if (child.traitModifier != "does" && child.traitModifier != "is") continue
-                val name = child.traitName
+                if (child.getTraitModifier() != "does" && child.getTraitModifier() != "is") continue
+                val name = child.getTraitName()
                 val project = project
                 val indexables = ArrayList<RakuIndexableType>()
                 indexables.addAll(StubIndex.getElements(
@@ -244,9 +244,9 @@ class RakuPackageDeclImpl : RakuTypeStubBasedPsi<RakuPackageDeclStub>, RakuPacka
                     RakuGlobalTypeStubIndex.getInstance().key, name, project,
                     GlobalSearchScope.projectScope(project), RakuIndexableType::class.java))
                 if (indexables.size == 1) {
-                    parents.add(ParentRef(child.traitModifier == "does", indexables.first() as RakuPackageDecl, null))
+                    parents.add(ParentRef(child.getTraitModifier() == "does", indexables.first() as RakuPackageDecl, null))
                 } else {
-                    parents.add(ParentRef(child.traitModifier == "does", null, name))
+                    parents.add(ParentRef(child.getTraitModifier() == "does", null, name))
                 }
                 if (name == "Mu") {
                     isAny = false
@@ -419,7 +419,7 @@ class RakuPackageDeclImpl : RakuTypeStubBasedPsi<RakuPackageDeclStub>, RakuPacka
         val stub = stub ?: return super<RakuTypeStubBasedPsi>.findTrait(mod, name)
         return stub.childrenStubs
             .filterIsInstance<RakuTraitStub>()
-            .firstOrNull { it.traitModifier == mod && it.traitName == name }
+            .firstOrNull { it.getTraitModifier() == mod && it.getTraitName() == name }
             ?.psi
     }
 
