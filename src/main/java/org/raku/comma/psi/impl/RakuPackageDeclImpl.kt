@@ -369,7 +369,7 @@ class RakuPackageDeclImpl : RakuTypeStubBasedPsi<RakuPackageDeclStub>, RakuPacka
     }
 
     private fun nestedPackageView(node: Any): NestedPackageView? = when (node) {
-        is RakuPackageDeclStub -> NestedPackageView(node.scope, node.typeName, node.psi)
+        is RakuPackageDeclStub -> NestedPackageView(node.getScope(), node.typeName, node.psi)
         is RakuPackageDecl -> NestedPackageView(node.scope, node.packageName, node)
         else -> null
     }

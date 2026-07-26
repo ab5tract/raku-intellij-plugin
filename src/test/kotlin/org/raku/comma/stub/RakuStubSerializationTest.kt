@@ -49,8 +49,8 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
     fun testEnum() {
         val stub = roundTrip("enum Class <Wizard Crusader Priest>;").childrenStubs[0] as RakuEnumStub
         assertEquals("Class", stub.typeName)
-        assertTrue(stub.isExported)
-        assertEquals("our", stub.scope)
+        assertTrue(stub.isExported())
+        assertEquals("our", stub.getScope())
         assertEquals(listOf("Wizard", "Crusader", "Priest"), stub.enumValues)
     }
 
@@ -68,17 +68,17 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
     fun testNeed() {
         val root = roundTrip("need Foo::Bar; need Foo::Baz;")
         val stub1 = root.childrenStubs[0] as RakuNeedStatementStub
-        assertEquals(listOf("Foo::Bar"), stub1.moduleNames)
+        assertEquals(listOf("Foo::Bar"), stub1.getModuleNames())
         val stub2 = root.childrenStubs[1] as RakuNeedStatementStub
-        assertEquals(listOf("Foo::Baz"), stub2.moduleNames)
+        assertEquals(listOf("Foo::Baz"), stub2.getModuleNames())
     }
 
     fun testUse() {
         val root = roundTrip("use Foo::Bar; use Foo::Baz;")
         val stub1 = root.childrenStubs[0] as RakuUseStatementStub
-        assertEquals("Foo::Bar", stub1.moduleName)
+        assertEquals("Foo::Bar", stub1.getModuleName())
         val stub2 = root.childrenStubs[1] as RakuUseStatementStub
-        assertEquals("Foo::Baz", stub2.moduleName)
+        assertEquals("Foo::Baz", stub2.getModuleName())
     }
 
     fun testTrait() {
