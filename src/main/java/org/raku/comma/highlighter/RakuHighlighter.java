@@ -614,4 +614,34 @@ public final class RakuHighlighter {
         ALT_WARNING_ID,
         CodeInsightColors.WEAK_WARNING_ATTRIBUTES
     );
+
+    /* Semantic (resolution-based)
+     * ***************************
+     * These are applied by RakuSemanticAnnotator, layered on top of the
+     * lexer-driven keys above, once a reference has actually been resolved.
+     */
+
+    static final String BUILTIN_VARIABLE_ID = "RAKU_BUILTIN_VARIABLE";
+    public static final TextAttributesKey BUILTIN_VARIABLE = TextAttributesKey.createTextAttributesKey(
+            BUILTIN_VARIABLE_ID,
+            DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL
+    );
+
+    static final String BUILTIN_CALL_ID = "RAKU_BUILTIN_CALL";
+    public static final TextAttributesKey BUILTIN_CALL = TextAttributesKey.createTextAttributesKey(
+            BUILTIN_CALL_ID,
+            DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL
+    );
+
+    static final String REASSIGNED_LOCAL_VARIABLE_ID = "RAKU_REASSIGNED_LOCAL_VARIABLE";
+    public static final TextAttributesKey REASSIGNED_LOCAL_VARIABLE = TextAttributesKey.createTextAttributesKey(
+            REASSIGNED_LOCAL_VARIABLE_ID,
+            DefaultLanguageHighlighterColors.REASSIGNED_LOCAL_VARIABLE
+    );
+
+    static final String REASSIGNED_PARAMETER_ID = "RAKU_REASSIGNED_PARAMETER";
+    public static final TextAttributesKey REASSIGNED_PARAMETER = TextAttributesKey.createTextAttributesKey(
+            REASSIGNED_PARAMETER_ID,
+            DefaultLanguageHighlighterColors.REASSIGNED_PARAMETER
+    );
 }
