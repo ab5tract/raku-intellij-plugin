@@ -84,7 +84,7 @@ class RakuPackageDeclImpl : RakuTypeStubBasedPsi<RakuPackageDeclStub>, RakuPacka
     override fun getPackageKind(): String {
         val stub = stub
         if (stub != null) {
-            return stub.packageKind
+            return stub.getPackageKind()
         }
 
         val declarator = declarator

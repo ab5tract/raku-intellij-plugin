@@ -103,7 +103,7 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
     fun testPackageDeclAndRoutineDecl() {
         val root = roundTrip("class Foo { method mm {}; method !kk {}; }")
         val pkg = root.childrenStubs[0] as RakuPackageDeclStub
-        assertEquals("class", pkg.packageKind)
+        assertEquals("class", pkg.getPackageKind())
         val method1 = pkg.childrenStubs[0] as RakuRoutineDeclStub
         assertFalse(method1.isPrivate())
         assertEquals("method", method1.getRoutineKind())
