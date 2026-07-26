@@ -48,7 +48,7 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
 
     fun testEnum() {
         val stub = roundTrip("enum Class <Wizard Crusader Priest>;").childrenStubs[0] as RakuEnumStub
-        assertEquals("Class", stub.typeName)
+        assertEquals("Class", stub.getTypeName())
         assertTrue(stub.isExported())
         assertEquals("our", stub.getScope())
         assertEquals(listOf("Wizard", "Crusader", "Priest"), stub.enumValues)
@@ -61,7 +61,7 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
 
     fun testSubset() {
         val stub = roundTrip("subset Alpha of Int;").childrenStubs[0] as RakuSubsetStub
-        assertEquals("Alpha", stub.typeName)
+        assertEquals("Alpha", stub.getTypeName())
         assertEquals("Int", stub.subsetBaseTypeName)
     }
 
@@ -130,9 +130,9 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
     fun testGlobalNameAcrossPackageNesting() {
         val root = roundTrip("class Outer { class Inner {} }")
         val outer = root.childrenStubs[0] as RakuPackageDeclStub
-        assertEquals("Outer", outer.globalName)
+        assertEquals("Outer", outer.getGlobalName())
         val inner = outer.childrenStubs[0] as RakuPackageDeclStub
-        assertEquals("Outer::Inner", inner.globalName)
+        assertEquals("Outer::Inner", inner.getGlobalName())
     }
 
     fun testMyScopedPackageBehavesLikeOurForNaming() {
@@ -145,11 +145,11 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
         // for packages. Pinning this as-is; not something to fix as part of this conversion.
         val root = roundTrip("my class Outer { class Inner {} }")
         val outer = root.childrenStubs[0] as RakuPackageDeclStub
-        assertEquals("Outer", outer.globalName)
-        assertNull(outer.lexicalName)
+        assertEquals("Outer", outer.getGlobalName())
+        assertNull(outer.getLexicalName())
         val inner = outer.childrenStubs[0] as RakuPackageDeclStub
-        assertEquals("Outer::Inner", inner.globalName)
-        assertNull(inner.lexicalName)
+        assertEquals("Outer::Inner", inner.getGlobalName())
+        assertNull(inner.getLexicalName())
     }
 
     fun testLexicalNameIsAlwaysNullForPackages() {
@@ -158,8 +158,8 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
         // happens for packages -- so it's always null regardless of nesting or "my"/"our".
         val root = roundTrip("class Outer { class Inner {} }")
         val outer = root.childrenStubs[0] as RakuPackageDeclStub
-        assertNull(outer.lexicalName)
+        assertNull(outer.getLexicalName())
         val inner = outer.childrenStubs[0] as RakuPackageDeclStub
-        assertNull(inner.lexicalName)
+        assertNull(inner.getLexicalName())
     }
 }
