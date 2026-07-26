@@ -43,7 +43,7 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
 
     fun testConstant() {
         val stub = roundTrip("constant \$foo = 5;").childrenStubs[0] as RakuConstantStub
-        assertEquals("\$foo", stub.constantName)
+        assertEquals("\$foo", stub.getConstantName())
     }
 
     fun testEnum() {
