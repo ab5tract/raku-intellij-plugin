@@ -105,12 +105,12 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
         val pkg = root.childrenStubs[0] as RakuPackageDeclStub
         assertEquals("class", pkg.packageKind)
         val method1 = pkg.childrenStubs[0] as RakuRoutineDeclStub
-        assertFalse(method1.isPrivate)
-        assertEquals("method", method1.routineKind)
-        assertEquals("mm", method1.routineName)
+        assertFalse(method1.isPrivate())
+        assertEquals("method", method1.getRoutineKind())
+        assertEquals("mm", method1.getRoutineName())
         val method2 = pkg.childrenStubs[1] as RakuRoutineDeclStub
-        assertTrue(method2.isPrivate)
-        assertEquals("!kk", method2.routineName)
+        assertTrue(method2.isPrivate())
+        assertEquals("!kk", method2.getRoutineName())
     }
 
     fun testSubCall() {
