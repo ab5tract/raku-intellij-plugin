@@ -51,7 +51,7 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
         assertEquals("Class", stub.getTypeName())
         assertTrue(stub.isExported())
         assertEquals("our", stub.getScope())
-        assertEquals(listOf("Wizard", "Crusader", "Priest"), stub.enumValues)
+        assertEquals(listOf("Wizard", "Crusader", "Priest"), stub.getEnumValues())
     }
 
     fun testRegex() {
