@@ -18,14 +18,10 @@ class CroTemplatePartStubIndex : StringStubIndexExtension<CroTemplatePart>() {
 
     companion object {
         private const val INDEX_VERSION = 6
-
-        // NOTE: pre-existing copy-paste bug -- this should be typed
-        // CroTemplatePartStubIndex, not RakuAllRoutinesStubIndex. Preserved
-        // verbatim here; fixed as its own clearly-labeled commit.
-        private val instance = RakuAllRoutinesStubIndex()
+        private val instance = CroTemplatePartStubIndex()
 
         @JvmStatic
-        fun getInstance(): RakuAllRoutinesStubIndex {
+        fun getInstance(): CroTemplatePartStubIndex {
             return instance
         }
     }
