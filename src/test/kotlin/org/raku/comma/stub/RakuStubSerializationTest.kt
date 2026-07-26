@@ -62,7 +62,7 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
     fun testSubset() {
         val stub = roundTrip("subset Alpha of Int;").childrenStubs[0] as RakuSubsetStub
         assertEquals("Alpha", stub.getTypeName())
-        assertEquals("Int", stub.subsetBaseTypeName)
+        assertEquals("Int", stub.getSubsetBaseTypeName())
     }
 
     fun testNeed() {
