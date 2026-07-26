@@ -95,9 +95,9 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
         val typeName = scoped.childrenStubs[0] as RakuTypeNameStub
         assertEquals("Int", typeName.getTypeName())
         val variable = scoped.childrenStubs[1] as RakuVariableDeclStub
-        assertEquals("\$!bar", variable.variableNames[0])
-        assertEquals("\$.bar", variable.variableNames[1])
-        assertEquals("Int", variable.variableType)
+        assertEquals("\$!bar", variable.getVariableNames()[0])
+        assertEquals("\$.bar", variable.getVariableNames()[1])
+        assertEquals("Int", variable.getVariableType())
     }
 
     fun testPackageDeclAndRoutineDecl() {
