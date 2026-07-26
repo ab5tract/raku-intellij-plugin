@@ -56,7 +56,7 @@ class RakuStubSerializationTest : CommaFixtureTestCase() {
 
     fun testRegex() {
         val stub = roundTrip("regex aa <1 2 3 4 5>").childrenStubs[0] as RakuRegexDeclStub
-        assertEquals("aa", stub.regexName)
+        assertEquals("aa", stub.getRegexName())
     }
 
     fun testSubset() {
