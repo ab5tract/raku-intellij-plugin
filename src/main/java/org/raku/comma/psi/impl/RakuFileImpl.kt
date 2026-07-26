@@ -202,7 +202,7 @@ class RakuFileImpl(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, R
         is RakuEnumStub -> GlobalsFacts.EnumDecl(node.isExported, node.scope) { node.psi }
         is RakuSubsetStub -> GlobalsFacts.SubsetDecl(node.isExported, node.scope) { node.psi }
         is RakuUseStatementStub -> GlobalsFacts.Use(node.getModuleName())
-        is RakuNeedStatementStub -> GlobalsFacts.Need(node.moduleNames)
+        is RakuNeedStatementStub -> GlobalsFacts.Need(node.getModuleNames())
         is RakuVariableDecl -> GlobalsFacts.Variable(node.isExported, node.scope) { node }
         is RakuPackageDecl -> GlobalsFacts.Pkg(node.packageKind, node.scope, node.name) { node }
         is RakuRoutineDecl -> GlobalsFacts.Routine(node.isExported, node.scope, node.name) { node }
