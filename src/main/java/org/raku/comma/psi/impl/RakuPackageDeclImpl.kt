@@ -146,7 +146,7 @@ class RakuPackageDeclImpl : RakuTypeStubBasedPsi<RakuPackageDeclStub>, RakuPacka
     private fun getTrusts(): List<String> {
         val stub = stub
         if (stub != null) {
-            return stub.childrenStubs.filterIsInstance<RakuTypeNameStub>().map { it.typeName }
+            return stub.childrenStubs.filterIsInstance<RakuTypeNameStub>().map { it.getTypeName() }
         }
         val statementList = PsiTreeUtil.findChildOfType(this, RakuStatementList::class.java) ?: return emptyList()
         return statementList.children
