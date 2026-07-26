@@ -209,7 +209,7 @@ repositories {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
@@ -258,6 +258,7 @@ dependencies {
         intellijIdeaUltimate(ideaBuildVersion)
         bundledPlugin("com.intellij.java")
         bundledModule("intellij.spellchecker")
+        bundledPlugin("com.intellij.modules.jcef")
 
         pluginVerifier()
         zipSigner()
