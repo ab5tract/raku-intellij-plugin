@@ -17,22 +17,26 @@ eval "$(~/.rakubrew/bin/rakubrew init Zsh)"
 
 Shell state does not persist between tool calls, so put both in one command.
 
-## The `checkHighlighting()` / `doHighlighting()` pipeline is broken in this environment
+## ~~The `checkHighlighting()` pipeline is broken~~ / ~~use a checkpoint subset~~ — RESOLVED
 
-Since an SDK bump, the highlighting pipeline fails even for otherwise-untouched tests
-here (annotation/highlighting suites time out or error). This is environmental, not
-your change. Consequences:
+**Both of these claims are obsolete. Do not act on them.** They were symptoms of one
+harness bug, fixed in `test-harness-project-reuse.md`: the full suite now runs 1087
+tests in ~2 minutes, and `org.raku.comma.annotation.*` / `org.raku.comma.highlighting.*`
+are as trustworthy as any other suite.
 
-- **Do not** trust a red result from `org.raku.comma.annotation.*` /
-  `org.raku.comma.highlighting.*` as evidence your change broke something — it may be
-  the pre-existing pipeline breakage, indistinguishable from a real failure.
-- **Write inspection/parser regression tests that bypass it.** For inspections, invoke
-  `provideVisitFunction` directly over the PSI and assert on `ProblemsHolder.results`
-  (see `MissingRoleMethodInspectionTest`). For parsing, use the golden-PSI-tree
-  `RakuParsingTestCase` framework (see `parser-generated-lexer-architecture.md`).
-- Reliable parser/structure suites that don't route through it:
-  `org.raku.comma.parsing.*`, `org.raku.comma.cro.parsing.*`, `org.raku.comma.folding.*`,
-  `org.raku.comma.formatter.*`, `org.raku.comma.stub.*`.
+What was really happening: the light project was rebuilt for *every* test, so each test
+respawned a ~4s `raku` CORE-symbols subprocess. Under that load a spawn would sometimes
+fail and `getCoreSettingFile()` silently fell back to the stale bundled
+`symbols/CORE.fallback` — so symbol-dependent highlighting assertions failed
+non-deterministically, which read as "the pipeline is broken". The ~69-minute runtime
+that motivated the "checkpoint subset" advice had the same single cause.
+
+Still true and still worth doing: **direct-invocation inspection tests are a good
+idea on their own merits** — faster and far more precise than a golden-highlighting
+comparison. Invoke `provideVisitFunction` over the PSI and assert on
+`ProblemsHolder.results` (see `MissingRoleMethodInspectionTest`,
+`RedeclaredImportedSymbolInspectionTest`). For parsing, use the golden-PSI-tree
+`RakuParsingTestCase` framework (see `parser-generated-lexer-architecture.md`).
 
 ## Logged errors are escalated to hard failures under test
 
@@ -59,12 +63,29 @@ LoggedErrorProcessor.executeWith<Throwable>(object : LoggedErrorProcessor() {
 }) { /* body */ }
 ```
 
-## Full-suite instability; use a checkpoint subset
+## Just run the full suite
 
-The full `./gradlew test` has hung/timed out repeatedly in this environment. A curated
-subset (stub + parsing + a few completion/cro suites) is the reliable signal after a
-change. Run the suites relevant to what you touched, plus the parser/structure suites
-above, rather than betting on a clean full run.
+`./gradlew test` is ~2 minutes for 1087 tests. There is no longer any reason to guess
+at a "checkpoint subset" — run everything. See `test-harness-project-reuse.md` for why
+it used to take over an hour.
+
+## Tests that need a Raku module you don't have installed
+
+`CommaFixtureTestCase.ensureModuleIsLoaded` probes the SDK (`raku -e 'use X'`, cached
+per JVM) and aborts the test as `[SKIPPED]` when the module genuinely isn't installed,
+instead of letting it fail later on a content assertion. `Cro::WebApp::Template`,
+`Cro::WebApp::Form` and `OO::Monitors` are not installed on every dev machine, so
+`GoToDeclarationTest`'s template-jump tests, `TraitCompletionTest.testAttributeTrait`
+and `MethodCompletionTest.testMetaMethodCompletion` skip unless you `zef install` them.
+
+A skip is deliberately *not* the same as a pass-with-no-symbols: if the module **is**
+installed and symbol loading then fails, the test still fails. Grep the run log for
+`[SKIPPED]` to see what didn't actually run.
+
+Pass `required = false` when the test only needs the module *named* in the source it
+operates on rather than resolved — `IntentionTest`'s two monitor cases rewrite code that
+mentions `OO::Monitors` without ever looking a symbol up, and skipping those would have
+been a silent loss of coverage. Those log `[NOTE]` instead and keep running.
 
 ## Scratch tests: write outputs to a randomized temp dir
 
@@ -80,8 +101,8 @@ File(dir, "out.txt").writeText(...); println("[scratch] wrote ${'$'}dir/out.txt"
 ## Running the sandbox IDE
 
 `./gradlew runIde` launches a sandbox IDE with the plugin. Used to reproduce
-user-facing symptoms (e.g. highlighting) that the broken test-highlighting pipeline
-can't. `.rakumod` module-file support depends on `<depends>com.intellij.modules.platform</depends>`
+user-facing symptoms end to end (the test suite is trustworthy again, but seeing it is
+still seeing it). `.rakumod` module-file support depends on `<depends>com.intellij.modules.platform</depends>`
 / JCEF wiring in `plugin.xml` (a tab that opens and immediately closes is that
 dependency missing — cf. commit `c2c45083` "Fix .rakumod loading by explicitly
 depending on JCEF").

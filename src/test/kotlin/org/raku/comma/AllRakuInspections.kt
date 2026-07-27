@@ -29,6 +29,7 @@ import org.raku.comma.inspection.inspections.PodFormatterInspection
 import org.raku.comma.inspection.inspections.ProblematicReturnInspection
 import org.raku.comma.inspection.inspections.RakuExecutableStringInspection
 import org.raku.comma.inspection.inspections.RakudoImplementationDetailInspection
+import org.raku.comma.inspection.inspections.RedeclaredImportedSymbolInspection
 import org.raku.comma.inspection.inspections.RedundantInitializationInspection
 import org.raku.comma.inspection.inspections.SelfAvailabilityInspection
 import org.raku.comma.inspection.inspections.SignatureInspection
@@ -81,6 +82,7 @@ val ALL_RAKU_INSPECTIONS = arrayOf(
         ProblematicReturnInspection::class.java,
         RakuExecutableStringInspection::class.java,
         RakudoImplementationDetailInspection::class.java,
+        RedeclaredImportedSymbolInspection::class.java,
         RedundantInitializationInspection::class.java,
         SelfAvailabilityInspection::class.java,
         SignatureInspection::class.java,

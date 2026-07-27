@@ -49,13 +49,44 @@ public class RakuTypeNameImpl extends StubBasedPsiElementBase<RakuTypeNameStub> 
 
     @Override
     public @NotNull RakuType inferType() {
-        PsiElement resolution = getReference().resolve();
-        return tweakType(resolution instanceof RakuPsiElement
-               ? new RakuResolvedType(getTypeName(), (RakuPsiElement)resolution)
-               : new RakuUnresolvedType(getTypeName()));
+        return inferType(true);
     }
 
-    private RakuType tweakType(RakuType type) {
+    /**
+     * Like {@link #inferType()}, but never resolves the type name.
+     *
+     * Resolution goes through {@link RakuTypeNameReference#resolve()}, which
+     * consults the stub index -- illegal while a stub is being built, since it
+     * makes indexing depend on the very index it is populating. In production
+     * that degrades silently (the resolution just comes back empty); under the
+     * test harness the platform's Logger.error is escalated to a hard failure.
+     *
+     * Skipping resolution costs the stub nothing: RakuResolvedType.getName()
+     * and RakuUnresolvedType.getName() both return the bare type name, and
+     * RakuRoutineDeclStubElementType.createStub only ever stores that name.
+     * Real callers keep using inferType() and still get the resolution.
+     */
+    public @NotNull RakuType inferTypeForStub() {
+        return inferType(false);
+    }
+
+    private @NotNull RakuType inferType(boolean resolve) {
+        PsiElement resolution = resolve ? getReference().resolve() : null;
+        return tweakType(resolution instanceof RakuPsiElement
+               ? new RakuResolvedType(getTypeName(), (RakuPsiElement)resolution)
+               : new RakuUnresolvedType(getTypeName()),
+                         resolve);
+    }
+
+    // Nested type names (coercions, type parameters) have to inherit the
+    // no-resolution mode, or the walk finds its way back into the index.
+    private static RakuType inferNested(PsiElement element, boolean resolve) {
+        if (!resolve && element instanceof RakuTypeNameImpl typeName)
+            return typeName.inferTypeForStub();
+        return element instanceof RakuPsiElement psi ? psi.inferType() : RakuUntyped.INSTANCE;
+    }
+
+    private RakuType tweakType(RakuType type, boolean resolve) {
         // Handle definedness type
         RakuLongName longName = findChildByClass(RakuLongName.class);
         if (longName != null) {
@@ -76,7 +107,7 @@ public class RakuTypeNameImpl extends StubBasedPsiElementBase<RakuTypeNameStub> 
             // Coercion is another embedded type name.
             RakuTypeName from = findChildByClass(RakuTypeName.class);
             if (from != null)
-                type = new RakuCoercionType(type, from.inferType());
+                type = new RakuCoercionType(type, inferNested(from, resolve));
         }
         else  {
             ASTNode curToken = getNode().findChildByType(RakuTokenTypes.TYPE_PARAMETER_BRACKET);
@@ -88,13 +119,13 @@ public class RakuTypeNameImpl extends StubBasedPsiElementBase<RakuTypeNameStub> 
                     PsiElement[] operands = ((RakuInfixApplication)arg).getOperands();
                     for (PsiElement operand : operands) {
                         if (operand instanceof RakuPsiElement)
-                            typeArgs.add(((RakuPsiElement)operand).inferType());
+                            typeArgs.add(inferNested(operand, resolve));
                     }
                 }
                 else {
                     // One parameter (for now, we assume it's a type).
                     if (arg instanceof RakuPsiElement)
-                        typeArgs.add(((RakuPsiElement)arg).inferType());
+                        typeArgs.add(inferNested(arg, resolve));
                 }
                 if (!typeArgs.isEmpty())
                     type = new RakuParametricType(type, typeArgs.toArray(new RakuType[0]));

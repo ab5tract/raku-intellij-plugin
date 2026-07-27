@@ -1,0 +1,13 @@
+<html>
+<body>
+Reports a routine or package declaration that re-declares a symbol the file has
+already imported with <code>use</code>. Rakudo rejects this at compile time.
+<pre><code>
+use Base;      # Base exports sub foo
+sub foo { }    # Redeclaration of routine 'foo'
+</code></pre>
+Declare a <code>multi</code> if you meant to add a candidate to the imported
+routine, or pick a different name.
+<!-- tooltip end -->
+</body>
+</html>

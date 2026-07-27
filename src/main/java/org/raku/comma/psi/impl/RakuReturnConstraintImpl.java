@@ -24,4 +24,13 @@ public class RakuReturnConstraintImpl extends RakuASTWrapperPsiElement implement
                ? ((RakuTypeName)typeName).inferType()
                : RakuUntyped.INSTANCE;
     }
+
+    @NotNull
+    @Override
+    public RakuType getReturnTypeForStub() {
+        PsiElement typeName = findChildByType(TYPE_NAME);
+        return typeName instanceof RakuTypeName
+               ? ((RakuTypeName)typeName).inferTypeForStub()
+               : RakuUntyped.INSTANCE;
+    }
 }

@@ -2,6 +2,7 @@ package org.raku.comma.highlighting
 
 import org.raku.comma.CommaFixtureTestCase
 import org.raku.comma.filetypes.RakuScriptFileType
+import org.raku.comma.inspection.inspections.RedeclaredImportedSymbolInspection
 
 class RakuHighlightTest : CommaFixtureTestCase() {
     override fun getTestDataPath(): String {
@@ -104,7 +105,11 @@ class RakuHighlightTest : CommaFixtureTestCase() {
         checkHighlightingDumpable()
     }
 
+    // Unlike the in-file duplicate checks above, which RakuHighlightVisitor
+    // performs unconditionally, re-declaration of an *imported* symbol is an
+    // inspection (see RedeclaredImportedSymbolInspection) and has to be enabled.
     fun testDuplicatesInExternal() {
+        myFixture.enableInspections(RedeclaredImportedSymbolInspection())
         myFixture.configureByFiles("User.rakumod", "Base.rakumod")
         checkHighlightingDumpable()
     }
