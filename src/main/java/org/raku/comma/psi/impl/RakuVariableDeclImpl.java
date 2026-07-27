@@ -255,7 +255,24 @@ public class RakuVariableDeclImpl extends RakuMemberStubBasedPsi<RakuVariableDec
 
     @Override
     public @NotNull RakuType inferType() {
-        RakuType baseType = calculateBaseType();
+        return inferType(true);
+    }
+
+    // Stub-safe type inference: identical to inferType(), except it skips the
+    // `is`-trait-as-base-type resolution below, which requires cross-file
+    // symbol resolution (RakuIsTraitReference.resolve(), e.g. for `has @!foo
+    // is SomeCustomArrayClass;`). That resolution can query the stub index,
+    // which is illegal from within stub building itself (the platform
+    // detects and refuses this: "Stub building must not rely on data from
+    // indexes..."). Used only by RakuVariableDeclStubElementType.createStub()
+    // to compute the type string cached in the stub; real callers still get
+    // the fully-resolved type via inferType() once the PSI is materialized.
+    public @NotNull RakuType inferTypeForStub() {
+        return inferType(false);
+    }
+
+    private @NotNull RakuType inferType(boolean resolveIsTraitBaseType) {
+        RakuType baseType = calculateBaseType(resolveIsTraitBaseType);
 
         RakuTypeName typeName = PsiTreeUtil.getPrevSiblingOfType(this, RakuTypeName.class);
         RakuType type = typeName != null ? typeName.inferType() : getOfType();
@@ -274,7 +291,7 @@ public class RakuVariableDeclImpl extends RakuMemberStubBasedPsi<RakuVariableDec
     }
 
     @Nullable
-    private RakuType calculateBaseType() {
+    private RakuType calculateBaseType(boolean resolveIsTraitBaseType) {
         // Find the variable, since we need to go on sigil.
         RakuVariable variable = PsiTreeUtil.getChildOfType(this, RakuVariable.class);
         if (variable == null)
@@ -282,7 +299,7 @@ public class RakuVariableDeclImpl extends RakuMemberStubBasedPsi<RakuVariableDec
 
         // If we have an `is` trait with a type, and a % or @ sigil, that is the base type.
         char sigil = variable.getSigil();
-        if (sigil == '@' || sigil == '%') {
+        if (resolveIsTraitBaseType && (sigil == '@' || sigil == '%')) {
             for (RakuTrait trait : getTraits()) {
                 if (!trait.getTraitModifier().equals("is"))
                     continue;

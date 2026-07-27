@@ -19,7 +19,12 @@ class RakuVariableDeclStubElementType : IStubElementType<RakuVariableDeclStub, R
     }
 
     override fun createStub(psi: RakuVariableDecl, parentStub: StubElement<*>?): RakuVariableDeclStub {
-        return RakuVariableDeclStubImpl(parentStub, psi.variableNames, psi.inferType().name, psi.isExported)
+        // inferType() (via RakuIsTraitReference.resolve()) can require cross-file
+        // symbol resolution for @/%-sigil variables with an `is` trait, which
+        // queries the stub index -- illegal from within stub building itself.
+        // inferTypeForStub() computes the same type without that resolution.
+        val type = (psi as RakuVariableDeclImpl).inferTypeForStub()
+        return RakuVariableDeclStubImpl(parentStub, psi.variableNames, type.name, psi.isExported)
     }
 
     override fun getExternalId(): String {
