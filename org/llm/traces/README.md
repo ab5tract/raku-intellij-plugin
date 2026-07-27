@@ -18,9 +18,10 @@ machine-local / user-preference stuff; put transmissible engineering history her
 
 ## Start here (recommended reading order)
 
-1. **`test-harness-and-environment.md`** — how to run tests at all (rakubrew,
-   logged-errors-as-failures, skipping when a Raku module isn't installed). Read this
-   before running anything.
+1. **`test-harness-and-environment.md`** — how to run tests at all (`rakubrew init`
+   **plus `rakubrew switch 2026.03`**, logged-errors-as-failures, skipping when a Raku
+   module isn't installed). Read this before running anything: on the wrong Rakudo the
+   suite fails in ways that impersonate plugin bugs.
 1b. **`test-harness-project-reuse.md`** — why the suite used to take ~69 minutes and
    produce flaky, symptom-diverse failures, and what fixed it. Read it if any older
    note tells you the highlighting pipeline is broken or to run a "checkpoint subset";

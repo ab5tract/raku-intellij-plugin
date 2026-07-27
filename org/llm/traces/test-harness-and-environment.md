@@ -3,7 +3,7 @@
 Practical, load-bearing knowledge for getting tests to run and trusting their
 results. Several of these will waste an hour if you don't know them up front.
 
-## rakubrew must be initialized in the same shell as gradle
+## rakubrew must be initialized *and switched to 2026.03* in the same shell as gradle
 
 Tests spawn a real `raku` subprocess to load symbols. If `raku` isn't on `PATH`, they
 fail in `setUp()` (`CommaFixtureTestCase.suggestSdkHome()` → "Found a raku in path"
@@ -12,15 +12,41 @@ the same shell**, by:
 
 ```bash
 eval "$(~/.rakubrew/bin/rakubrew init Zsh)"
+rakubrew switch 2026.03
 ./gradlew test --tests "..."
 ```
 
-Shell state does not persist between tool calls, so put both in one command.
+Shell state does not persist between tool calls, so put all of them in one command.
+
+**The `switch` line is load-bearing, not decoration.** `suggestSdkHome()` takes the
+first `PATH` entry that looks like a Raku SDK home, so without it the system Rakudo in
+`/usr/bin` wins and the suite fails in ways that look like plugin bugs but are not.
+The expectations in `AnnotationTest` encode 2026.03's CORE.setting, and two of them
+break on 2025.08:
+
+| | 2026.03 (canonical) | 2025.08 (system) |
+|---|---|---|
+| `Mu.^find_method("perl").candidates[0].DEPRECATED` | `raku` | *absent* |
+| `&open.candidates` | 2 — `("-", \|c)`, `($path, \|c)` | 1 — `(IO(Any) $path, \|c)` |
+
+So on 2025.08 `raku-core-symbols.raku` emits `perl` with no `x` (deprecation) key and
+`testCallArityMismatchAnnotating` loses its `.perl` warning; and because `open` is no
+longer a multi with several candidates, the same test gets a bare "Not enough
+positional arguments" instead of the "No multi candidates match (...)" enumeration.
+
+Both failures are environment, not code. Do not "fix" them by editing the
+expectations — check `raku -v` first. Note that the deprecation lives on the
+*candidate*, not on the proto (`is DEPRECATED` is a `Method+{is-DEPRECATED}` mixin),
+which is why probing `$m.DEPRECATED` on the proto reports nothing even on 2026.03.
+
+`~/.rakubrew/MODE` is `env` here, so rakubrew works by rewriting `PATH` from the shell
+hook; there are no shims. A `PATH` that lacks the hook is the normal failure mode for
+a non-interactive shell that never sourced the user's profile.
 
 ## ~~The `checkHighlighting()` pipeline is broken~~ / ~~use a checkpoint subset~~ — RESOLVED
 
 **Both of these claims are obsolete. Do not act on them.** They were symptoms of one
-harness bug, fixed in `test-harness-project-reuse.md`: the full suite now runs 1087
+harness bug, fixed in `test-harness-project-reuse.md`: the full suite now runs ~1100
 tests in ~2 minutes, and `org.raku.comma.annotation.*` / `org.raku.comma.highlighting.*`
 are as trustworthy as any other suite.
 
