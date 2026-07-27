@@ -20,24 +20,43 @@ Shell state does not persist between tool calls, so put all of them in one comma
 
 **The `switch` line is load-bearing, not decoration.** `suggestSdkHome()` takes the
 first `PATH` entry that looks like a Raku SDK home, so without it the system Rakudo in
-`/usr/bin` wins and the suite fails in ways that look like plugin bugs but are not.
-The expectations in `AnnotationTest` encode 2026.03's CORE.setting, and two of them
-break on 2025.08:
+`/usr/bin` wins. Symbol-dependent assertions then fail in ways that impersonate plugin
+bugs, because CORE.setting genuinely differs between releases:
 
 | | 2026.03 (canonical) | 2025.08 (system) |
 |---|---|---|
 | `Mu.^find_method("perl").candidates[0].DEPRECATED` | `raku` | *absent* |
 | `&open.candidates` | 2 — `("-", \|c)`, `($path, \|c)` | 1 — `(IO(Any) $path, \|c)` |
 
-So on 2025.08 `raku-core-symbols.raku` emits `perl` with no `x` (deprecation) key and
-`testCallArityMismatchAnnotating` loses its `.perl` warning; and because `open` is no
-longer a multi with several candidates, the same test gets a bare "Not enough
-positional arguments" instead of the "No multi candidates match (...)" enumeration.
+On 2025.08 `raku-core-symbols.raku` emits `perl` with no `x` (deprecation) key, so no
+deprecation warning is possible; and `open` is no longer a multi with several
+candidates, so an arity error reads "Not enough positional arguments" rather than
+enumerating "No multi candidates match (...)".
 
-Both failures are environment, not code. Do not "fix" them by editing the
-expectations — check `raku -v` first. Note that the deprecation lives on the
-*candidate*, not on the proto (`is DEPRECATED` is a `Method+{is-DEPRECATED}` mixin),
-which is why probing `$m.DEPRECATED` on the proto reports nothing even on 2026.03.
+**When a symbol-dependent assertion fails, check `raku -v` before you touch the
+expectation.** An expectation that merely encodes a different Rakudo is not evidence of
+a regression. The two cases above were the ones that bit, and `1b187385` unpinned them
+deliberately (see below), so they no longer serve as examples — but the failure mode
+recurs for any assertion whose text is built from SDK signatures.
+
+Note that the deprecation lives on the *candidate*, not on the proto (`is DEPRECATED`
+is a `Method+{is-DEPRECATED}` mixin), which is why probing `$m.DEPRECATED` on the proto
+reports nothing even on 2026.03.
+
+## Assertions built from CORE.setting text should not be pinned exactly
+
+`CommaFixtureTestCase.checkHighlightingContains(vararg fragments)` asserts that the
+rendered actual highlighting *contains* each fragment, for annotations whose full text
+is assembled from the SDK's own signatures. `testCallArityMismatchAnnotating` uses it
+for `open;`: the multi-candidate list is Rakudo's, not the plugin's, so pinning it
+exactly pins a Rakudo release for no gain in coverage.
+
+Keep a fragment that closes a span (e.g. `open</error>`) in the list, otherwise the
+assertion passes even when the annotation vanishes entirely. Configure the source
+*without* expectation markup when using it.
+
+This is the right tool only when the varying part belongs to Rakudo. An annotation the
+plugin composes itself should still be pinned exactly.
 
 `~/.rakubrew/MODE` is `env` here, so rakubrew works by rewriting `PATH` from the shell
 hook; there are no shims. A `PATH` that lacks the hook is the normal failure mode for
