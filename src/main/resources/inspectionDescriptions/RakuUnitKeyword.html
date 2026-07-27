@@ -1,14 +1,21 @@
 <html>
 <body>
+<p>Reports mismatched use of the <code>unit</code> keyword on a package declaration.</p>
 <p>
-    A routine must be declared before it is used, even if it is only declared via a "stub" declaration.
-</p>
-<p>
-    Routines may also be marked deprecated by the author of a module or in the Rakudo core setting.
+    A declaration has two forms. The block form, <code>class C { ... }</code>, encloses its
+    body in braces. The semicolon form, <code>unit class C;</code>, takes the rest of the file
+    as its body and <b>requires</b> the <code>unit</code> keyword. Using a semicolon without
+    <code>unit</code>, or <code>unit</code> together with a block, does not compile.
 </p>
 <pre><code>
-# Example undeclared call:
-    undeclared-routine($parameter1);
+class C;              # Semicolon form of 'class' without 'unit' is not supported
+
+unit class D { }      # Cannot use 'unit' with block form of declaration
+
+# Correct
+unit class C;
+
+class D { }
 </code></pre>
 <!-- tooltip end -->
 </body>

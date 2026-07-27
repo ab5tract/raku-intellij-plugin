@@ -1,10 +1,18 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a <code>use</code>d module that cannot be found, or that is declared inconsistently.</p>
+<p>Four distinct situations, and the message says which:</p>
+<ul>
+    <li>the module is not installed for the current Raku;</li>
+    <li>it is listed in <code>META6.json</code> <code>depends</code> but is not installed;</li>
+    <li>it is used but missing from <code>META6.json</code> <code>depends</code>;</li>
+    <li>it cannot be found in the ecosystem at all &mdash; typically a typo in the name.</li>
+</ul>
+<p>Pragmas and modules that ship with Rakudo are not reported. Quick fixes offer to install the module, add it to <code>META6.json</code>, or create it locally.</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+use Cro::HTTP::Router;    # Module Cro::HTTP::Router is not installed for current Raku
+
+use JSON::Fasst;          # Cannot find JSON::Fasst in the ecosystem
 </code></pre>
 <!-- tooltip end -->
 </body>

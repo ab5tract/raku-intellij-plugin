@@ -1,10 +1,32 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a <code>has</code>-scoped method declared where it can never be called.</p>
+<p>
+    Methods need an object to be invoked on. A <code>module</code> or <code>package</code> is
+    a namespace with no instances and no method resolution order, and a method declared at
+    file scope has no invocant at all, so in both cases the declaration is inert &mdash;
+    Rakudo says as much itself: <i>Useless declaration of a has-scoped method in module</i>.
+</p>
+<p>
+    Either make the enclosing declarator a <code>class</code> or <code>role</code>, or, if
+    the routine really is just a helper, declare it <code>my method</code> (callable on an
+    explicit invocant within the lexical scope) or an ordinary <code>sub</code>.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+method orphan() { }          # Useless declaration of a method outside of any package
+
+module Utils {
+    method helper() { }      # Useless declaration of a method in a module
+}
+
+# Correct
+class Utils {
+    method helper() { }
+}
+
+module Utils {
+    sub helper() { }
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

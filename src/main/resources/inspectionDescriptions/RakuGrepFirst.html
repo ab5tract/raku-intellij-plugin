@@ -1,10 +1,17 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports <code>.grep(...).first</code>, which can be written as a single <code>.first</code>.</p>
+<p>
+    Both forms return the first matching element, but <code>.grep</code> is specified to
+    produce a lazy sequence of <i>all</i> matches, whereas <code>.first</code> stops at the
+    one it needs. The combined form is shorter and states the intent directly.
+</p>
+<p>Only reported when the <code>.first</code> call has no arguments of its own and <code>.grep</code> has exactly one.</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+my $found = @items.grep(*.active).first;
+
+# Correct
+my $found = @items.first(*.active);
 </code></pre>
 <!-- tooltip end -->
 </body>

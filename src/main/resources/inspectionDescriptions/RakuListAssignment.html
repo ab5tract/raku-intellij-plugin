@@ -1,10 +1,18 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports an <code>@</code> or <code>%</code> variable that is not last in a list assignment.</p>
+<p>
+    List assignment fills its targets left to right, and an array or hash is greedy: it takes
+    every remaining value, leaving the variables after it empty. That is almost never what a
+    multi-variable declaration is trying to express. Bind with <code>:=</code> to destructure
+    positionally instead.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+my (@first, $second) = 1, 2, 3;   # Array slurps everything from assignment
+                                  # @first is [1, 2, 3]; $second is Any
+
+# Correct
+my (@first, $second) := \(1, 2), 3;
 </code></pre>
 <!-- tooltip end -->
 </body>

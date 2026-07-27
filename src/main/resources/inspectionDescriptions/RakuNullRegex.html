@@ -1,0 +1,23 @@
+<html>
+<body>
+<p>Reports a regex with an empty body.</p>
+<p>
+    An empty regex would match the empty string at every position, which is never useful and
+    is rejected by Rakudo. It normally means a pattern was deleted, or a <code>token</code> or
+    <code>rule</code> was stubbed out and never filled in.
+</p>
+<pre><code>
+my $re = //;              # Empty regex is not allowed
+
+grammar G {
+    token name { }        # Empty regex is not allowed
+}
+
+# Correct
+grammar G {
+    token name { \w+ }
+}
+</code></pre>
+<!-- tooltip end -->
+</body>
+</html>

@@ -1,10 +1,17 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a method call written directly on a range endpoint.</p>
+<p>
+    The range operators <code>^</code> and <code>..</code> bind looser than a postfix method
+    call, so <code>^10.pick</code> parses as <code>^(10.pick)</code> &mdash; a range up to a
+    random number &mdash; not as a pick from the range. Parenthesise the range to get the
+    intended meaning.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+say ^10.pick;         # Parses as ^(10.pick)
+
+# Correct
+say (^10).pick;
 </code></pre>
 <!-- tooltip end -->
 </body>

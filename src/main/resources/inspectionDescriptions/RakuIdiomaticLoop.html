@@ -1,10 +1,19 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports <code>while True</code> (or <code>while 1</code>), which Raku spells <code>loop</code>.</p>
+<p>
+    <code>loop</code> exists precisely for the unconditional case and says so without the
+    reader having to evaluate a condition that never changes.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+while True {
+    last if done();
+}
+
+# Correct
+loop {
+    last if done();
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

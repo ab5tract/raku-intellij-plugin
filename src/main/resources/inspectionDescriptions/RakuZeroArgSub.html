@@ -1,27 +1,21 @@
 <html>
 <body>
-Write your description here.
-Start the description with a verb in 3rd person singular, like reports, detects, highlights.
-In the first sentence, briefly explain what exactly the inspection helps you detect.
-Make sure the sentence is not very long and complicated.
+<p>Reports a subroutine that takes no parameters and could be declared as a term.</p>
 <p>
-    The first sentence must be in a dedicated paragraph separated from the rest of the text. This will make the
-    description easier to read.
-    Make sure the description doesn’t just repeat the inspection title.
+    A parameterless <code>sub</code> still has to be called with empty parentheses, because a
+    bare mention of its name is a reference to the routine rather than a call. Declaring it
+    <code>term:&lt;name&gt;</code> lets it be used as a plain word, which reads better for
+    something that is conceptually a constant or a generator.
 </p>
-<p>
-    See https://plugins.jetbrains.com/docs/intellij/inspections.html#descriptions for more information.
-</p>
-<p>
-    Embed code snippets:
-</p>
+<p>This is informational: a parameterless sub is perfectly correct, and <code>MAIN</code> is never reported.</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+sub answer() { 42 }
+say answer();
+
+# Correct
+sub term:&lt;answer&gt; { 42 }
+say answer;
 </code></pre>
 <!-- tooltip end -->
-<p>Text after this comment will only be shown in the settings of the inspection.</p>
-
-<p>To open related settings directly from the description, add a link with `settings://$` optionally followed by `?$` to
-    pre-select a UI element.</p>
 </body>
 </html>

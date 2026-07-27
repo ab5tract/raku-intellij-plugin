@@ -1,10 +1,20 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a call to a method its author has marked deprecated.</p>
+<p>
+    Deprecation comes from the <code>is DEPRECATED</code> trait, either in a module you
+    <code>use</code> or in the Rakudo core setting. When the trait carries a replacement,
+    the message names it.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+class Legacy {
+    method old-name() is DEPRECATED('new-name') { }
+    method new-name() { }
+}
+
+Legacy.old-name();   # method 'old-name' is deprecated ... use new-name
+
+say 42.perl;         # method 'perl' is deprecated ... use raku
 </code></pre>
 <!-- tooltip end -->
 </body>

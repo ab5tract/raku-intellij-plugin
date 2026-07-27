@@ -1,10 +1,18 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports <code>does</code> applied to a class.</p>
+<p>
+    <code>does</code> composes a <b>role</b>. A class is inherited from, not composed, so the
+    relationship has to be spelled <code>is</code>. This is easy to get wrong when a role is
+    later refactored into a class and its consumers are not updated.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+class Base { }
+class Derived does Base { }    # Class cannot compose a class
+role  Mixin   does Base { }    # Role cannot compose a class
+
+# Correct
+class Derived is Base { }
 </code></pre>
 <!-- tooltip end -->
 </body>

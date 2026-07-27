@@ -1,10 +1,24 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a class that composes a role without implementing every method the role requires.</p>
+<p>
+    A role method declared with the yada body <code>{ ... }</code> is a <i>stub</i>: it
+    demands that the composing class supply an implementation, and composition fails at
+    compile time otherwise. An attribute's generated accessor, or a
+    <code>handles</code> delegation, satisfies the requirement just as a method does.
+</p>
+<p>Private (<code>!</code>-twigil) role methods are not composition requirements and are never reported.</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+role Drawable {
+    method draw { ... }
+}
+
+class Circle does Drawable { }   # Composed roles require to implement methods: draw
+
+# Correct
+class Circle does Drawable {
+    method draw { say 'O' }
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

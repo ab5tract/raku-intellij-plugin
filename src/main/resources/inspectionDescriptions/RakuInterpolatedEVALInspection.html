@@ -1,0 +1,20 @@
+<html>
+<body>
+<p>Reports <code>EVAL</code> of a string containing interpolation, without the required pragma.</p>
+<p>
+    Evaluating an interpolated string means running code assembled at runtime, so Raku
+    refuses unless the file opts in with <code>use MONKEY-SEE-NO-EVAL</code> (or
+    <code>use MONKEY</code>). The pragma is a deliberate speed bump: whatever is
+    interpolated becomes executable, so it must be trusted.
+</p>
+<pre><code>
+my $expr = get-user-input();
+EVAL "1 + $expr";        # Cannot EVAL interpolated expression without MONKEY-SEE-NO-EVAL pragma
+
+# Correct
+use MONKEY-SEE-NO-EVAL;
+EVAL "1 + $expr";
+</code></pre>
+<!-- tooltip end -->
+</body>
+</html>

@@ -1,8 +1,18 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
+<p>Reports a <code>..</code> range operator with nothing on its right-hand side.</p>
+<p>
+    <code>..</code> is an infix operator and always needs a second operand; without one
+    Rakudo reports <i>Missing required term after infix</i>. An unbounded range is written
+    with <code>*</code> (Whatever) as the endpoint, which Rakudo will tell you directly
+    &mdash; <i>Please use ..* for indefinite range</i> &mdash; and which produces a lazy,
+    infinite sequence.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+my @counts = 1..;     # The range operator must have a second argument
+
+# Correct
+my @counts = 1..*;    # Lazy, unbounded
 </code></pre>
 <!-- tooltip end -->
 </body>

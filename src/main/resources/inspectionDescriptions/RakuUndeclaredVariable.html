@@ -1,10 +1,22 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports use of a variable with no declaration in scope.</p>
+<p>
+    Raku requires declaration before use, and lexical scoping means a <code>my</code> further
+    down the file does not help code above it &mdash; that case is reported distinctly as
+    <i>not declared in this scope yet</i>. Also covers <code>$=finish</code> in a file with no
+    <code>=finish</code> section, and use of an implicit variable such as <code>$_</code> in a
+    block whose signature does not declare it.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+say $total;                 # Variable $total is not declared
+
+say $count;                 # Variable $count is not declared in this scope yet
+my $count = 0;
+
+# Correct
+my $total = 0;
+say $total;
 </code></pre>
 <!-- tooltip end -->
 </body>

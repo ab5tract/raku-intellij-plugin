@@ -1,10 +1,24 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a <code>{ ... }</code> that looks like a hash composer but will be parsed as a block.</p>
+<p>
+    Raku decides between the two by inspecting the contents. Some things that read as
+    hash-like to a human &mdash; a placeholder parameter such as <code>$^a</code>, or a
+    pair whose value mentions the topic <code>$_</code> &mdash; force the block reading,
+    so the value ends up being a <code>Callable</code> rather than the
+    <code>Hash</code> that was probably intended. Use <code>%( ... )</code> to be explicit.
+</p>
+<p>
+    This inspection additionally applies an <i>information</i>-level highlight to the
+    <code>{</code> and <code>}</code> of a construct that <i>is</i> a hash composer, so the
+    two readings are distinguishable at a glance. Disabling the inspection turns that
+    highlighting off as well.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+say { :$^a };            # Taken as a block, not a hash
+
+# Correct
+say %( :$^a );
 </code></pre>
 <!-- tooltip end -->
 </body>

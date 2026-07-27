@@ -1,0 +1,33 @@
+<html>
+<body>
+<p>Reports a <code>return</code> that cannot do what it appears to.</p>
+<p>
+    <code>return</code> unwinds to the enclosing <i>routine</i>. A <code>start</code>,
+    <code>react</code>, <code>supply</code> or <code>whenever</code> block runs on its own
+    schedule, quite possibly on another thread and long after the routine that set it up has
+    returned, so there is no frame left to unwind to. This is not caught at compile time and
+    it does not fail gracefully: reaching such a <code>return</code> aborts the process with
+    <i>MoarVM panic: Did not find expected unwind target frame</i>.
+</p>
+<p>
+    Let the block's last expression be its value instead. A <code>return</code> outside any
+    routine at all is also reported; that one dies cleanly with <i>Attempt to return outside
+    of any Routine</i>.
+</p>
+<pre><code>
+sub fetch() {
+    await start {
+        return get-data();      # Cannot use return to produce a result in a start block
+    }                           # ... MoarVM panic when this actually runs
+}
+
+# Correct
+sub fetch() {
+    await start {
+        get-data();
+    }
+}
+</code></pre>
+<!-- tooltip end -->
+</body>
+</html>

@@ -1,10 +1,20 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a fat-arrow pair that has a shorter colon-pair spelling.</p>
+<p>
+    Three cases collapse: a <code>True</code> value becomes <code>:key</code>, a
+    <code>False</code> value becomes <code>:!key</code>, and a value that is a variable of
+    the same name becomes <code>:$key</code>. All are exactly equivalent, and the short forms
+    are the conventional way to write them.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+run 'curl', out =&gt; True, err =&gt; False;
+my $verbose = True;
+report(verbose =&gt; $verbose);
+
+# Correct
+run 'curl', :out, :!err;
+report(:$verbose);
 </code></pre>
 <!-- tooltip end -->
 </body>

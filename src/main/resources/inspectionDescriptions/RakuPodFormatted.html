@@ -1,11 +1,27 @@
 <html>
 <body>
-Some methods and routines are declared as implementation details in the Rakudo <code>CORE.setting</code>.
 <p>
-It's possible to use them in user code, but such usage is discouraged and their semantics are not guaranteed.
+    Renders the Pod formatting codes <code>B&lt;&gt;</code>, <code>I&lt;&gt;</code> and
+    <code>U&lt;&gt;</code> in bold, italic and underline respectively.
+</p>
+<p>
+    <b>This entry reports no problems.</b> It exists here only so the styled rendering can be
+    switched off; there is nothing to fix and nothing will ever appear in an inspection
+    results list. Turning it off leaves the codes shown as plain text.
 </p>
 <pre><code>
+=begin pod
+This word is B&lt;bold&gt;, this one is I&lt;italic&gt;, and this one is U&lt;underlined&gt;.
+=end pod
 </code></pre>
 <!-- tooltip end -->
+<p>
+    <i>Note for maintainers:</i> a rendering-only feature implemented as a
+    <code>LocalInspectionTool</code> is a design smell &mdash; it produces text attributes as
+    a side effect of a visit rather than reporting a problem, and it inherits inspection
+    machinery (severity, scope, quick fixes, batch runs) that means nothing for it. An
+    <code>Annotator</code> or a syntax highlighter is the fitting home; the only thing keeping
+    it here is that inspections come with a user-facing on/off switch for free.
+</p>
 </body>
 </html>

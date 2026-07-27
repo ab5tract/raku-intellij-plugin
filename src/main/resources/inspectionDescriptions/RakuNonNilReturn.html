@@ -1,10 +1,28 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a value produced by a routine whose declared return type is <code>Nil</code>.</p>
+<p>
+    <code>--&gt; Nil</code> is a promise that the routine yields nothing useful, and Raku
+    holds you to it in two different ways. An explicit <code>return</code> with an argument
+    is a compile error &mdash; <i>No return arguments allowed when return value Nil is
+    already specified in the signature</i>. A value arrived at implicitly, as the routine's
+    last expression, is instead coerced away: the caller always receives <code>Nil</code>,
+    so the expression is computed and discarded.
+</p>
+<p>
+    The second case is the one worth catching. It compiles, and the routine reads as though
+    it returns something, but no caller can ever observe it.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+sub log-it($msg --&gt; Nil) {
+    say $msg;
+    $msg;              # A value is returned from subroutine returning Nil
+}                      # ... and the caller still gets Nil
+
+# Correct
+sub log-it($msg --&gt; Nil) {
+    say $msg;
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

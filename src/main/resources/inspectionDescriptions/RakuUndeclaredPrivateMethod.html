@@ -1,10 +1,26 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a call to a private method that the type does not declare.</p>
+<p>
+    Private methods are not virtual and are not inherited: <code>self!foo</code> resolves
+    against the current class only, at compile time, so a name that is not declared there is
+    an error rather than a dispatch failure. A subroutine name may not begin with
+    <code>!</code> at all, which is reported separately.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+class C {
+    method run() {
+        self!helper();     # Private method !helper is used, but not declared
+    }
+}
+
+# Correct
+class C {
+    method run() {
+        self!helper();
+    }
+    method !helper() { }
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

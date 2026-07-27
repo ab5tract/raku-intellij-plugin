@@ -1,10 +1,20 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports <code>if $x.defined</code>, which <code>with</code> expresses directly.</p>
+<p>
+    <code>with</code> tests definedness and topicalises the value in one step, so the block
+    can use <code>$_</code> and the postfix form. <code>without</code> is the negated
+    counterpart of <code>unless ... .defined</code>.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+if $config.defined {
+    say $config;
+}
+
+# Correct
+with $config {
+    say $_;
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

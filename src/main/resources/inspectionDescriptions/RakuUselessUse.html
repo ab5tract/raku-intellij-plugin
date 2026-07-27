@@ -1,0 +1,26 @@
+<html>
+<body>
+<p>Reports an expression whose value is computed and then discarded.</p>
+<p>
+    A statement in sink (void) context throws its result away. When that statement is a bare
+    literal or a pure expression it cannot have had any other effect either, so it does
+    nothing at all &mdash; typically a leftover, or a call whose result was meant to be
+    assigned or returned.
+</p>
+<pre><code>
+sub compute() {
+    my $x = 1;
+    $x + 1;            # Useless use of value in sink (void) context
+    say 'done';
+}
+
+# Correct
+sub compute() {
+    my $x = 1;
+    say $x + 1;
+    say 'done';
+}
+</code></pre>
+<!-- tooltip end -->
+</body>
+</html>

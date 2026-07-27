@@ -1,10 +1,20 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports an opening bracket with no matching closing bracket.</p>
+<p>
+    Covers parentheses, array composers and indexers, blocks, and the regex-specific
+    bracket forms &mdash; groups, assertions and captures. The message names the closer
+    that is missing.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+sub greet($name {      # Missing closing ')'
+    say "hi $name";
+}
+
+# Correct
+sub greet($name) {
+    say "hi $name";
+}
 </code></pre>
 <!-- tooltip end -->
 </body>
