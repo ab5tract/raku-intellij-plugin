@@ -1153,7 +1153,8 @@ class AnnotationTest : CommaFixtureTestCase() {
         myFixture.checkHighlighting()
         myFixture.configureByFile("CallArityExtended.pm6")
         myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "42.perl;")
+        myFixture.configureByText(RakuScriptFileType.INSTANCE,
+                                  "42<warning descr=\"method 'perl' is deprecated ... use raku\">.perl</warning>;")
         myFixture.checkHighlighting()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "open;")
         checkHighlightingContains("Not enough positional arguments", "open</error>")
