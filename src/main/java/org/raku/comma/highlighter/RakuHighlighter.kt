@@ -198,13 +198,13 @@ object RakuHighlighter {
 
     @JvmField
     val POSTFIX = key(
-        "RAKU_POSTFIX", DefaultLanguageHighlighterColors.OPERATION_SIGN,
+        "RAKU_POSTFIX", DefaultLanguageHighlighterColors.MARKUP_ATTRIBUTE,
         Group.BRACES_AND_OPERATORS, "Postfix operator"
     )
 
     @JvmField
     val METAOP = key(
-        "RAKU_METAOP", DefaultLanguageHighlighterColors.OPERATION_SIGN,
+        "RAKU_METAOP", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
         Group.BRACES_AND_OPERATORS, "Meta-operator"
     )
 
@@ -246,7 +246,7 @@ object RakuHighlighter {
 
     @JvmField
     val TYPE_DECLARATOR = key(
-        "RAKU_TYPE_DECLARATOR", DefaultLanguageHighlighterColors.KEYWORD,
+        "RAKU_TYPE_DECLARATOR", DefaultLanguageHighlighterColors.CLASS_NAME,
         Group.KEYWORDS, "Type Declarator (enum, subset, constant)"
     )
 
@@ -270,7 +270,7 @@ object RakuHighlighter {
 
     @JvmField
     val PHASER = key(
-        "RAKU_PHASER", DefaultLanguageHighlighterColors.KEYWORD,
+        "RAKU_PHASER", DefaultLanguageHighlighterColors.HIGHLIGHTED_REFERENCE,
         Group.KEYWORDS, "Phaser"
     )
 
@@ -379,13 +379,13 @@ object RakuHighlighter {
 
     @JvmField
     val VARIABLE = key(
-        "RAKU_VARIABLE", DefaultLanguageHighlighterColors.LOCAL_VARIABLE,
+        "RAKU_VARIABLE", DefaultLanguageHighlighterColors.GLOBAL_VARIABLE,
         Group.VARIABLES, "Variable"
     )
 
     @JvmField
     val SHAPE_DECLARATION = key(
-        "RAKU_SHAPE_DECLARATION", DefaultLanguageHighlighterColors.LOCAL_VARIABLE,
+        "RAKU_SHAPE_DECLARATION", DefaultLanguageHighlighterColors.INSTANCE_FIELD,
         Group.VARIABLES, "Variable shape declaration"
     )
 
@@ -399,13 +399,13 @@ object RakuHighlighter {
 
     @JvmField
     val NAMED_PARAMETER_SYNTAX = key(
-        "RAKU_NAMED_PARAMETER_SYNTAX", DefaultLanguageHighlighterColors.PARENTHESES,
+        "RAKU_NAMED_PARAMETER_SYNTAX", DefaultLanguageHighlighterColors.INSTANCE_FIELD,
         Group.SIGNATURES, "Named parameter colon and parentheses"
     )
 
     @JvmField
     val NAMED_PARAMETER_NAME_ALIAS = key(
-        "RAKU_NAMED_PARAMETER_NAME_ALIAS", DefaultLanguageHighlighterColors.PARAMETER,
+        "RAKU_NAMED_PARAMETER_NAME_ALIAS", DefaultLanguageHighlighterColors.GLOBAL_VARIABLE,
         Group.SIGNATURES, "Named parameter name alias"
     )
 
@@ -491,8 +491,8 @@ object RakuHighlighter {
 
     @JvmField
     val STUB_CODE = key(
-        "RAKU_STUB_CODE", DefaultLanguageHighlighterColors.LINE_COMMENT,
-        Group.COMMENTS, "Stub Code (..., ???, !!!)"
+        "RAKU_STUB_CODE", DefaultLanguageHighlighterColors.CONSTANT,
+        Group.LITERALS, "Stub Code (..., ???, !!!)"
     )
 
     /* Regex
