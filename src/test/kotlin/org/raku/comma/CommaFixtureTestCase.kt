@@ -117,23 +117,9 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
 
     private var highlightCheckIndex = 0
 
-    // With -Draku.test.dump.actual=true, prints the source annotated with the
-    // ACTUAL highlighting before every check (sequence-indexed per test) and
-    // swallows comparison failures so later checks in the test still dump.
-    protected fun checkHighlightingDumpable() {
-        val dumping = java.lang.Boolean.getBoolean("raku.test.dump.actual")
-        if (!dumping) {
-            myFixture.checkHighlighting()
-            return
-        }
-        // Run the check FIRST: it strips the expectation markup out of the
-        // document, so the post-check dump reflects real source offsets.
-        var failure: Throwable? = null
-        try {
-            myFixture.checkHighlighting()
-        } catch (error: Throwable) {
-            failure = error
-        }
+    // Renders the current document with the ACTUAL highlighting inlined, in the
+    // same <error descr="...">...</error> form the expectations are written in.
+    protected fun renderActualHighlighting(): String {
         val text = myFixture.editor.document.text
         data class Mark(val offset: Int, val closing: Boolean, val order: Int, val tag: String)
         val marks = ArrayList<Mark>()
@@ -155,7 +141,40 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
                              .thenBy { it.closing }
                              .thenBy { it.order })
             .forEach { builder.insert(it.offset, it.tag) }
-        println("HIGHLIGHT-ACTUAL ${getTestName(false).trim()}#${highlightCheckIndex} <<<$builder>>>")
+        return builder.toString()
+    }
+
+    // Asserts only that the actual highlighting contains each fragment, for
+    // annotations whose full text is not stable across Rakudo releases (the
+    // multi-candidate list in an arity error is built from the SDK's own
+    // CORE.setting signatures, so pinning it exactly pins a Rakudo version).
+    // The source must be configured WITHOUT expectation markup.
+    protected fun checkHighlightingContains(vararg fragments: String) {
+        val actual = renderActualHighlighting()
+        for (fragment in fragments) {
+            assertTrue("Expected highlighting to contain <<<$fragment>>>, was <<<$actual>>>",
+                       actual.contains(fragment))
+        }
+    }
+
+    // With -Draku.test.dump.actual=true, prints the source annotated with the
+    // ACTUAL highlighting before every check (sequence-indexed per test) and
+    // swallows comparison failures so later checks in the test still dump.
+    protected fun checkHighlightingDumpable() {
+        val dumping = java.lang.Boolean.getBoolean("raku.test.dump.actual")
+        if (!dumping) {
+            myFixture.checkHighlighting()
+            return
+        }
+        // Run the check FIRST: it strips the expectation markup out of the
+        // document, so the post-check dump reflects real source offsets.
+        var failure: Throwable? = null
+        try {
+            myFixture.checkHighlighting()
+        } catch (error: Throwable) {
+            failure = error
+        }
+        println("HIGHLIGHT-ACTUAL ${getTestName(false).trim()}#${highlightCheckIndex} <<<${renderActualHighlighting()}>>>")
         if (failure != null) {
             println("HIGHLIGHT-FAILED ${getTestName(false).trim()}#${highlightCheckIndex}")
         }
