@@ -4,7 +4,7 @@
 
 Four Java files in `org/raku/comma/highlighter/` converted to Kotlin
 (`RakuHighlighter`, `RakuSyntaxHighlighter`, `RakuSyntaxHighlighterFactory`,
-`RakuColorSettingsPage`), the two bundled colour schemes cut from ~37 overrides
+`RakuColorSettingsPage`), the two bundled color schemes cut from ~37 overrides
 to 5, and `RakuColorSettingsPageTest` (11 tests) added. Full suite green at
 1104 tests.
 
@@ -13,7 +13,7 @@ to 5, and `RakuColorSettingsPageTest` (11 tests) added. Full suite green at
 The task came in as "migrate to the modern approach which uses fallbacks".
 `RakuHighlighter.java` **already** used
 `createTextAttributesKey(externalName, fallback)` for all 91 keys, and so did
-`CroTemplateHighlighter.java`. There was nothing to modernise at the
+`CroTemplateHighlighter.java`. There was nothing to modernize at the
 declaration site.
 
 What actually defeated the fallbacks was `colorSchemes/RakuDefault.xml` and
@@ -44,7 +44,7 @@ new AttributesDescriptor("Array Composer ([...])", RakuHighlighter.ARRAY_COMPOSE
 new AttributesDescriptor("Hash Composer ({...})",  RakuHighlighter.ARRAY_COMPOSER),  // <-- wrong key
 ```
 
-A user editing "Hash Composer" silently recoloured array composers.
+A user editing "Hash Composer" silently recolored array composers.
 
 The fix is structural, not a corrected constant: each key now declares its
 external name, fallback, panel group and label **once**, in `RakuHighlighter.kt`,
@@ -61,7 +61,7 @@ While wiring "Hash composer" to the right key, it turned out there is no
 Fixing that is a lexer change and out of scope. The key is kept (its external
 name is frozen; deleting it would break saved schemes) but carries
 `inPanel = false`, so the settings page does not offer a control that visibly
-does nothing. `testHashComposerIsDeclaredButNotOffered` characterises this so
+does nothing. `testHashComposerIsDeclaredButNotOffered` characterizes this so
 the next person finds the reason rather than the symptom.
 
 ## What survived the scheme trim, and why
@@ -70,7 +70,7 @@ Five overrides, per `docs/color-principles.md`:
 
 - `RAKU_TEXT_BOLD` / `RAKU_TEXT_ITALIC` / `RAKU_TEXT_UNDERLINE` — Pod `B<>`,
   `I<>`, `U<>` must render bold/italic/underlined to mean anything, and
-  `DOC_COMMENT` carries a colour but no font style.
+  `DOC_COMMENT` carries a color but no font style.
 - `RAKU_REGEX_SIG_SPACE` — a blank run; with no effect there is nothing to see.
 - `RAKU_ALT_WARNING` — exists precisely to differ from the ordinary weak
   warning it falls back to.
@@ -107,7 +107,7 @@ because `editor/SigSpaceAnnotator.java` is still Java and was left alone.
 - `RakuHighlightVisitor.java` (458 lines) — lives in `highlighter/` and is
   registered as `<highlightVisitor>`, but references **zero** attribute keys.
   It reports duplicate declarations, and carries its own TODO about becoming an
-  inspection. Not a colour concern.
+  inspection. Not a color concern.
 - `cro/template/highlighter/` — structurally identical old-Java shape, already
   using fallbacks. Same treatment would apply cleanly if someone wants it.
 - The `RAKU_REGEX_SIG_SPACE` fallback is `FUNCTION_CALL`, which looks odd until

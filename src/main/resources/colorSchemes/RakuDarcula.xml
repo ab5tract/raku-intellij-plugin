@@ -1,12 +1,12 @@
 <!-- Raku overrides for the Darcula scheme. See RakuDefault.xml for why this
      file is (and should stay) this short. The two must define the same set of
      keys; RakuColorSettingsPageTest checks that, after they drifted apart
-     (Darcula neutralised three keys Default did not, Default coloured
+     (Darcula neutralized three keys Default did not, Default colored
      RAKU_ROUTINE_NAME and Darcula did not). -->
 <list>
   <!-- Pod B<>, I<> and U<> have to actually render bold, italic and
        underlined; that is what the markup means. DOC_COMMENT carries a
-       colour but no font style. -->
+       color but no font style. -->
   <option name="RAKU_TEXT_BOLD">
     <value>
       <option name="FONT_TYPE" value="1" />

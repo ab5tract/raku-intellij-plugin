@@ -5,7 +5,7 @@ import org.raku.comma.highlighter.RakuColorSettingsPage
 import org.raku.comma.highlighter.RakuHighlighter
 
 /**
- * Guards the colour-attribute surface. Every assertion here corresponds to a
+ * Guards the color-attribute surface. Every assertion here corresponds to a
  * way the highlighter, the settings page and the bundled schemes had actually
  * drifted apart while they were three hand-maintained lists.
  */
@@ -13,8 +13,8 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
     private val page = RakuColorSettingsPage()
 
     /**
-     * External names are persisted in users' saved colour schemes. Renaming
-     * one silently discards that user's customisation of it, so this list is
+     * External names are persisted in users' saved color schemes. Renaming
+     * one silently discards that user's customization of it, so this list is
      * frozen; adding a key is expected and means adding a line here.
      *
      * Note the irregular ones: the Pod group predates its POD_ field prefix
@@ -151,10 +151,10 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
     }
 
     /**
-     * Characterises a known gap rather than asserting a fix: no lexer token
+     * Characterizes a known gap rather than asserting a fix: no lexer token
      * maps to HASH_COMPOSER, because `{...}` arrives as a block brace. The
      * old page offered a "Hash Composer" row wired to ARRAY_COMPOSER, so
-     * editing it recoloured array composers instead.
+     * editing it recolored array composers instead.
      */
     fun testHashComposerIsDeclaredButNotOffered() {
         val entry = RakuHighlighter.entries.single { it.key == RakuHighlighter.HASH_COMPOSER }
@@ -197,7 +197,7 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
 
     /**
      * Default and Darcula had drifted to 37 and 39 keys. They are meant to be
-     * the same set of overrides differing only in colour values.
+     * the same set of overrides differing only in color values.
      */
     fun testBothSchemesOverrideTheSameKeys() {
         assertEquals(schemeKeys("RakuDefault"), schemeKeys("RakuDarcula"))
@@ -206,7 +206,7 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
     /**
      * The point of the fallback approach: overrides are the exception. If
      * this number climbs, the schemes are drifting back towards restating
-     * colours the active theme already supplies.
+     * colors the active theme already supplies.
      */
     fun testSchemesOverrideOnlyWhatFallbacksCannotExpress() {
         assertEquals(
