@@ -14,8 +14,18 @@ public class RakuLexer extends LexerBase {
     private SortedMap<Integer, CursorStack> resumePoints;
     private int lastTokenStart;
 
+    /* The text as the document actually has it. The cursor machine is run over a copy
+     * with inactive #?if regions blanked out (see RakuConditionalCompilation), but the
+     * platform must keep seeing the real characters: PsiBuilder takes the token text
+     * from getBufferSequence(), so handing it the masked copy would put spaces into the
+     * PSI. Masking replaces characters one-for-one, so the two agree on every offset. */
+    private CharSequence originalBuffer;
+
     @Override
     public void start(@NotNull CharSequence buffer, int startOffset, int endOffset, int initialState) {
+        originalBuffer = buffer;
+        buffer = RakuConditionalCompilation.preprocess(buffer);
+
         /* Resume at the last statement end, if possible. */
         if (startOffset != 0) {
             int lastResPos = -1;
@@ -122,7 +132,7 @@ public class RakuLexer extends LexerBase {
     @NotNull
     @Override
     public CharSequence getBufferSequence() {
-        return stack.target;
+        return originalBuffer != null ? originalBuffer : stack.target;
     }
 
     @Override
