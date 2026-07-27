@@ -52,9 +52,17 @@ enumerating "No multi candidates match (...)".
 
 **When a symbol-dependent assertion fails, check `raku -v` before you touch the
 expectation.** An expectation that merely encodes a different Rakudo is not evidence of
-a regression. The two cases above were the ones that bit, and `1b187385` unpinned them
-deliberately (see below), so they no longer serve as examples — but the failure mode
-recurs for any assertion whose text is built from SDK signatures.
+a regression, and deleting it can make things worse.
+
+That is not hypothetical: the `.perl` expectation was removed to get the suite green on
+2025.08, and then the environment was pinned to 2026.03, where `Mu.perl` *is*
+deprecated. The same test went on failing with the comparison inverted — the warning
+was now reported as **extra** rather than missing. Two fixes, each locally reasonable,
+that cancelled out. The expectation is restored and the canonical SDK is what makes it
+hold.
+
+Of the two cases in the table, only `open` is unpinned (`1b187385`, see below); `.perl`
+is pinned again and depends on running 2026.03.
 
 Note that the deprecation lives on the *candidate*, not on the proto (`is DEPRECATED`
 is a `Method+{is-DEPRECATED}` mixin), which is why probing `$m.DEPRECATED` on the proto
