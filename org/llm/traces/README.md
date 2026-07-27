@@ -46,6 +46,10 @@ machine-local / user-preference stuff; put transmissible engineering history her
   second path is now fixed too**, see the doc.
 - **`test-harness-project-reuse.md`** — the light project was rebuilt for every test.
   ~69 min → ~2 min, and three of the "pre-existing failures" evaporated.
+- **`highlighter-kotlin-and-fallbacks.md`** — the highlighter package was already
+  using `TextAttributesKey` fallbacks; the bundled `colorSchemes/*.xml` were what
+  defeated them. Also: one concept split across three hand-maintained lists, and
+  the "Hash Composer" row that edited array composers.
 
 ## Kotlin-conversion roadmap docs (ongoing Java→Kotlin migration)
 
