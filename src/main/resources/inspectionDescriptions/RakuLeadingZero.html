@@ -1,10 +1,17 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports an integer literal with a leading zero.</p>
+<p>
+    Unlike C, Perl or Python 2, a leading zero does <b>not</b> make a literal octal in Raku
+    &mdash; <code>0755</code> is simply seven hundred and fifty-five. Code carried over from
+    another language will silently compute the wrong number. Raku's octal prefix is
+    <code>0o</code>.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+my $mode = 0755;      # Decimal 755, not octal
+
+# Correct
+my $mode = 0o755;     # Decimal 493
 </code></pre>
 <!-- tooltip end -->
 </body>

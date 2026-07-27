@@ -1,10 +1,20 @@
 <html>
 <body>
-Some methods and routines are declared as implementation details in the Rakudo <code>CORE.setting</code>.
+<p>Reports a range starting at zero that the <code>^</code> operator expresses more directly.</p>
 <p>
-It's possible to use them in user code, but such usage is discouraged and their semantics are not guaranteed.
+    <code>^N</code> is shorthand for <code>0..^N</code> &mdash; zero up to but excluding
+    <code>N</code> &mdash; which is the usual shape for indexing and counting. Writing the
+    lower bound out, or subtracting one from the upper bound, is noise.
 </p>
 <pre><code>
+for 0..^10 { }
+for 0..$n-1 { }
+my @indices = 0..^@items.elems;
+
+# Correct
+for ^10 { }
+for ^$n { }
+my @indices = ^@items.elems;
 </code></pre>
 <!-- tooltip end -->
 </body>

@@ -209,7 +209,7 @@
                          implementationClass="org.raku.comma.inspection.inspections.MissingThingsInspection"/>
 
         <localInspection language="Raku"
-                         displayName="Opening bracket missing corresponding closing bracket"
+                         displayName="Semicolon form of package declaration requires 'unit'"
                          shortName="RakuUnitKeyword"
                          groupPath="Raku"
                          enabledByDefault="true"
@@ -218,7 +218,7 @@
                          implementationClass="org.raku.comma.inspection.inspections.UnitKeywordInspection"/>
 
         <localInspection language="Raku"
-                         displayName="Opening bracket missing corresponding closing bracket"
+                         displayName="'monitor' declared without OO::Monitors imported"
                          shortName="RakuMonitorUsage"
                          groupPath="Raku"
                          enabledByDefault="true"
@@ -245,7 +245,7 @@
                          implementationClass="org.raku.comma.inspection.inspections.NamedPairArgumentInspection"/>
 
         <localInspection language="Raku"
-                         displayName="Range has an endpoint"
+                         displayName="Range is missing its endpoint"
                          shortName="RakuNoEndpointRage"
                          groupPath="Raku"
                          enabledByDefault="true"
@@ -270,7 +270,7 @@
                          implementationClass="org.raku.comma.inspection.inspections.NonNilReturnInspection"/>
 
         <localInspection language="Raku"
-                         displayName="Routines with Nil return type must only return Nil values"
+                         displayName="Quantified expression may not progress"
                          shortName="RakuNotProgressingRegex"
                          groupPath="Raku"
                          enabledByDefault="true"

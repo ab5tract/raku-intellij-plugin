@@ -1,10 +1,20 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports <code>is</code> or <code>does</code> on a <code>module</code> or <code>package</code>.</p>
+<p>
+    Inheritance and role composition are features of the object system, and only
+    <code>class</code> and <code>role</code> participate in it. A <code>module</code> or
+    <code>package</code> is a namespace: it has no method resolution order to extend and
+    nothing to compose into.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+role Loggable { }
+
+module Utils does Loggable { }   # module cannot compose a role
+package Tools is Utils { }       # package cannot inherit a class
+
+# Correct
+class Utils does Loggable { }
 </code></pre>
 <!-- tooltip end -->
 </body>

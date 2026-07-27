@@ -1,8 +1,25 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
+<p>Reports an assignment whose target cannot be assigned to.</p>
+<p>
+    Raku containers are only mutable when something makes them so. Literals, constants,
+    routine declarations and read-only parameters (the default binding for a parameter,
+    absent <code>is copy</code>, <code>is rw</code> or <code>is raw</code>) have no
+    container to write through, so an assignment to one fails at runtime.
+</p>
+<p>The message names what was found, e.g. <i>Cannot assign to a readonly parameter</i>.</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+sub scale($factor) {
+    $factor = $factor * 2;   # Cannot assign to a readonly parameter
+}
+
+my constant LIMIT = 10;
+LIMIT = 20;                  # Cannot assign to a constant
+
+# Correct
+sub scale($factor is copy) {
+    $factor = $factor * 2;
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

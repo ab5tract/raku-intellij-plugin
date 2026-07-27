@@ -1,10 +1,25 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a subroutine or private method with no callers.</p>
+<p>
+    The search is scoped to where the routine could be reached from: a lexical scope for a
+    <code>my</code>/<code>our</code> sub, the declaring class for a private method. A routine
+    that is exported, or that Raku calls for you &mdash; <code>MAIN</code>,
+    <code>USAGE</code>, <code>EXPORT</code> &mdash; is never reported.
+</p>
+<p>
+    Quick fixes offer to remove the routine, or (for a subroutine) to mark it
+    <code>is export</code> if it was meant to be part of the module's interface.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+sub helper() { }         # Unused subroutine
+
+class C {
+    method !unused() { } # Unused private method
+}
+
+# Correct
+sub helper() is export { }
 </code></pre>
 <!-- tooltip end -->
 </body>

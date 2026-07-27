@@ -1,10 +1,25 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a hyphen used inside a regex character class.</p>
+<p>
+    Raku does not spell ranges with <code>-</code> the way PCRE does &mdash; the range
+    operator inside a character class is <code>..</code>, and Rakudo rejects a bare hyphen
+    between two characters outright: <i>Unsupported use of - as character range</i>. A
+    pattern carried over from another language therefore fails to compile rather than
+    quietly matching the wrong thing.
+</p>
+<p>
+    To match a literal hyphen, escape it or place it first or last in the class. Class
+    subtraction is a separate construct and uses <code>-</code> between two bracketed
+    groups, not between characters.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+/ &lt;[ a-z ]&gt; /              # Unsupported use of - as character range
+
+# Correct
+/ &lt;[ a..z ]&gt; /             # Range
+/ &lt;[ az- ]&gt; /              # Literal hyphen, last in the class
+/ &lt;[ a..z ] - [ aeiou ]&gt; / # Subtraction: consonants
 </code></pre>
 <!-- tooltip end -->
 </body>

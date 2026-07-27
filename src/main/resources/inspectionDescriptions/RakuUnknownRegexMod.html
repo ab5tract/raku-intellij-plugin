@@ -1,10 +1,18 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a regex adverb that Raku does not define.</p>
+<p>
+    Adverbs are checked against the known set &mdash; among them <code>:i</code>
+    (ignorecase), <code>:m</code> (ignoremark), <code>:g</code> (global), <code>:s</code>
+    (sigspace), <code>:r</code> (ratchet), <code>:ex</code>/<code>:ov</code> and the
+    <code>:nth</code> family. An unrecognised one is usually a typo or an adverb carried over
+    from another language's flavour of regex.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+/ :foo 'text' /          # Unrecognized regex modifier ':foo'
+
+# Correct
+/ :i 'text' /
 </code></pre>
 <!-- tooltip end -->
 </body>

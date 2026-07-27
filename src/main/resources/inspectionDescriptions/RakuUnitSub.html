@@ -1,10 +1,18 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports <code>unit sub</code> on anything other than <code>MAIN</code>.</p>
+<p>
+    The semicolon form of a routine declaration exists for exactly one purpose: letting a
+    script's whole body be <code>sub MAIN</code>, so that command-line arguments are parsed
+    against its signature. No other routine may be declared that way.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+unit sub helper($x);     # The unit sub syntax is only allowed for the sub MAIN
+
+# Correct
+unit sub MAIN($file, Bool :$verbose);
+
+say "processing $file";
 </code></pre>
 <!-- tooltip end -->
 </body>

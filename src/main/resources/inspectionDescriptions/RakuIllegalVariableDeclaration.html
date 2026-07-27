@@ -1,10 +1,21 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a declaration of a name that Raku reserves and populates itself.</p>
+<p>
+    Regex match variables &mdash; positional <code>$0</code>, <code>$1</code>&hellip; and
+    named <code>$&lt;name&gt;</code> &mdash; are elements of the match object <code>$/</code>
+    and cannot be declared. Neither can a contextualizer such as <code>$( )</code> or
+    <code>@( )</code>, which is an operator rather than a name.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+my $&lt;foo&gt;;      # Cannot declare a regex named match variable
+my $0;          # Cannot declare a regex positional match variable
+my $()          # Cannot declare a contextualizer
+
+# Correct: match variables are already available after a match
+if $text ~~ / $&lt;foo&gt; = \w+ / {
+    say $&lt;foo&gt;;
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

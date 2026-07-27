@@ -1,8 +1,32 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
+<p>Reports use of <code>self</code> where no invocant exists, or where the object is not yet fully built.</p>
+<p>
+    There is no invocant outside a method, so <code>self</code> and the <code>$.</code> form
+    have nothing to refer to. Separately, inside <code>BUILD</code> and default-value
+    expressions the object is only partially constructed: a virtual method call such as
+    <code>$.name</code> may dispatch to an override that reads attributes not yet
+    initialised. Use direct attribute access, <code>$!name</code>, in that case.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+sub helper() {
+    say self;              # No invocant is available here
+}
+
+class Person {
+    has $.name;
+    submethod BUILD() {
+        say $.name;        # Virtual method calls are not allowed on partially constructed objects
+    }
+}
+
+# Correct
+class Person {
+    has $.name;
+    submethod BUILD() {
+        say $!name;
+    }
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

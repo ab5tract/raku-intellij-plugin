@@ -1,0 +1,20 @@
+<html>
+<body>
+<p>Reports <code>is export</code> on a <code>my</code>-scoped variable.</p>
+<p>
+    Exporting means installing a symbol into the importer's lexical scope, which requires the
+    symbol to be visible in the package to begin with. <code>my</code> is lexical to the
+    declaring block, so there is nothing for the export to publish. Use <code>our</code>
+    &mdash; or, for a constant, <code>our constant</code>.
+</p>
+<pre><code>
+unit module Config;
+
+my $DEFAULT-PORT is export = 8080;    # `my` scoped variable cannot be exported
+
+# Correct
+our $DEFAULT-PORT is export = 8080;
+</code></pre>
+<!-- tooltip end -->
+</body>
+</html>

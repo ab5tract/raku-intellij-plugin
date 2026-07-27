@@ -1,10 +1,18 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a <code>+</code> or <code>*</code> quantifier on an atom that can match nothing.</p>
+<p>
+    If the quantified atom succeeds while consuming no characters, the engine can repeat it
+    forever without advancing &mdash; the match hangs rather than fails. This usually comes
+    from nesting one quantifier inside another, where the inner one already permits zero
+    matches.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+/ [ \d* ]+ /       # Quantified expression may not progress, leading to a hang
+
+# Correct
+/ \d+ /
+/ [ \d+ ]+ /
 </code></pre>
 <!-- tooltip end -->
 </body>

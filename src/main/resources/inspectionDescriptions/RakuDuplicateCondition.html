@@ -1,10 +1,22 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports a branch whose condition already appeared earlier in the same chain.</p>
+<p>
+    A repeated condition is dead code: the earlier branch always wins, so the later one can
+    never run. Conditions are compared after normalisation, so <code>if</code>/<code>elsif</code>
+    are treated alike and commutative infix operators are matched regardless of operand order.
+    Usually it means a copy-pasted branch whose condition was never edited.
+</p>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+if $x == 1 {
+    do-one();
+}
+elsif $x == 2 {
+    do-two();
+}
+elsif $x == 1 {      # An identical condition appears in a previous branch
+    never-reached();
+}
 </code></pre>
 <!-- tooltip end -->
 </body>

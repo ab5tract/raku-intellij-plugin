@@ -1,10 +1,25 @@
 <html>
 <body>
-TODO (Community pull requests welcome! :) )
-
-All you need to know to fix this is what the inspection is for and the few HTML codes needed to encode that information.
+<p>Reports parameter declarations that are contradictory or redundant.</p>
+<p>Five cases, all of them signature defaults being restated or fought:</p>
+<ul>
+    <li>an optional positional parameter placed after a named one;</li>
+    <li><code>?</code> on a named parameter &mdash; nameds are optional already;</li>
+    <li><code>!</code> on a parameter that has a default value &mdash; it cannot be both;</li>
+    <li><code>!</code> on a positional parameter &mdash; positionals are required already;</li>
+    <li><code>?</code> on a parameter that has a default &mdash; a default already implies optional.</li>
+</ul>
 <pre><code>
-// automatically highlighted according to inspection registration 'language' attribute
+sub f($a!) { }            # `!` is redundant, positionals are required by default
+sub g(:$b?) { }           # `?` is redundant, nameds are optional by default
+sub h($c! = 10) { }       # Has a default value and so cannot be required
+sub i(:$d, $e?) { }       # Cannot put an optional parameter after a named parameter
+
+# Correct
+sub f($a) { }
+sub g(:$b) { }
+sub h($c = 10) { }
+sub i($e?, :$d) { }
 </code></pre>
 <!-- tooltip end -->
 </body>
