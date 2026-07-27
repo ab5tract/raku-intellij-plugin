@@ -12,11 +12,28 @@ the same shell**, by:
 
 ```bash
 eval "$(~/.rakubrew/bin/rakubrew init Zsh)"
-rakubrew switch 2026.03
-./gradlew test --tests "..."
+rakubrew switch moar-2026.03
+./gradlew test --rerun --tests "..."
 ```
 
 Shell state does not persist between tool calls, so put all of them in one command.
+
+Three ways this line goes wrong, all of which end in a green build that proves nothing:
+
+- **The version is `moar-2026.03`, not `2026.03`.** A bare `2026.03` prints "Sorry,
+  '2026.03' not found. Did you mean: moar-2026.03" — but through the `rakubrew` shell
+  function that `init` installs it still returns success, so `&&` chains march on with
+  the switch silently not applied. (Called directly as `~/.rakubrew/bin/rakubrew`,
+  outside the hook, the same mistake exits 1.)
+- **`--rerun` is not optional when you have changed only the environment.** `PATH` and
+  the SDK are not declared inputs of the `test` task, so switching Rakudo leaves it
+  `UP-TO-DATE`. `./gradlew test` then reports `BUILD SUCCESSFUL in 629ms` having
+  executed zero tests. Check for `> Task :test UP-TO-DATE` before believing a result,
+  and confirm the "N tests completed" line is present.
+- **`rakubrew init` alone may already be enough**, which masks the first bullet:
+  `init` exports `~/.rakubrew/versions/<CURRENT>/bin` at the front of `PATH`, and
+  `~/.rakubrew/CURRENT` is already `moar-2026.03` here. The `switch` line is insurance
+  against `CURRENT` having drifted, not the thing doing the work.
 
 **The `switch` line is load-bearing, not decoration.** `suggestSdkHome()` takes the
 first `PATH` entry that looks like a Raku SDK home, so without it the system Rakudo in
