@@ -46,7 +46,6 @@
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.modules.jcef</depends>
 
-
   <dependencies>
     <module name="intellij.spellchecker"/>
   </dependencies>
@@ -114,6 +113,7 @@
     <additionalTextAttributes scheme="Default" file="colorSchemes/DefaultCroTemplate.xml"/>
     <additionalTextAttributes scheme="Darcula" file="colorSchemes/DarculaCroTemplate.xml"/>
     <annotator language="Raku" implementationClass="org.raku.comma.editor.SigSpaceAnnotator"/>
+    <annotator language="Raku" implementationClass="org.raku.comma.highlighter.RakuSemanticAnnotator"/>
     <annotator language="CroTemplate"
                implementationClass="org.raku.comma.cro.template.annotation.DuplicateSeparatorAnnotator"/>
     <annotator language="CroTemplate"

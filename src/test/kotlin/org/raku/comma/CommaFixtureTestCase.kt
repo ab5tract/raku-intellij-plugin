@@ -2,7 +2,9 @@ package org.raku.comma
 
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.LightProjectDescriptor
+import com.intellij.testFramework.LoggedErrorProcessor
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.util.ThrowableRunnable
 import org.raku.comma.sdk.RakuSdkUtil
 import org.raku.comma.services.project.RakuProjectSdkService
 import java.io.File
@@ -115,6 +117,46 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
             println("HIGHLIGHT-FAILED ${getTestName(false).trim()}#${highlightCheckIndex}")
         }
         highlightCheckIndex++
+    }
+
+    // The bundled Kotlin plugin's CodeVision initialization can fail with a
+    // PluginException from KotlinScriptDefinitionCodeVisionProvider --
+    // 'hints.codevision.script.definition.name' actually exists in the
+    // plugin's own properties file (verified by inspecting the jar), so this
+    // is a resource-bundle *lookup* failure in this specific
+    // test-sandbox/IDE-build combination, not a genuinely missing
+    // translation upstream. In real usage that failure is just a swallowed
+    // Logger.error(); -Dintellij.testFramework.rethrow.logged.errors=true
+    // (set for all test JVMs here) escalates it to a hard test failure.
+    //
+    // It's fired from a background coroutine (CodeVisionInitializer,
+    // launched on project startup) rather than synchronously from
+    // checkHighlighting() itself, and only for whichever test first touches
+    // a "real" project/file in the whole run -- confirmed by testing that
+    // wrapping just checkHighlighting(), and then just runTestRunnable()
+    // (the whole test method body), both still let it slip through when it
+    // triggers during setUp() instead. runBare() is the outermost
+    // overridable hook (UsefulTestCase) spanning setUp -> test body ->
+    // tearDown, so wrapping there is the only reliable way to catch it
+    // regardless of when the coroutine's Logger.error() actually lands.
+    // Scope-suppress only this known message so a real regression elsewhere
+    // still fails loudly.
+    override fun runBare(testRunnable: ThrowableRunnable<Throwable>) {
+        LoggedErrorProcessor.executeWith<Throwable>(object : LoggedErrorProcessor() {
+            override fun processError(
+                category: String,
+                message: String,
+                details: Array<String>,
+                t: Throwable?
+            ): MutableSet<Action> {
+                return if (message.contains("KotlinScriptDefinitionCodeVisionProvider"))
+                    Action.NONE
+                else
+                    super.processError(category, message, details, t)
+            }
+        }) {
+            super.runBare(testRunnable)
+        }
     }
 
     companion object {

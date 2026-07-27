@@ -196,13 +196,13 @@ class RakuFileImpl(viewProvider: FileViewProvider) : PsiFileBase(viewProvider, R
     }
 
     private fun factsOf(node: Any): GlobalsFacts? = when (node) {
-        is RakuVariableDeclStub -> GlobalsFacts.Variable(node.isExported, node.scope) { node.psi }
-        is RakuPackageDeclStub -> GlobalsFacts.Pkg(node.packageKind, node.scope, node.typeName) { node.psi }
-        is RakuRoutineDeclStub -> GlobalsFacts.Routine(node.isExported, node.scope, node.routineName) { node.psi }
-        is RakuEnumStub -> GlobalsFacts.EnumDecl(node.isExported, node.scope) { node.psi }
-        is RakuSubsetStub -> GlobalsFacts.SubsetDecl(node.isExported, node.scope) { node.psi }
-        is RakuUseStatementStub -> GlobalsFacts.Use(node.moduleName)
-        is RakuNeedStatementStub -> GlobalsFacts.Need(node.moduleNames)
+        is RakuVariableDeclStub -> GlobalsFacts.Variable(node.isExported(), node.getScope()) { node.psi }
+        is RakuPackageDeclStub -> GlobalsFacts.Pkg(node.getPackageKind(), node.getScope(), node.getTypeName()) { node.psi }
+        is RakuRoutineDeclStub -> GlobalsFacts.Routine(node.isExported(), node.getScope(), node.getRoutineName()) { node.psi }
+        is RakuEnumStub -> GlobalsFacts.EnumDecl(node.isExported(), node.getScope()) { node.psi }
+        is RakuSubsetStub -> GlobalsFacts.SubsetDecl(node.isExported(), node.getScope()) { node.psi }
+        is RakuUseStatementStub -> GlobalsFacts.Use(node.getModuleName())
+        is RakuNeedStatementStub -> GlobalsFacts.Need(node.getModuleNames())
         is RakuVariableDecl -> GlobalsFacts.Variable(node.isExported, node.scope) { node }
         is RakuPackageDecl -> GlobalsFacts.Pkg(node.packageKind, node.scope, node.name) { node }
         is RakuRoutineDecl -> GlobalsFacts.Routine(node.isExported, node.scope, node.name) { node }

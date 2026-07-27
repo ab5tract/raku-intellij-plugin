@@ -101,6 +101,10 @@ public class RakuColorSettingsPage implements ColorSettingsPage {
             new AttributesDescriptor("Pod format code", RakuHighlighter.POD_FORMAT_CODE),
             new AttributesDescriptor("Pod format delimiters", RakuHighlighter.POD_FORMAT_QUOTES),
             new AttributesDescriptor("Quasi quote", RakuHighlighter.QUASI),
+            new AttributesDescriptor("Built-in variable", RakuHighlighter.BUILTIN_VARIABLE),
+            new AttributesDescriptor("Built-in call", RakuHighlighter.BUILTIN_CALL),
+            new AttributesDescriptor("Reassigned local variable", RakuHighlighter.REASSIGNED_LOCAL_VARIABLE),
+            new AttributesDescriptor("Reassigned parameter", RakuHighlighter.REASSIGNED_PARAMETER),
     };
 
     @Nullable
@@ -157,13 +161,25 @@ public class RakuColorSettingsPage implements ColorSettingsPage {
             # Regex fun begins!
             'foo' ~~ m:g!^ [(f) <[o]> $<foo>=[]] || 'constant' \\invalid !;
 
+            # Semantic highlighting: built-ins and reassignment.
+            sub semantics(<reassignedParameter>$p</reassignedParameter> is rw) {
+                <reassignedParameter>$p</reassignedParameter> = 42;
+                my $total = 0;
+                <reassignedVariable>$total</reassignedVariable> += 1;
+                <builtinCall>say</builtinCall>(<builtinVariable>$*OUT</builtinVariable>);
+            }
             \\""";
     }
 
     @Nullable
     @Override
     public Map<String, TextAttributesKey> getAdditionalHighlightingTagToDescriptorMap() {
-        return null;
+        return Map.of(
+                "builtinVariable", RakuHighlighter.BUILTIN_VARIABLE,
+                "builtinCall", RakuHighlighter.BUILTIN_CALL,
+                "reassignedVariable", RakuHighlighter.REASSIGNED_LOCAL_VARIABLE,
+                "reassignedParameter", RakuHighlighter.REASSIGNED_PARAMETER
+        );
     }
 
     @Override

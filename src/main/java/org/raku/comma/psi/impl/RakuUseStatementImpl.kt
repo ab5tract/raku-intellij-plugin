@@ -66,7 +66,7 @@ class RakuUseStatementImpl : StubBasedPsiElementBase<RakuUseStatementStub?>, Rak
 
     override fun getModuleName(): String? {
         val stub = stub
-        if (stub != null) return stub.moduleName
+        if (stub != null) return stub.getModuleName()
 
         val moduleName = findChildByClass(RakuModuleName::class.java)
         return moduleName?.text

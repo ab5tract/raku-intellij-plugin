@@ -66,7 +66,7 @@ class RakuSubCallStubElementType : IStubElementType<RakuSubCallStub?, RakuSubCal
             val frameworkData: MutableMap<String, String> = mutableMapOf()
             for (entry in allFrameworkData.entries) {
                 if (entry.key!!.startsWith("$prefix.")) {
-                    frameworkData.put(entry.key!!.substring(prefix.length + 1), entry.value)
+                    frameworkData.put(entry.key!!.substring(prefix.length + 1), entry.value!!)
                 }
             }
             if (!frameworkData.isEmpty()) {

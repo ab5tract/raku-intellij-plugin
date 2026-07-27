@@ -32997,6 +32997,21 @@ public class MAINBraid extends Cursor<MAINBraid> {
                 continue;
 
             case 14:
+                // A meta-operator (reduce [op], hyper, cross X, zip Z, ...)
+                // must wrap a complete base operator. Without this guard an
+                // empty/incomplete bracketed infix (`[` with no operator) is
+                // accepted here, so `[[]]` mis-parses as a reduce metaop
+                // `[ [] ]`, consuming the inner `]` as its close and orphaning
+                // the outer `]` -> BAD_CHARACTER swallowing the rest of the
+                // file. The incomplete fallback is only for editor tolerance
+                // in ordinary infix position ($*IN_META empty).
+                if (this.isValueTruthy(this.findDynamicVariable("$*IN_META"))) {
+                    if (this.backtrack()) {
+                        continue;
+                    } else {
+                        return -2;
+                    }
+                }
                 this.startToken(RakuTokenTypes.BRACKETED_INFIX_INCOMPLETE);
                 this.state = 15;
                 return -3;
@@ -35728,7 +35743,15 @@ public class MAINBraid extends Cursor<MAINBraid> {
                 continue;
 
             case 177:
-                if (this.isValueTruthy(this.testStrLE(this.findDynamicVariable("$*PREC"), this.findDynamicVariable("$*PRECLIM")))) {
+                // A meta-operator (reduce [op], hyper, cross X, zip Z, R, S,
+                // neg) wraps its base infix regardless of the surrounding
+                // expression's precedence limit, so only apply the precedence
+                // guard when not identifying a meta-operator's base operator
+                // (i.e. when $*IN_META is empty). Without this, wordy loose
+                // operators like `and`/`or`/`xor` fail to be recognised inside
+                // `[...]` reduce metaops (e.g. `[and] map {...}, @list`).
+                if (!this.isValueTruthy(this.findDynamicVariable("$*IN_META"))
+                        && this.isValueTruthy(this.testStrLE(this.findDynamicVariable("$*PREC"), this.findDynamicVariable("$*PRECLIM")))) {
                     if (this.backtrack()) {
                         continue;
                     } else {
