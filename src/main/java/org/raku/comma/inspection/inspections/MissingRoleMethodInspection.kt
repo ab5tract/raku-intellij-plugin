@@ -76,6 +76,13 @@ class MissingRoleMethodInspection : RakuInspection() {
                 for (maybeMethod in declarations) {
                     if (maybeMethod !is RakuRoutineDecl) continue
                     if (maybeMethod.routineKind != "method" || maybeMethod.getParent() is RakuMultiDecl) continue
+                    // Private (!-twigil) role methods are composed into the
+                    // consuming class but are NOT enforced as requirements by
+                    // Raku: a stubbed private method does not force the class to
+                    // implement it (unlike a public stub, which is a hard
+                    // composition requirement). A private method also cannot
+                    // satisfy a public requirement, so skip them entirely.
+                    if (maybeMethod.isPrivate) continue
                     if (maybeMethod.isStubbed) {
                         // If method is not indexed or we saw it, and it was not closer to root class than current stub,
                         // add it to candidates for stubbing
