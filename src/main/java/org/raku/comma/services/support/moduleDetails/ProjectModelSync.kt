@@ -37,7 +37,13 @@ class ProjectModelSync(private val project: Project, private val runScope: Corou
                     // "IntelliJ module" per project.
                     val metadata = project.service<RakuMetaDataComponent>()
 
-                    for (metaDep in completeMETADependencies) {
+                    // Every name here becomes part of a raku:// URL below, and the VFS
+                    // will try to resolve whatever we hand it. A malformed META6 once
+                    // produced a "dependency" holding a whole JSON blob, which the
+                    // platform then tried to stat as a path; keep anything that cannot
+                    // be a module name out of the model rather than relying on the
+                    // parsers upstream never slipping again.
+                    for (metaDep in completeMETADependencies.filter(::looksLikeModuleName)) {
                         // If local, project module, attach it as dependency
                         if (metadata.name == metaDep) {
                             val moduleOfMetaDep = metadata.module
@@ -82,6 +88,12 @@ class ProjectModelSync(private val project: Project, private val runScope: Corou
             throw ignore
         }
     }
+
+    // A Raku module name is identifier parts joined by `::`, optionally carrying
+    // :ver/:auth/:api adverbs. It never contains whitespace, quotes or braces, which is
+    // what a stringified chunk of JSON is made of.
+    private fun looksLikeModuleName(name: String): Boolean =
+        name.isNotBlank() && name.none { it.isWhitespace() || it in "{}[]\"" }
 
     private fun removeOrderEntriesNotInMETA(
         model: ModifiableRootModel,

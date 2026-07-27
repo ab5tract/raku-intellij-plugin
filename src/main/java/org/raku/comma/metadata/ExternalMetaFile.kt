@@ -22,11 +22,13 @@ data class ExternalMetaFile (
     val authors: List<String> = listOf(),
     val auth: String? = null,
     val dist: String? = null,
-    @Serializable(with =  MapListSerializer::class)
+    @Serializable(with =  DependsSerializer::class)
     val depends: List<String> = listOf(),
     @SerialName("build-depends")
+    @Serializable(with =  DependsSerializer::class)
     val buildDepends: List<String> = listOf(),
     @SerialName("test-depends")
+    @Serializable(with =  DependsSerializer::class)
     val testDepends: List<String> = listOf(),
     val provides: Map<String, String> = mapOf(),
     @Serializable(with =  MapListSerializer::class)
@@ -64,6 +66,52 @@ object MapListSerializer : JsonTransformingSerializer<List<String>>(ListSerializ
             !is JsonArray -> JsonArray(listOf(element))
             else -> element
         }
+    }
+}
+
+/**
+ * `depends` is not always a list of module names. META6 also allows a hash keyed by
+ * phase, whose values carry the actual list under `requires`:
+ *
+ * ```json
+ * "depends": { "runtime": { "requires": [ "Foo", "Bar" ] } }
+ * ```
+ *
+ * Flattening that hash the way [MapListSerializer] does yields one bogus "module name"
+ * per key -- literally `runtime => {"requires":[...]}`. That string then travels all the
+ * way into ProjectModelSync, which formats every dependency into a `raku://` library
+ * URL, and the VFS ends up trying to stat a file named after the whole JSON blob
+ * ("File name too long" in the log). Anything we cannot resolve to a name is dropped
+ * instead, which is also how conditional entries have always been treated.
+ */
+object DependsSerializer : JsonTransformingSerializer<List<String>>(ListSerializer(String.serializer())) {
+    override fun transformDeserialize(element: JsonElement): JsonElement =
+        JsonArray(entriesOf(element).mapNotNull(::dependencyName).map(::JsonPrimitive))
+
+    private fun entriesOf(element: JsonElement): List<JsonElement> = when (element) {
+        is JsonArray  -> element
+        is JsonObject -> requiresOf(element)
+        else          -> listOf(element)
+    }
+
+    // The phase hash. Only `runtime` belongs in `depends`; `build` and `test` have their
+    // own META6 fields and are read there. Both the nested form and the flat
+    // `{ "requires": [...] }` some distributions use are accepted.
+    private fun requiresOf(element: JsonObject): List<JsonElement> {
+        val sections = listOfNotNull(element["runtime"], element)
+        return sections.flatMap { section ->
+            when (section) {
+                is JsonArray  -> section
+                is JsonObject -> (section["requires"] as? JsonArray) ?: emptyList()
+                else          -> emptyList()
+            }
+        }
+    }
+
+    private fun dependencyName(entry: JsonElement): String? = when (entry) {
+        is JsonPrimitive -> if (entry.isString) entry.content else null
+        is JsonObject    -> resolveConditionalDependencyName(entry)
+        else             -> null
     }
 }
 

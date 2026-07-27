@@ -114,7 +114,7 @@ data class ComplexBuildDepends(val requires: List<JsonElement>?, val runtime: Li
 // or its nested form `{ "by-kernel": { "name": { "linux": ... } } }` (same for distro).
 // We resolve what we can and silently drop anything we don't recognise, matching the
 // "ignore it for now" stance already taken for build-depends above.
-private fun resolveConditionalDependencyName(entry: JsonObject): String? {
+internal fun resolveConditionalDependencyName(entry: JsonObject): String? {
     try {
         val asMap: Map<String, String> = Json.decodeFromJsonElement(entry)
         if (asMap.keys.size == 1 && asMap.keys.all { it == "name" })
