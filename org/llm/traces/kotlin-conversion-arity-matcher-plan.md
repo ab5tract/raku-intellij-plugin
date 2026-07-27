@@ -108,6 +108,8 @@ public void setFailureDetail(int argIndex, @Nullable String detail) { if (detail
 - **Single commit** (this item is small enough not to need the multi-commit staging of items 1-2): add `RakuArityMatcher.kt`, shrink `RakuSignature.java` to the two abstract methods + one-line delegating default + the two nested types (with the `failureDetails` addition and `name`-field removal), update `CallArityInspection.kt`'s one read site, extend `RakuSignatureComparatorTest.kt` with the two-missing-named-args regression case.
 - Verify: `RakuSignatureComparatorTest`, `RakuParameterInfoTest`, `AnnotationTest` (arity-specific methods at minimum, ideally the full class since it's already a known-flaky-adjacent suite), then a full-suite run for the final sign-off against the established baseline (6 pre-existing failures + roaming leak flake).
 
+> **Superseded:** that "baseline (6 pre-existing failures + roaming leak flake)" no longer exists — the full suite is green in ~2 minutes. The leak flake and two of the six failures had no bug of their own; they were artifacts of the light project being rebuilt for every test. See `test-harness-project-reuse.md`. Verify against green, not against a baseline.
+
 ## Must not change
 
 - `RakuSignature`/`CroTemplateSignature` public API shapes (`acceptsArguments` signature, `SignatureCompareResult`/`MatchFailureReason` as nested types with their existing getters).

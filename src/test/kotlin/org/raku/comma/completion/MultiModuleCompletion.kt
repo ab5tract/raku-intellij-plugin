@@ -8,7 +8,7 @@ import org.raku.comma.RakuMultiModuleProjectDescriptor
 
 class MultiModuleCompletion : CommaFixtureTestCase() {
     override fun getProjectDescriptor(): LightProjectDescriptor {
-        return RakuMultiModuleProjectDescriptor()
+        return RakuMultiModuleProjectDescriptor
     }
 
     override fun getTestDataPath(): String {

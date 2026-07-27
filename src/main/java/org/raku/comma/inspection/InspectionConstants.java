@@ -46,6 +46,10 @@ public class InspectionConstants {
         public static final String DESCRIPTION_FORMAT = "Missing closing '%s'";
     }
 
+    public static class RedeclaredImportedSymbol {
+        public static final String DESCRIPTION_FORMAT = "Re-declaration of %s from %s:%d";
+    }
+
     public static class MissingRoleMethod {
         public static final Regex SPLIT_REGEX = new Regex("\\s+");
         public static final String DESCRIPTION_FORMAT = "Composed roles require to implement methods: %s";

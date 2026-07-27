@@ -105,6 +105,15 @@
                          implementationClass="org.raku.comma.inspection.inspections.RedundantInitializationInspection"/>
 
         <localInspection language="Raku"
+                         displayName="Re-declaration of an imported symbol"
+                         shortName="RakuRedeclaredImportedSymbol"
+                         groupPath="Raku"
+                         enabledByDefault="true"
+                         level="ERROR"
+                         groupName="Declarations"
+                         implementationClass="org.raku.comma.inspection.inspections.RedeclaredImportedSymbolInspection"/>
+
+        <localInspection language="Raku"
                          displayName="Unnecessary combination of .grep with .first"
                          shortName="RakuGrepFirst"
                          groupPath="Raku"

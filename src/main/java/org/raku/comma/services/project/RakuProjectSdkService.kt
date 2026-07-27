@@ -116,6 +116,14 @@ class RakuProjectSdkService(
     }
 
     fun setProjectSdkPath(sdkPath: String) {
+        // Re-setting the path it already has is a no-op that used to cost a
+        // `raku -e` subprocess (versionString), a full symbol-cache invalidation
+        // -- and so a re-parse of the ~3MB CORE.setting JSON -- and a
+        // dependency-refreshing meta build. In the IDE that fires whenever the
+        // settings dialog is closed unchanged; under test, CommaFixtureTestCase
+        // .setUp does it before every single test.
+        if (sdkState.projectSdkPath == sdkPath && symbolCache.sdkPath == sdkPath) return
+
         sdkState.projectSdkPath    = sdkPath
         sdkState.projectSdkVersion = RakuSdkUtil.versionString(sdkPath)
         sdkState.projectZefPath    = calculateZefPath(sdkPath)
@@ -197,9 +205,6 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
         // Project-specific cache with PsiFile instances
     private val projectSymbolCache: ProjectSymbolCache = ProjectSymbolCache()
 
-    private var settingJson: String? = null
-    private val settingsStarted = AtomicBoolean(false)
-
     companion object {
         const val SETTING_FILE_NAME: String = "SETTINGS.rakumod"
     }
@@ -207,8 +212,16 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
     fun getCoreSettingFile(): RakuFile? {
         if (projectSymbolCache.setting != null) return projectSymbolCache.setting
 
-        if (settingJson != null) {
-            projectSymbolCache.setting = makeSettingSymbols(settingJson!!)
+        val settingSdkPath = sdkPath
+        val globalCache = service<RakuGlobalSdkSymbolCache>()
+
+        // Another project (or an earlier incarnation of this one) may already
+        // have paid for this SDK's symbols. Re-check on every call, not just the
+        // first: while a load is in flight this is also how callers polling for
+        // a non-DUMMY file pick the result up.
+        val cachedJson = settingSdkPath?.let { globalCache.settingJsonCache[it] }
+        if (cachedJson != null) {
+            projectSymbolCache.setting = makeSettingSymbols(cachedJson)
             return projectSymbolCache.setting
         }
 
@@ -226,14 +239,15 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
         }
 
         try {
-            if (settingsStarted.compareAndSet(false, true)) {
-                if (sdkPath == null) return getFallback()
+            if (settingSdkPath == null) return getFallback()
 
-                val cmd = RakuCommandLine(sdkPath)
+            if (globalCache.settingLoadsStarted.add(settingSdkPath)) {
+                val cmd = RakuCommandLine(settingSdkPath)
                 cmd.setWorkDirectory(System.getProperty("java.io.tmpdir"))
                 cmd.addParameter(coreSymbols.absolutePath)
                 cmd.addParameter(coreDocs.absolutePath)
                 runScope.launch {
+                    var loaded = false
                     try {
                         val settingLines = java.lang.String.join("\n", cmd.executeAndRead(coreSymbols))
                         try {
@@ -247,11 +261,19 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
                                                         "getCoreSettingFile got no symbols from Raku, using fallback")
                             getFallback()
                         } else {
+                            loaded = true
+                            globalCache.settingJsonCache[settingSdkPath] = settingLines
                             projectSymbolCache.setting = makeSettingSymbols(settingLines)
                         }
                         RakuSdkUtil.triggerCodeAnalysis(project)
                     } catch (e: AssertionError) {
                         // If the project was already disposed, do not die in a background thread
+                    } finally {
+                        // Only a successful load gets to keep the claim. Leaving
+                        // it held after a failure would pin every project on this
+                        // SDK to the fallback symbols for the rest of the session,
+                        // with no way to retry.
+                        if (!loaded) globalCache.settingLoadsStarted.remove(settingSdkPath)
                     }
                 }
             } else {
@@ -322,7 +344,6 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
 
     private fun makeSettingSymbols(json: String): RakuFile? {
         try {
-            settingJson = json
             val entries = RakuExternalNamesParser.tryDecode(json)
                 ?: return ExternalRakuFile(project, LightVirtualFile(SETTING_FILE_NAME))
             if (project.isDisposed) return null
@@ -373,8 +394,8 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
                 // the project that requested it is long gone -- bail out
                 // before spawning the raku subprocess rather than keeping a
                 // disposed project reachable for the duration of that work.
-                if (project.isDisposed) return@executeOnPooledThread
                 try {
+                    if (project.isDisposed) return@executeOnPooledThread
                     // if no symbol cache, compute as usual
                     fileCache.compute(name) { n: String, v: RakuFile? ->
                         constructExternalPsiFile(project, name, invocation, symbolCache)
@@ -382,6 +403,16 @@ class ProjectSdkSymbolCache(private val project: Project, var sdkPath: String?, 
                     RakuSdkUtil.triggerCodeAnalysis(project)
                 } catch (e: java.lang.AssertionError) {
                     // If the project was already disposed, do not die in a background thread
+                } finally {
+                    // packagesStarted is a permanent "already requested" claim.
+                    // If this run did not actually populate the shared symbol
+                    // cache -- disposed project, or a failure -- leaving the
+                    // name in it poisons that module for the rest of the JVM:
+                    // every later request short-circuits here, nothing is ever
+                    // loaded, and callers that wait for real symbols (e.g.
+                    // CommaFixtureTestCase.ensureModuleIsLoaded) burn their full
+                    // timeout. Release the claim so a later caller can retry.
+                    if (! symbolCache.containsKey(name)) packagesStarted.remove(name)
                 }
             }
         }

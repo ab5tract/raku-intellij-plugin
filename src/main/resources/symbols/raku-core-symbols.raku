@@ -312,7 +312,7 @@ my sub parse-string(str $text, int $pos is rw) {
                 die "don't understand escape sequence '\\{ nqp::substr($text, $pos, 1) }' at $pos";
             }
         } elsif $ord == 9 or $ord == 10 {
-            die "this kind of whitespace is not allowed in a string: { nqp::substr($text, $pos - 1, 1).perl } at {$pos - 1}";
+            die "this kind of whitespace is not allowed in a string: { nqp::substr($text, $pos - 1, 1).raku } at {$pos - 1}";
         }
     }
 
@@ -410,7 +410,7 @@ my sub parse-numeric(str $text, int $pos is rw) {
         $pos = $pos + 1 while nqp::iscclass(nqp::const::CCLASS_NUMERIC, $text, $pos);
     }
 
-    +(my $result := nqp::substr($text, $startpos - 1, $pos - $startpos + 1)) // die "at $pos: invalid number token $result.perl()";
+    +(my $result := nqp::substr($text, $startpos - 1, $pos - $startpos + 1)) // die "at $pos: invalid number token $result.raku()";
 }
 
 my sub parse-obj(str $text, int $pos is rw) {
@@ -541,7 +541,7 @@ my sub parse-thing(str $text, int $pos is rw) {
             die "at $pos: expected 'false', found { $initial ~ nqp::substr($text, $pos, 4) } instead.";
         }
     } else {
-        my str $rest = nqp::substr($text, $pos - 1, 8).perl;
+        my str $rest = nqp::substr($text, $pos - 1, 8).raku;
         die "at $pos: expected a json object, but got $initial (context: $rest)"
     }
 }

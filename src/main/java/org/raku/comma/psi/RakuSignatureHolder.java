@@ -24,16 +24,35 @@ public interface RakuSignatureHolder extends RakuMultiHolder {
     }
 
     default @NotNull RakuType getReturnType() {
-        String retTrait = getReturnsTrait();
-        if (retTrait != null)
-            return new RakuUnresolvedType(retTrait);
+        RakuReturnConstraint constraint = findReturnConstraint();
+        if (constraint == null)
+            return returnTypeWithoutConstraint();
+        return constraint.getReturnType();
+    }
 
+    /**
+     * {@link #getReturnType()} without index-backed name resolution, for use
+     * from StubElementType.createStub -- stub building must not query indexes.
+     * Yields the same type *name*, which is all the stub records.
+     */
+    default @NotNull RakuType getReturnTypeForStub() {
+        RakuReturnConstraint constraint = findReturnConstraint();
+        if (constraint == null)
+            return returnTypeWithoutConstraint();
+        return constraint.getReturnTypeForStub();
+    }
+
+    private @Nullable RakuReturnConstraint findReturnConstraint() {
+        if (getReturnsTrait() != null)
+            return null;
         RakuSignature signature = getSignatureNode();
         if (signature == null)
-            return RakuUntyped.INSTANCE;
-        RakuReturnConstraint constraint = PsiTreeUtil.getChildOfType(signature, RakuReturnConstraint.class);
-        if (constraint == null)
-            return RakuUntyped.INSTANCE;
-        return constraint.getReturnType();
+            return null;
+        return PsiTreeUtil.getChildOfType(signature, RakuReturnConstraint.class);
+    }
+
+    private @NotNull RakuType returnTypeWithoutConstraint() {
+        String retTrait = getReturnsTrait();
+        return retTrait != null ? new RakuUnresolvedType(retTrait) : RakuUntyped.INSTANCE;
     }
 }

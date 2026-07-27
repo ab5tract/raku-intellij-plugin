@@ -1,7 +1,4 @@
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/vcs.xml
-.idea/kotlinc.xml
+.idea/
 .intellijPlatform/
 out/
 .precomp/
@@ -16,6 +13,7 @@ currentDraftPluginVersion
 raku-idea-plugin/build/
 raku-idea-plugin/.idea/
 raku-idea-plugin/raku-idea-plugin.iml
+*.iml
 
 build/
 .intellijPlatform/self-update.lock

@@ -282,6 +282,10 @@ dependencies {
 }
 
 tasks.test {
+    // Gradle's 512m default is far too tight for an in-process IntelliJ test
+    // application; it GC-thrashes long before it OOMs, which is invisible except
+    // as a slow suite.
+    maxHeapSize = "3g"
     // Run with -Didea.tests.overwrite.data=true to regenerate golden test data.
     systemProperty("idea.tests.overwrite.data", System.getProperty("idea.tests.overwrite.data", "false"))
     // Run with -Draku.test.dump.actual=true to dump actual output of failing

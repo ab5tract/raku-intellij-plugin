@@ -32,21 +32,29 @@ Real callers still get the fully-resolved type from `inferType()` once the PSI i
 materialized. (This was the deliberately **narrow** "Option A" — fix the one illegal
 path, not a broad "detect stub-building context inside resolve()".)
 
-## Still open / known-incomplete
+## The second instance — also fixed now (still Option A)
 
-Verification during the fix surfaced a **second** index-query path via
-`RakuTypeNameImpl.inferType()` → `RakuTypeNameReference.resolve()` (resolving explicit
-type annotations like `Int`/`Bool`), which is far more pervasive — it triggers for
-nearly any explicitly-typed declaration. It was **not** fixed, for two reasons:
-1. The narrow Option A was the chosen scope.
-2. This class of bug degrades silently in production (see above), so it is not the
-   cause of any visible user-facing breakage — it is latent correctness debt, not a
-   live fire.
+The first fix surfaced a second index-query path via `RakuTypeNameImpl.inferType()` →
+`RakuTypeNameReference.resolve()`, reached from
+`RakuRoutineDeclStubElementType.createStub()` → `RakuRoutineDeclImpl.getReturnType()` →
+`RakuSignatureHolder.getReturnType()` → `RakuReturnConstraintImpl.getReturnType()`.
+This is what `FindUsageTest.testRole` was failing on.
 
-If you pick this up: the general options are (a) keep whittling individual illegal
-paths stub-safe (like Option A), or (b) a broader "am I inside stub building?" guard
-that resolve() can consult. (b) is more invasive and needs care not to change
-resolution semantics for real callers. Prefer (a) unless the paths multiply.
+**Fix**, same shape as the first: `RakuTypeNameImpl.inferType(boolean resolve)`, with
+`inferTypeForStub()` = `inferType(false)`, threaded up through
+`RakuReturnConstraint.getReturnTypeForStub()` and
+`RakuSignatureHolder.getReturnTypeForStub()`; `createStub` calls the stub-safe variant.
+Nested type names (coercions, type parameters) inherit the no-resolution mode via
+`inferNested`, or the walk finds its way back into the index.
+
+The stub loses nothing: it stores only the type's *name*, and
+`RakuResolvedType.getName()` and `RakuUnresolvedType.getName()` both return the same
+bare `typename`. No `STUB_VERSION` bump — shape and values are unchanged. Real callers
+still use `inferType()` and still get the resolution.
+
+If a third path shows up: keep whittling individual illegal paths stub-safe (Option A)
+rather than adding a broad "am I inside stub building?" guard inside `resolve()` — the
+latter is far more invasive and risks changing resolution semantics for real callers.
 
 ## How to detect it
 

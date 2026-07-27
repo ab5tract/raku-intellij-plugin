@@ -18,9 +18,13 @@ machine-local / user-preference stuff; put transmissible engineering history her
 
 ## Start here (recommended reading order)
 
-1. **`test-harness-and-environment.md`** — how to run tests at all (rakubrew, the
-   broken `checkHighlighting` pipeline, logged-errors-as-failures, checkpoint subset).
-   Read this before running anything.
+1. **`test-harness-and-environment.md`** — how to run tests at all (rakubrew,
+   logged-errors-as-failures, skipping when a Raku module isn't installed). Read this
+   before running anything.
+1b. **`test-harness-project-reuse.md`** — why the suite used to take ~69 minutes and
+   produce flaky, symptom-diverse failures, and what fixed it. Read it if any older
+   note tells you the highlighting pipeline is broken or to run a "checkpoint subset";
+   both claims are obsolete.
 2. **`parser-generated-lexer-architecture.md`** — `MAINBraid.java` is *generated*;
    its grammar source is *external*; how the runtime machine works; how to instrument
    and debug it; the mirror-fix discipline. **Read before touching `parsing/`.**
@@ -33,9 +37,15 @@ machine-local / user-preference stuff; put transmissible engineering history her
 - **`inspection-private-role-methods.md`** — `MissingRoleMethodInspection` wrongly
   required private (`!`) role methods; Raku only enforces *public* yada-stubs. Settled
   by asking rakudo directly. PR #47.
+- **`inspection-redeclared-imported-symbol.md`** — a golden test red since Sept 2024
+  because the feature it asserted had been commented out on purpose. Reimplemented as
+  `RedeclaredImportedSymbolInspection` rather than re-enabled.
 - **`stub-building-index-queries.md`** — a whole class of latent bug: querying the
   stub index during stub building (silent in prod, hard failure under test). One path
-  fixed (Option A); a second, more pervasive path documented as known-open. PR #47.
+  fixed (Option A); a second, more pervasive path documented as known-open — **that
+  second path is now fixed too**, see the doc.
+- **`test-harness-project-reuse.md`** — the light project was rebuilt for every test.
+  ~69 min → ~2 min, and three of the "pre-existing failures" evaporated.
 
 ## Kotlin-conversion roadmap docs (ongoing Java→Kotlin migration)
 

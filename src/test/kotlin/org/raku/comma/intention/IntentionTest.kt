@@ -160,13 +160,16 @@ class IntentionTest : CommaFixtureTestCase() {
         executeIntention("Change")
     }
 
+    // These two only need OO::Monitors *named* in the source they rewrite, not
+    // resolved, so they pass with or without it installed -- hence required =
+    // false, which keeps them running instead of skipping.
     fun testPackageTypeChangeIntoMonitorIntention() {
-        ensureModuleIsLoaded("OO::Monitors")
+        ensureModuleIsLoaded("OO::Monitors", required = false)
         executeIntention("Change")
     }
 
     fun testPackageTypeChangeIntoMonitorPresent() {
-        ensureModuleIsLoaded("OO::Monitors")
+        ensureModuleIsLoaded("OO::Monitors", required = false)
         executeIntention("Change")
     }
 

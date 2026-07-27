@@ -10,7 +10,7 @@ import org.raku.comma.services.project.RakuProjectSdkService
 import java.io.File
 
 abstract class CommaFixtureTestCase : BasePlatformTestCase() {
-    override fun getProjectDescriptor(): LightProjectDescriptor = RakuLightProjectDescriptor()
+    override fun getProjectDescriptor(): LightProjectDescriptor = RakuLightProjectDescriptor.INSTANCE
 
     protected val sdkService: RakuProjectSdkService
         get() = project.service<RakuProjectSdkService>()
@@ -29,11 +29,54 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
             .firstOrNull { it.isNotEmpty() && RakuSdkUtil.isValidRakuSdkHome(it) }
     }
 
-    protected fun ensureModuleIsLoaded(moduleName: String, invocation: String = "use") {
+    /**
+     * Loads a module's symbols, or aborts the current test as skipped when the
+     * module simply isn't installed in the SDK under test.
+     *
+     * Without the installed-check this degrades silently and misleadingly: the
+     * symbol load "succeeds" with an empty result, the test proceeds, and the
+     * eventual assertion failure ("`password` missing from completion") is
+     * indistinguishable from a real regression. Asking the SDK directly keeps
+     * "module absent" (environment, skip) separate from "module present but the
+     * plugin failed to load its symbols" (a genuine failure, still reported).
+     */
+    protected fun ensureModuleIsLoaded(
+        moduleName: String,
+        invocation: String = "use",
+        required: Boolean = true,
+    ) {
+        if (!isModuleInstalled(moduleName)) {
+            // `required` says whether the test's *assertions* depend on this
+            // module's symbols. Most callers assert on completions or
+            // resolutions that come straight out of it, so the default is to
+            // skip. A few only need the module named in the source they operate
+            // on -- e.g. an intention that inserts `use OO::Monitors` -- and
+            // pass required = false so they keep running everywhere.
+            if (required) throw ModuleNotInstalled(moduleName)
+            println("[NOTE] ${javaClass.simpleName}.$name: Raku module '$moduleName' is not installed; " +
+                        "continuing, this test does not depend on its symbols")
+            return
+        }
         awaitSymbols("module $moduleName") {
             sdkService.symbolCache.getPsiFileForModule(moduleName, "$invocation $moduleName")
         }
     }
+
+    private fun isModuleInstalled(moduleName: String): Boolean =
+        installedModules.getOrPut(moduleName) {
+            val raku = sdkService.sdkPath?.let(RakuSdkUtil::findRakuInSdkHome) ?: return@getOrPut false
+            try {
+                val process = ProcessBuilder(raku, "-e", "use $moduleName")
+                    .redirectErrorStream(true)
+                    .start()
+                process.inputStream.use { it.readBytes() } // don't let the pipe fill and block
+                process.waitFor() == 0
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+    class ModuleNotInstalled(val moduleName: String) : RuntimeException("Raku module '$moduleName' is not installed")
 
     private fun ensureSetting() {
         awaitSymbols("CORE.setting") { sdkService.symbolCache.getCoreSettingFile() }
@@ -155,11 +198,24 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
                     super.processError(category, message, details, t)
             }
         }) {
-            super.runBare(testRunnable)
+            try {
+                super.runBare(testRunnable)
+            } catch (skipped: ModuleNotInstalled) {
+                // JUnit3 (which is what BasePlatformTestCase is) has no notion of
+                // an ignored test, and JUnit38ClassRunner turns an
+                // AssumptionViolatedException into a plain failure -- so record
+                // the skip loudly in the run log instead of failing the build for
+                // something that is purely a missing local Raku module.
+                println("[SKIPPED] ${javaClass.simpleName}.$name: ${skipped.message}")
+            }
         }
     }
 
     companion object {
         private const val LOAD_TIMEOUT_MS = 120_000L
+
+        // Each probe is a `raku -e 'use X'` subprocess, so remember the answer
+        // for the lifetime of the JVM rather than per test.
+        private val installedModules = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
     }
 }
