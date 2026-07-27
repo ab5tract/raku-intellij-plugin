@@ -1,184 +1,12 @@
+<!-- Raku overrides for the Darcula scheme. See RakuDefault.xml for why this
+     file is (and should stay) this short. The two must define the same set of
+     keys; RakuColorSettingsPageTest checks that, after they drifted apart
+     (Darcula neutralised three keys Default did not, Default coloured
+     RAKU_ROUTINE_NAME and Darcula did not). -->
 <list>
-  <option name="RAKU_CONTEXTUALIZER">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_ARRAY_COMPOSER">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_HASH_COMPOSER">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_INFIX">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_METAOP">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_METHOD_CALL_NAME">
-    <value>
-      <option name="FOREGROUND" value="ffc66d" />
-    </value>
-  </option>
-  <option name="RAKU_NAMED_PARAMETER_NAME_ALIAS">
-    <value>
-      <option name="FOREGROUND" value="9876aa" />
-    </value>
-  </option>
-  <option name="RAKU_PARAMETER_QUANTIFIER">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_PARAMETER_SEPARATOR">
-    <value />
-  </option>
-  <option name="RAKU_POSTFIX">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_PREFIX">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_ANCHOR">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_CAPTURE">
-    <value>
-      <option name="FOREGROUND" value="9876aa" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_INFIX">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_LOOKAROUND">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_MOD">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_QUANTIFIER">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_SIG_SPACE">
-    <value>
-      <option name="EFFECT_COLOR" value="898989" />
-      <option name="EFFECT_TYPE" value="5" />
-    </value>
-  </option>
-  <option name="RAKU_RETURN_ARROW">
-    <value />
-  </option>
-  <option name="RAKU_SELF">
-    <value>
-      <option name="FOREGROUND" value="9876aa" />
-    </value>
-  </option>
-  <option name="RAKU_SHAPE_DECLARATION">
-    <value>
-      <option name="FOREGROUND" value="9876aa" />
-    </value>
-  </option>
-  <option name="RAKU_SUB_CALL_NAME">
-    <value>
-      <option name="FOREGROUND" value="ffc66d" />
-    </value>
-  </option>
-  <option name="RAKU_TERM">
-    <value>
-      <option name="FOREGROUND" value="c4448e" />
-    </value>
-  </option>
-  <option name="RAKU_TERM_DECLARATION_BACKSLASH">
-    <value />
-  </option>
-  <option name="RAKU_TRANS_RANGE">
-    <value>
-      <option name="FOREGROUND" value="bbb529" />
-    </value>
-  </option>
-  <option name="RAKU_TYPE_NAME">
-    <value>
-      <option name="FOREGROUND" value="c4448e" />
-    </value>
-  </option>
-  <option name="RAKU_TYPE_PARAMETER_BRACKET">
-    <value>
-      <option name="FOREGROUND" value="c4448e" />
-    </value>
-  </option>
-  <option name="RAKU_VARIABLE">
-    <value>
-      <option name="FOREGROUND" value="9876aa" />
-    </value>
-  </option>
-  <option name="RAKU_WHATEVER">
-    <value>
-      <option name="FOREGROUND" value="c4448e" />
-    </value>
-  </option>
-  <option name="RAKU_CONFIGURATION">
-    <value>
-      <option name="FOREGROUND" value="808080" />
-      <option name="FONT_TYPE" value="3" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_DIRECTIVE">
-    <value>
-      <option name="FOREGROUND" value="808080" />
-      <option name="FONT_TYPE" value="3" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_TEXT">
-    <value>
-      <option name="FOREGROUND" value="d0d0d0" />
-    </value>
-  </option>
-  <option name="RAKU_TYPENAME">
-    <value>
-      <option name="FOREGROUND" value="808080" />
-      <option name="FONT_TYPE" value="3" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_FORMAT_CODE">
-    <value>
-      <option name="FOREGROUND" value="629755" />
-      <option name="FONT_TYPE" value="2" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_FORMAT_QUOTES">
-    <value>
-      <option name="FOREGROUND" value="629755" />
-      <option name="FONT_TYPE" value="2" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
+  <!-- Pod B<>, I<> and U<> have to actually render bold, italic and
+       underlined; that is what the markup means. DOC_COMMENT carries a
+       colour but no font style. -->
   <option name="RAKU_TEXT_BOLD">
     <value>
       <option name="FONT_TYPE" value="1" />
@@ -195,6 +23,19 @@
       <option name="EFFECT_TYPE" value="1" />
     </value>
   </option>
+
+  <!-- Sigspace in a `rule` is whitespace that silently calls <.ws>. Without
+       an effect there is nothing to see, since the run is blank. -->
+  <option name="RAKU_REGEX_SIG_SPACE">
+    <value>
+      <option name="EFFECT_COLOR" value="898989" />
+      <option name="EFFECT_TYPE" value="5" />
+    </value>
+  </option>
+
+  <!-- The whole point of ALT_WARNING is to be distinguishable from an
+       ordinary weak warning, which its WEAK_WARNING_ATTRIBUTES fallback
+       would make it identical to. -->
   <option name="RAKU_ALT_WARNING">
     <value>
       <option name="EFFECT_COLOR" value="56A8F5" />

@@ -1,180 +1,18 @@
+<!-- Raku overrides for the Default scheme.
+
+     Deliberately tiny. Every RAKU_* key falls back to a platform key (see
+     RakuHighlighter.kt), so Raku inherits whatever colours the active scheme
+     already defines for operators, variables, types and the rest. This file
+     used to restate ~37 of those as hardcoded foregrounds, which meant Raku
+     looked one way under Default/Darcula and another under every third-party
+     theme, which only ever saw the fallbacks.
+
+     What is left encodes something no platform key can express. Add an entry
+     here only when that is true; otherwise change the key's fallback. -->
 <list>
-  <option name="RAKU_CONTEXTUALIZER">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_ARRAY_COMPOSER">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_HASH_COMPOSER">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_INFIX">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_METAOP">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_METHOD_CALL_NAME">
-    <value>
-      <option name="FOREGROUND" value="ff4500" />
-    </value>
-  </option>
-  <option name="RAKU_NAMED_PARAMETER_NAME_ALIAS">
-    <value>
-      <option name="FOREGROUND" value="800080" />
-    </value>
-  </option>
-  <option name="RAKU_PARAMETER_QUANTIFIER">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_POSTFIX">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_PREFIX">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_ANCHOR">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_CAPTURE">
-    <value>
-      <option name="FOREGROUND" value="800080" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_INFIX">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_LOOKAROUND">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_MOD">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_QUANTIFIER">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_REGEX_SIG_SPACE">
-    <value>
-      <option name="EFFECT_COLOR" value="898989" />
-      <option name="EFFECT_TYPE" value="5" />
-    </value>
-  </option>
-  <option name="RAKU_ROUTINE_NAME">
-    <value>
-      <option name="FOREGROUND" value="ff4500" />
-    </value>
-  </option>
-  <option name="RAKU_SELF">
-    <value>
-      <option name="FOREGROUND" value="800080" />
-    </value>
-  </option>
-  <option name="RAKU_SHAPE_DECLARATION">
-    <value>
-      <option name="FOREGROUND" value="800080" />
-    </value>
-  </option>
-  <option name="RAKU_SUB_CALL_NAME">
-    <value>
-      <option name="FOREGROUND" value="ff4500" />
-    </value>
-  </option>
-  <option name="RAKU_TERM">
-    <value>
-      <option name="FOREGROUND" value="4b0082" />
-    </value>
-  </option>
-  <option name="RAKU_TRANS_RANGE">
-    <value>
-      <option name="FOREGROUND" value="8b0000" />
-    </value>
-  </option>
-  <option name="RAKU_TYPE_NAME">
-    <value>
-      <option name="FOREGROUND" value="4b0082" />
-    </value>
-  </option>
-  <option name="RAKU_TYPE_PARAMETER_BRACKET">
-    <value>
-      <option name="FOREGROUND" value="4b0082" />
-    </value>
-  </option>
-  <option name="RAKU_VARIABLE">
-    <value>
-      <option name="FOREGROUND" value="800080" />
-    </value>
-  </option>
-  <option name="RAKU_WHATEVER">
-    <value>
-      <option name="FOREGROUND" value="4b0082" />
-    </value>
-  </option>
-  <option name="RAKU_CONFIGURATION">
-    <value>
-      <option name="FOREGROUND" value="808080" />
-      <option name="FONT_TYPE" value="1" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_DIRECTIVE">
-    <value>
-      <option name="FOREGROUND" value="808080" />
-      <option name="FONT_TYPE" value="1" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_TEXT">
-    <value>
-      <option name="FOREGROUND" value="202020" />
-    </value>
-  </option>
-  <option name="RAKU_TYPENAME">
-    <value>
-      <option name="FOREGROUND" value="808080" />
-      <option name="FONT_TYPE" value="1" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_FORMAT_CODE">
-    <value>
-      <option name="FOREGROUND" value="808080" />
-      <option name="FONT_TYPE" value="3" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_FORMAT_QUOTES">
-    <value>
-      <option name="FOREGROUND" value="808080" />
-      <option name="FONT_TYPE" value="3" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
+  <!-- Pod B<>, I<> and U<> have to actually render bold, italic and
+       underlined; that is what the markup means. DOC_COMMENT carries a
+       colour but no font style. -->
   <option name="RAKU_TEXT_BOLD">
     <value>
       <option name="FONT_TYPE" value="1" />
@@ -191,7 +29,20 @@
       <option name="EFFECT_TYPE" value="1" />
     </value>
   </option>
-  <!-- TODO: Match this up with the genuine blue from the default scheme -->
+
+  <!-- Sigspace in a `rule` is whitespace that silently calls <.ws>. Without
+       an effect there is nothing to see, since the run is blank. -->
+  <option name="RAKU_REGEX_SIG_SPACE">
+    <value>
+      <option name="EFFECT_COLOR" value="898989" />
+      <option name="EFFECT_TYPE" value="5" />
+    </value>
+  </option>
+
+  <!-- The whole point of ALT_WARNING is to be distinguishable from an
+       ordinary weak warning, which its WEAK_WARNING_ATTRIBUTES fallback
+       would make it identical to.
+       TODO: Match this up with the genuine blue from the default scheme -->
   <option name="RAKU_ALT_WARNING">
     <value>
       <option name="EFFECT_COLOR" value="56A8F5" />
