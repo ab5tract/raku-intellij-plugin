@@ -13,9 +13,9 @@ import org.raku.comma.parsing.RakuTokenTypes
  * The mapping is many-to-one on purpose -- an open and close bracket share a
  * key, and several distinct tokens collapse onto one concept (a method-call
  * operator and an invocant marker are both [RakuHighlighter.INFIX]) -- so the
- * user tunes one colour rather than four.
+ * user tunes one color rather than four.
  *
- * Tokens absent from this map get no lexer colour. That is correct for the
+ * Tokens absent from this map get no lexer color. That is correct for the
  * keys applied later by an annotator or inspection instead: the semantic four,
  * REGEX_SIG_SPACE, the Pod formatting trio, UNUSED and ALT_WARNING. It is also
  * true of HASH_COMPOSER, which nothing applies at all -- see its declaration.

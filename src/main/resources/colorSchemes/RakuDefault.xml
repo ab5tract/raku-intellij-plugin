@@ -1,7 +1,7 @@
 <!-- Raku overrides for the Default scheme.
 
      Deliberately tiny. Every RAKU_* key falls back to a platform key (see
-     RakuHighlighter.kt), so Raku inherits whatever colours the active scheme
+     RakuHighlighter.kt), so Raku inherits whatever colors the active scheme
      already defines for operators, variables, types and the rest. This file
      used to restate ~37 of those as hardcoded foregrounds, which meant Raku
      looked one way under Default/Darcula and another under every third-party
@@ -12,7 +12,7 @@
 <list>
   <!-- Pod B<>, I<> and U<> have to actually render bold, italic and
        underlined; that is what the markup means. DOC_COMMENT carries a
-       colour but no font style. -->
+       color but no font style. -->
   <option name="RAKU_TEXT_BOLD">
     <value>
       <option name="FONT_TYPE" value="1" />

@@ -61,6 +61,6 @@ class RakuColorSettingsPage : ColorSettingsPage {
             RakuColorSettingsPage::class.java.getResourceAsStream(DEMO_TEXT_RESOURCE)
                 ?.bufferedReader()
                 ?.use { it.readText() }
-                ?: error("Missing colour settings demo text resource: $DEMO_TEXT_RESOURCE")
+                ?: error("Missing color settings demo text resource: $DEMO_TEXT_RESOURCE")
     }
 }

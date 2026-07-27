@@ -1,8 +1,8 @@
 # Raku Color Scheme Principles
 
-## Where colours come from
+## Where colors come from
 
-Raku ships almost no colours of its own. Every attribute key in
+Raku ships almost no colors of its own. Every attribute key in
 `RakuHighlighter.kt` declares a *fallback* — a platform key such as
 `OPERATION_SIGN`, `LOCAL_VARIABLE` or `CLASS_NAME` — and its appearance is
 whatever the user's active scheme gives that fallback. Retheming Raku is
@@ -10,13 +10,13 @@ therefore a matter of choosing a scheme, and Raku looks consistent under
 third-party themes rather than only under Default and Darcula.
 
 This used not to be true. `colorSchemes/RakuDefault.xml` and `RakuDarcula.xml`
-hardcoded ~37 foregrounds, so those two schemes showed the colours below while
+hardcoded ~37 foregrounds, so those two schemes showed the colors below while
 every other theme quietly showed the fallbacks instead. The two files had also
 drifted apart from each other (37 keys vs 39).
 
 The groups below still describe the *intent* — which things should read alike,
 and which should read differently. That intent is now expressed by **choosing
-the fallback**, not by setting a colour. If two groups look the same under some
+the fallback**, not by setting a color. If two groups look the same under some
 scheme, the fix is a better fallback for one of them.
 
 ### The exceptions

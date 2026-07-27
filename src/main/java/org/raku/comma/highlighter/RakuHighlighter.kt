@@ -12,15 +12,15 @@ import com.intellij.openapi.editor.colors.TextAttributesKey
  * name persisted in user settings, the platform key it falls back to, the
  * group it appears under in Settings | Editor | Color Scheme | Raku, and its
  * label there. [entries] is populated in declaration order as a side effect of
- * [key], so [RakuColorSettingsPage] composes the whole colour panel from this
+ * [key], so [RakuColorSettingsPage] composes the whole color panel from this
  * file rather than from a second, hand-maintained list. Those two lists had
  * drifted: "Hash Composer" pointed at [ARRAY_COMPOSER], leaving [HASH_COMPOSER]
  * unreachable, and [UNUSED]/[ALT_WARNING] had no entry at all.
  *
- * ## Colours come from the fallback, not from us
+ * ## Colors come from the fallback, not from us
  *
  * A key's appearance is whatever its fallback resolves to in the user's active
- * scheme -- we deliberately ship almost no colour overrides. `colorSchemes/`
+ * scheme -- we deliberately ship almost no color overrides. `colorSchemes/`
  * used to hardcode ~37 foregrounds for Default and Darcula, which meant Raku
  * looked one way under those two schemes and another way under every third-
  * party theme (which only ever saw the fallbacks). Now every theme gets the
@@ -31,16 +31,16 @@ import com.intellij.openapi.editor.colors.TextAttributesKey
  *
  * ## External names are a compatibility surface
  *
- * The strings below are persisted in users' saved colour schemes and in
+ * The strings below are persisted in users' saved color schemes and in
  * the `colorSchemes/` XML. Renaming one silently discards that user's
- * customisation of it, so they are frozen -- including the irregular ones the
+ * customization of it, so they are frozen -- including the irregular ones the
  * Pod group grew (`POD_DIRECTIVE` is `"RAKU_DIRECTIVE"`, not
  * `"RAKU_POD_DIRECTIVE"`) and `REGEX_CCLASS_SYNTAX` (`"RAKU_CCLASS_SYNTAX"`).
  * `RakuColorSettingsPageTest.testExternalNamesAreFrozen` pins the full set.
  */
 object RakuHighlighter {
     /**
-     * A section of the colour settings tree. [UNGROUPED] entries sit at the
+     * A section of the color settings tree. [UNGROUPED] entries sit at the
      * top level; everything else nests under [title] via the `//` separator
      * `AttributesDescriptor` understands.
      *
@@ -65,11 +65,11 @@ object RakuHighlighter {
         DIAGNOSTICS("Diagnostics"),
         ;
 
-        /** The `Group//Label` path a colour settings descriptor is named by. */
+        /** The `Group//Label` path a color settings descriptor is named by. */
         fun path(label: String): String = if (title == null) label else "$title//$label"
     }
 
-    /** One key's colour-panel presentation, in declaration order. */
+    /** One key's color-panel presentation, in declaration order. */
     data class Entry(val key: TextAttributesKey, val group: Group, val label: String, val inPanel: Boolean)
 
     private val mutableEntries = mutableListOf<Entry>()
@@ -81,7 +81,7 @@ object RakuHighlighter {
     val panelEntries: List<Entry> get() = mutableEntries.filter { it.inPanel }
 
     /**
-     * @param inPanel false for a key nothing currently applies, so the colour
+     * @param inPanel false for a key nothing currently applies, so the color
      *   panel does not offer a control that visibly does nothing.
      */
     private fun key(
@@ -110,7 +110,7 @@ object RakuHighlighter {
      * platform's bracket/brace/comma keys and so match the rest of the IDE.
      * Operators do not: in Raku the term/infix parser interlocking makes
      * operators load-bearing syntax rather than punctuation, so they inherit
-     * OPERATION_SIGN, which most schemes give a colour of its own. Array and
+     * OPERATION_SIGN, which most schemes give a color of its own. Array and
      * hash composers sit here too -- they read as operators but are bracketed,
      * so they follow BRACKETS.
      */
@@ -166,22 +166,22 @@ object RakuHighlighter {
     @JvmField
     val ARRAY_COMPOSER = key(
         "RAKU_ARRAY_COMPOSER", DefaultLanguageHighlighterColors.BRACKETS,
-        Group.BRACES_AND_OPERATORS, "Array composer ([...])"
+        Group.BRACES_AND_OPERATORS, "Array Composer ([...])"
     )
 
     // Declared but never applied: the lexer has no HASH_COMPOSER token, so a
     // `{...}` composer arrives as BLOCK_CURLY_BRACKET_OPEN/CLOSE and is
-    // coloured as an ordinary block brace. Kept because the external name is
+    // colored as an ordinary block brace. Kept because the external name is
     // frozen, and because the slot is the right home for the distinction if
-    // the lexer ever draws it -- but kept out of the colour panel, since a
+    // the lexer ever draws it -- but kept out of the color panel, since a
     // control that changes nothing is worse than an absent one.
     //
     // The old settings page did offer a "Hash Composer ({...})" row and wired
-    // it to ARRAY_COMPOSER, so editing it silently recoloured array composers.
+    // it to ARRAY_COMPOSER, so editing it silently recolored array composers.
     @JvmField
     val HASH_COMPOSER = key(
         "RAKU_HASH_COMPOSER", DefaultLanguageHighlighterColors.BRACKETS,
-        Group.BRACES_AND_OPERATORS, "Hash composer ({...})", inPanel = false
+        Group.BRACES_AND_OPERATORS, "Hash Composer ({...})", inPanel = false
     )
 
     @JvmField
@@ -216,14 +216,14 @@ object RakuHighlighter {
 
     /* Keywords
      * ********
-     * Every flavour of keyword inherits KEYWORD, so they share one colour the
+     * Every flavour of keyword inherits KEYWORD, so they share one color the
      * user can retheme in a single place. Labels inherit the platform's LABEL.
      */
 
     @JvmField
     val SCOPE_DECLARATOR = key(
         "RAKU_SCOPE_DECLARATOR", DefaultLanguageHighlighterColors.KEYWORD,
-        Group.KEYWORDS, "Scope keyword (my, our, has)"
+        Group.KEYWORDS, "Scope keyword"
     )
 
     @JvmField
@@ -247,7 +247,7 @@ object RakuHighlighter {
     @JvmField
     val TYPE_DECLARATOR = key(
         "RAKU_TYPE_DECLARATOR", DefaultLanguageHighlighterColors.KEYWORD,
-        Group.KEYWORDS, "Type declarator (enum, subset, constant)"
+        Group.KEYWORDS, "Type Declarator (enum, subset, constant)"
     )
 
     @JvmField
@@ -344,31 +344,31 @@ object RakuHighlighter {
     @JvmField
     val SELF = key(
         "RAKU_SELF", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
-        Group.NAMES_AND_TYPES, "Current object (self, sigil in \$.foo(...))"
+        Group.NAMES_AND_TYPES, "Current Object (self, sigil in \$.foo(...))"
     )
 
     @JvmField
     val WHATEVER = key(
         "RAKU_WHATEVER", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
-        Group.NAMES_AND_TYPES, "Whatever (* and **)"
+        Group.NAMES_AND_TYPES, "Whatever"
     )
 
     @JvmField
     val ONLY_STAR = key(
         "RAKU_ONLY_STAR", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
-        Group.NAMES_AND_TYPES, "Only star (protos)"
+        Group.NAMES_AND_TYPES, "Only Star (Protos)"
     )
 
     @JvmField
     val CAPTURE_TERM = key(
         "RAKU_CAPTURE_TERM", DefaultLanguageHighlighterColors.PARENTHESES,
-        Group.NAMES_AND_TYPES, "Argument capture (\\\$foo, \\(\$a, \$b))"
+        Group.NAMES_AND_TYPES, "Argument Capture (\\\$foo, \\(\$a, \$b))"
     )
 
     @JvmField
     val TERM_DECLARATION_BACKSLASH = key(
         "RAKU_TERM_DECLARATION_BACKSLASH", DefaultLanguageHighlighterColors.COMMA,
-        Group.NAMES_AND_TYPES, "Term declaration backslash (my \\answer = 42)"
+        Group.NAMES_AND_TYPES, "Term Declaration Backslash (my \\answer = 42)"
     )
 
     /* Variables
@@ -454,7 +454,7 @@ object RakuHighlighter {
     @JvmField
     val QUOTE_PAIR = key(
         "RAKU_QUOTE_PAIR", DefaultLanguageHighlighterColors.STRING,
-        Group.LITERALS, "Quote pair (on string and regex literals)"
+        Group.LITERALS, "Quote Pair (on string and regex literals)"
     )
 
     @JvmField
@@ -492,7 +492,7 @@ object RakuHighlighter {
     @JvmField
     val STUB_CODE = key(
         "RAKU_STUB_CODE", DefaultLanguageHighlighterColors.LINE_COMMENT,
-        Group.COMMENTS, "Stub code (..., ???, !!!)"
+        Group.COMMENTS, "Stub Code (..., ???, !!!)"
     )
 
     /* Regex
@@ -510,7 +510,7 @@ object RakuHighlighter {
     @JvmField
     val QUOTE_REGEX = key(
         "RAKU_QUOTE_REGEX", DefaultLanguageHighlighterColors.STRING,
-        Group.REGEX, "Regex literal quote"
+        Group.REGEX, "Literal quote"
     )
 
     @JvmField
@@ -583,7 +583,7 @@ object RakuHighlighter {
     @JvmField
     val REGEX_SIG_SPACE = key(
         "RAKU_REGEX_SIG_SPACE", DefaultLanguageHighlighterColors.FUNCTION_CALL,
-        Group.REGEX, "Rule sigspace (implicit <.ws> call)"
+        Group.REGEX, "Rule Sigspace (implicit <.ws> call)"
     )
 
     /* Transliteration */
@@ -649,19 +649,19 @@ object RakuHighlighter {
     @JvmField
     val POD_TEXT_BOLD = key(
         "RAKU_TEXT_BOLD", DefaultLanguageHighlighterColors.DOC_COMMENT,
-        Group.POD, "Text (bold)"
+        Group.POD, "Text (Bold)"
     )
 
     @JvmField
     val POD_TEXT_ITALIC = key(
         "RAKU_TEXT_ITALIC", DefaultLanguageHighlighterColors.DOC_COMMENT,
-        Group.POD, "Text (italic)"
+        Group.POD, "Text (Italic)"
     )
 
     @JvmField
     val POD_TEXT_UNDERLINE = key(
         "RAKU_TEXT_UNDERLINE", DefaultLanguageHighlighterColors.DOC_COMMENT,
-        Group.POD, "Text (underlined)"
+        Group.POD, "Text (Underlined)"
     )
 
     @JvmField
@@ -714,7 +714,7 @@ object RakuHighlighter {
 
     /* Diagnostics
      * ***********
-     * Applied by inspections rather than the lexer. Exposed in the colour
+     * Applied by inspections rather than the lexer. Exposed in the color
      * panel because they are overlays a user may well want to tune -- both
      * were previously undiscoverable there.
      */
