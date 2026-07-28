@@ -58,6 +58,22 @@ Python's sample is capped by budget at 4.0 MB with far more available, while
 **Raku's corpus is exhausted at 553 kB** — that is all the Raku on this machine.
 There is less Raku to measure, which is what being a minority language means.
 
+### Reproducing this off-host
+
+Two of the three corpus roots are machine-specific *in kind*: the Python standard
+library moves with the OS's Python version, and the Raku ecosystem is whatever the
+running Rakudo has installed. Roots are therefore resolved at run time
+(`lib/Corpus.rakumod`, overridable via `CORPUS_PYTHON_STDLIB` /
+`CORPUS_RAKU_ECOSYSTEM`), recorded in `95-corpus-manifest.txt`, and every path in the
+data is relative to its own root with an FNV-1a content digest beside it.
+
+`60-verify-corpus.raku` reports, on any machine, how much of the recorded corpus is
+present and byte-identical. It deliberately does not assert a match — off-host, a
+clean 100% would be luck. What portability buys is that **the delta is knowable**: if
+it reports 40% present, these figures were measured against a materially different
+corpus and should be re-derived rather than trusted. On the host that produced them
+it reports 2329/2329.
+
 ### The trap in this table
 
 Java and Kotlin score *better than Python*, which inverts the naive intuition. The

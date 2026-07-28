@@ -13,6 +13,8 @@ my @rows = $tsv.lines.skip(1).map({
     %( corpus => @f[0], language => @f[1], bytes => +@f[3],
        lines => +@f[5], tokens => +@f[6] )
 });
+# Reads only the recorded numbers, never the source files, so this stage works
+# unchanged on a machine where the corpus roots do not resolve.
 
 sub rollup(@r) {
     my $b = @r.map(*<bytes>).sum;

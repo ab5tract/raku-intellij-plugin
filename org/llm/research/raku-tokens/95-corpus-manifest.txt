@@ -1,0 +1,16 @@
+# Corpus roots as resolved on the machine that produced 90-corpus-per-file.tsv.
+# Paths in the TSV are relative to the root of their own corpus.
+# Re-running elsewhere resolves different roots; 60-verify-corpus.raku
+# reports the delta rather than asserting the two are the same.
+
+vocabulary	cl100k
+raku	2026.03
+budget	4000000	seed	20260728	max_file	60000
+
+corpus	language	files	bytes	root
+python-stdlib	Python	317	4018092	/usr/lib/python3.14
+raku-ecosystem	Raku	90	465607	/home/longwalker/.rakubrew/versions/moar-2026.03/share/perl6/site/sources
+raku-repo	Raku	810	87339	/home/longwalker/code/raku/2.community/raku-intellij-plugin
+kotlin-repo	Kotlin	253	756136	/home/longwalker/code/raku/2.community/raku-intellij-plugin
+java-repo	Java	839	1753980	/home/longwalker/code/raku/2.community/raku-intellij-plugin
+prose-markdown	English	19	112748	/home/longwalker/code/raku/2.community/raku-intellij-plugin

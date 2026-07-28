@@ -45,6 +45,14 @@ seeded sampling, files over 60 kB excluded so no single file dominates.
 
 This level carries the weight of any conclusion.
 
+Two of the three roots are machine-specific in kind — the Python stdlib moves with
+the OS's Python version, the Raku ecosystem with the running Rakudo — so roots are
+resolved at run time, recorded in `95-corpus-manifest.txt`, and every recorded path
+is relative to its own root with a content digest beside it. `60-verify-corpus.raku`
+reports how much of that corpus exists and matches on any given machine. It does not
+assert a match: off-host a clean 100% would be luck, and the useful property is that
+the delta is *knowable*.
+
 ### Level 2 — net cost per unit of work (indicative)
 
 Five real text-processing tasks taken from actual work in this repo, implemented in
@@ -122,9 +130,12 @@ Without that written boundary the next agent reads `paired/*/impl.py` as permiss
 |---|---|
 | `lib/BPE.rakumod` | tokenizer |
 | `11-tokenizer-selftest.raku` | instrument validation |
-| `20-measure-corpus.raku` | Level 1 measurement → `90-corpus-per-file.tsv` |
-| `30-analyze.raku` | Level 1 rollup → `91-rollup.txt` |
+| `lib/Corpus.rakumod` | run-time corpus-root resolution, digests, relative paths |
+| `lib/Rows.rakumod` | shared reader that re-resolves recorded paths |
+| `20-measure-corpus.raku` | Level 1 measurement → `90-corpus-per-file.tsv`, `95-corpus-manifest.txt` |
+| `30-analyze.raku` | Level 1 rollup → `91-rollup.txt` (numbers only; needs no corpus) |
 | `40-measure-paired.raku` | Level 2, verifies arms agree → `92-`, `93-` |
 | `50-robustness-o200k.raku` | H3 check → `94-robustness-o200k.txt` |
+| `60-verify-corpus.raku` | is the recorded corpus present and identical *here*? |
 | `99-notes.md` | working notes, surprises, dead ends |
 | `../../report/raku-tokens/` | findings |

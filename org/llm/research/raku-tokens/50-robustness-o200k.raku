@@ -2,6 +2,7 @@
 use v6.d;
 use lib $*PROGRAM.parent.add('lib').Str;
 use BPE;
+use Rows;
 
 #| Robustness check. Re-measures the Level 1 corpus against o200k_base -- a
 #| second, independently trained byte-level BPE with twice the vocabulary.
@@ -13,14 +14,14 @@ use BPE;
 my $enc = BPE::o200k();
 note "loaded {$enc.name}: {$enc.rank.elems} entries";
 
-my %bytes; my %tokens;
-for $*PROGRAM.parent.add('90-corpus-per-file.tsv').lines.skip(1) -> $line {
-    my @f = $line.split("\t");
-    my $text = try @f[2].IO.slurp;
-    next without $text;
-    %bytes{@f[1]}  += $text.encode('utf-8').bytes;
-    %tokens{@f[1]} += $enc.count($text);
+my %bytes; my %tokens; my $skipped = 0;
+for Rows::read($*PROGRAM.parent.add('90-corpus-per-file.tsv'), $*PROGRAM.IO) -> %r {
+    my $text = %r<file> ?? (try %r<file>.slurp) !! Str;
+    without $text { $skipped++; next }
+    %bytes{%r<language>}  += $text.encode('utf-8').bytes;
+    %tokens{%r<language>} += $enc.count($text);
 }
+note "  $skipped recorded files unreadable here -- run 60-verify-corpus.raku" if $skipped;
 
 my $out = $*PROGRAM.parent.add('94-robustness-o200k.txt').open(:w);
 sub emit($s) { say $s; $out.say($s) }

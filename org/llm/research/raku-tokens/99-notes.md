@@ -101,6 +101,49 @@ Two things worth keeping from that:
 
 n=1. It is an anecdote, not a result. Level 3 remains unrun.
 
+## Making the data portable
+
+First cut wrote absolute paths (`/usr/lib/python3.14/asyncio/events.py`) into the
+results. That is unreadable on any other machine, and `org/llm/` exists precisely
+because it travels.
+
+Rewriting the strings would not have been enough: two of the three roots are
+machine-specific *in kind*, not just in path. The Python stdlib moves with the OS's
+Python version; the Raku ecosystem is whatever the running Rakudo has installed. So
+roots resolve at run time and paths are recorded relative to them.
+
+The neat part is `$*EXECUTABLE.parent.parent/share/perl6/site/sources` — that finds
+the ecosystem under whichever Rakudo is *running*, which is the one the rakubrew
+preamble selected. The corpus follows the version switch for free.
+
+The important design decision was that **`60-verify-corpus.raku` does not assert a
+match.** Off-host, a clean 100% would be luck, and a green check that can only pass
+on one machine is worse than none. It reports how much of the recorded corpus is
+present and byte-identical, so the delta is knowable — 100% here, and anything much
+lower elsewhere means re-derive rather than trust.
+
+Gotcha: FNV-1a's 64-bit offset basis `0xcbf29ce484222325` exceeds Raku's *signed*
+native int and dies with "Cannot unbox 64 bit wide bigint into native integer".
+Dropping to the 32-bit variant keeps the loop in native ints; Int arithmetic would
+work but drags bigint maths through a per-byte pass over the whole corpus.
+
+**And it reintroduced the reproducibility bug in a new place.** Resolving the Python
+root by "most top-level `.py` files" used `.max`, and `/usr/lib64` is a symlink to
+`/usr/lib` here, so two equivalent-but-differently-spelled roots tied. Whichever won
+depended on `.dir`'s filesystem order; the paths then sorted differently, the seeded
+sample drew different files, and the headline moved 3.888 → 3.881. Fixed with
+`.resolve` to collapse symlinks, `.unique`, and an explicit `sort({ (-.value,
+.key.absolute) })` instead of `.max`.
+
+That is twice in one experiment that a plausible-looking result was actually
+nondeterministic, and both times the tell was the same: **a number that moved when
+nothing had changed.** The habit worth keeping is running the pipeline three times
+and diffing before believing any figure — cheap, and it caught both.
+
+Minor self-reference worth naming: the `prose-markdown` baseline reads
+`org/llm/traces/*.md`, which includes docs edited in this same session. It is a
+baseline, not load-bearing, but it is not a fully independent corpus either.
+
 ## Dead ends and instrument notes
 
 - **count_tokens API** — the right instrument. `api.anthropic.com` reachable but 401;
