@@ -21,18 +21,44 @@ scheme, the fix is a better fallback for one of them.
 
 ### The exceptions
 
-`colorSchemes/*.xml` retains exactly five overrides, each encoding something no
+`colorSchemes/*.xml` retains exactly three overrides, each encoding something no
 platform key expresses:
 
-* `RAKU_TEXT_BOLD`, `RAKU_TEXT_ITALIC`, `RAKU_TEXT_UNDERLINE` — Pod `B<>`,
-  `I<>` and `U<>` have to render bold/italic/underlined to mean anything.
-* `RAKU_REGEX_SIG_SPACE` — sigspace is a blank run, so without an effect there
-  is nothing to see.
+* `RAKU_TEXT_BOLD`, `RAKU_TEXT_ITALIC` — Pod `B<>` and `I<>` have to render
+  bold and italic to mean anything.
 * `RAKU_ALT_WARNING` — its whole purpose is to be distinguishable from the
   ordinary weak warning it falls back to.
 
-`RakuColorSettingsPageTest` pins that set. Adding a sixth needs the same kind of
-justification.
+`RakuColorSettingsPageTest` pins that set. Adding a fourth needs the same kind
+of justification.
+
+### Why font style can live in the XML but an effect cannot
+
+A scheme entry is all or nothing. `EditorColorsSchemeImpl.getAttributes`
+returns any directly defined attributes whole and consults
+`getFallbackAttributeKey` only when there are none, so a `<value>` block — even
+a one-line `FONT_TYPE` — takes that key out of the fallback path. (The one
+inheritance form the XML has, `baseAttributes` on a `<value>`-less option, is a
+plain "use the fallback" marker and cannot be combined with anything.)
+
+Font style survives that anyway, because composition happens a layer up.
+`PodFormatterInspection` adds `B<>`/`I<>` as range highlighters over text the
+lexer already colored, and `TextAttributes.merge` keeps the lower layer's
+foreground when the upper one is null and ORs the two font types. So
+`FONT_TYPE=1` with no color renders as bold *in the active theme's Pod color*.
+
+Effects do not survive it: `TextAttributesEffectsBuilder` drops an effect whose
+color is null, so an underline needs a literal color, and a literal in
+`colorSchemes/` is exactly the theme-specific hardcode this document argues
+against. `RAKU_TEXT_UNDERLINE` and `RAKU_REGEX_SIG_SPACE` used to ship one each
+(the underline was `202020` under Default and `d0d0d0` under Darcula, and no
+third-party theme saw either). Both now go through
+`RakuHighlighter.effectAttributes`, which resolves the key against the active
+scheme and derives the effect color from the foreground the fallback already
+gives it. A user who configures an effect of their own in the color panel still
+wins.
+
+**If you need an effect, add it there, not to `colorSchemes/`.**
 
 ## The basic idea
 
@@ -49,7 +75,8 @@ justification.
 * Literals have a distinct color
 * Literal escapes have a distinct color
 * Numeric literals have a distinct color
-* Sigspace is marked with an underline effect (see "The exceptions" above)
+* Sigspace is marked with a dotted underline in the color its `FUNCTION_CALL`
+  fallback resolves to (see "Why font style can live in the XML" above)
 * Bad escapes inherit INVALID_STRING_ESCAPE
 
 This gives us these colors for the elements:

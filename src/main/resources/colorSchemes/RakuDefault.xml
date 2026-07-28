@@ -10,9 +10,17 @@
      What is left encodes something no platform key can express. Add an entry
      here only when that is true; otherwise change the key's fallback. -->
 <list>
-  <!-- Pod B<>, I<> and U<> have to actually render bold, italic and
-       underlined; that is what the markup means. DOC_COMMENT carries a
-       color but no font style. -->
+  <!-- Pod B<> and I<> have to actually render bold and italic; that is what
+       the markup means. DOC_COMMENT carries a color but no font style, and
+       font style is the one thing that survives here: a range highlighter's
+       attributes merge over the text beneath, keeping its foreground when
+       ours is null and ORing the two font types together.
+
+       U<> is not in this file. An underline needs an EFFECT_COLOR, and naming
+       one here would take the key out of the fallback path entirely, so it is
+       resolved from the active theme at apply time instead; see
+       RakuHighlighter.effectAttributes. RAKU_REGEX_SIG_SPACE left for the
+       same reason. -->
   <option name="RAKU_TEXT_BOLD">
     <value>
       <option name="FONT_TYPE" value="1" />
@@ -21,21 +29,6 @@
   <option name="RAKU_TEXT_ITALIC">
     <value>
       <option name="FONT_TYPE" value="2" />
-    </value>
-  </option>
-  <option name="RAKU_TEXT_UNDERLINE">
-    <value>
-      <option name="EFFECT_COLOR" value="202020" />
-      <option name="EFFECT_TYPE" value="1" />
-    </value>
-  </option>
-
-  <!-- Sigspace in a `rule` is whitespace that silently calls <.ws>. Without
-       an effect there is nothing to see, since the run is blank. -->
-  <option name="RAKU_REGEX_SIG_SPACE">
-    <value>
-      <option name="EFFECT_COLOR" value="898989" />
-      <option name="EFFECT_TYPE" value="5" />
     </value>
   </option>
 

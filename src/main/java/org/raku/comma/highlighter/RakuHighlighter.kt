@@ -3,7 +3,10 @@ package org.raku.comma.highlighter
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
 import com.intellij.openapi.editor.HighlighterColors
 import com.intellij.openapi.editor.colors.CodeInsightColors
+import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.colors.TextAttributesKey
+import com.intellij.openapi.editor.markup.EffectType
+import com.intellij.openapi.editor.markup.TextAttributes
 
 /**
  * Every Raku text attribute, declared once.
@@ -94,6 +97,47 @@ object RakuHighlighter {
         val key = TextAttributesKey.createTextAttributesKey(externalName, fallback)
         mutableEntries.add(Entry(key, group, label, inPanel))
         return key
+    }
+
+    /**
+     * [key]'s effect, with a color derived from the theme when nothing set one.
+     *
+     * An effect draws only when *both* its type and its color are set, and a
+     * `colorSchemes/` entry cannot supply a color while leaving everything
+     * else to the fallback: `EditorColorsSchemeImpl.getAttributes` returns any
+     * directly defined attributes whole and only consults
+     * `getFallbackAttributeKey` when there are none. (The one inheritance form
+     * the XML has, `baseAttributes` on a `<value>`-less option, is all or
+     * nothing.) So an `EFFECT_COLOR` in `colorSchemes/` has to be a literal,
+     * which is how `RAKU_TEXT_UNDERLINE` and `RAKU_REGEX_SIG_SPACE` came to
+     * ship a light and a dark hardcode that no third-party theme ever saw.
+     *
+     * Deriving the color from the foreground the fallback already resolves to
+     * puts both back on the user's theme. A user who sets an effect of their
+     * own in the color panel still wins: a non-null effect color is the only
+     * evidence that one was configured, since [TextAttributes.getEffectType]
+     * defaults to [EffectType.BOXED] whether or not anything asked for it.
+     *
+     * Only the effect is returned. Leaving foreground null lets the run keep
+     * the color of whatever sits under it, which matters for Pod, where `U<>`
+     * can wrap spans the lexer colored differently.
+     */
+    @JvmStatic
+    fun effectAttributes(
+        scheme: EditorColorsScheme,
+        key: TextAttributesKey,
+        defaultEffect: EffectType,
+    ): TextAttributes {
+        val resolved = scheme.getAttributes(key)
+        val attributes = TextAttributes()
+        if (resolved?.effectColor != null) {
+            attributes.effectColor = resolved.effectColor
+            attributes.effectType = resolved.effectType
+        } else {
+            attributes.effectColor = resolved?.foregroundColor ?: scheme.defaultForeground
+            attributes.effectType = defaultEffect
+        }
+        return attributes
     }
 
     /* Illegal syntax, mapped onto the platform's own rule for it. */
@@ -503,8 +547,10 @@ object RakuHighlighter {
      * for a set of characters.
      *
      * REGEX_SIG_SPACE falls back to FUNCTION_CALL on purpose -- sigspace in a
-     * `rule` is an implicit `<.ws>` call, and the underline that makes it
-     * visible is one of the few overrides `colorSchemes/` still ships.
+     * `rule` is an implicit `<.ws>` call. The run is blank, so the dotted
+     * underline `SigSpaceAnnotator` draws is all there is to see; it takes its
+     * color from that fallback via [effectAttributes] rather than from a
+     * literal in `colorSchemes/`.
      */
 
     @JvmField
@@ -617,9 +663,12 @@ object RakuHighlighter {
      * Inherits the platform's documentation keys. The external names here
      * predate the POD_ field prefix and are frozen without it.
      *
-     * POD_TEXT_BOLD/ITALIC/UNDERLINE are the clearest case for shipping an
-     * override: `B<>` has to render bold to mean anything, and no platform
-     * key carries that. See `colorSchemes/`.
+     * POD_TEXT_BOLD/ITALIC are the clearest case for shipping an override:
+     * `B<>` has to render bold to mean anything, and no platform key carries
+     * that. Font style is also the only thing an override can add without
+     * losing the fallback's color, because range-highlighter attributes merge
+     * over the text beneath. See `colorSchemes/`. POD_TEXT_UNDERLINE needs an
+     * effect color instead, so it goes through [effectAttributes].
      */
 
     @JvmField
