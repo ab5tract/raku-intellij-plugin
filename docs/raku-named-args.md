@@ -1,7 +1,7 @@
 # Raku named arguments: what is real, what is silently ignored
 
 **Generated — do not edit by hand.** Rebuild with the pipeline in
-`org/llm/traces/raku-named-args-corpus.md`.
+`org/llm/raku/traces/raku-named-args-corpus.md`.
 
 ## The one thing to know
 
@@ -17,7 +17,7 @@ argument is *accepted, ignored, and never reported*:
 
 Measured cost of exactly this: **4 of 4 first-attempt failures** in a blind 24-arm
 Raku trial, against 0 for Python, three of them exiting 0 while printing plausible
-zeros (`org/llm/report/raku-tokens/`).
+zeros (`org/llm/raku/report/raku-tokens/`).
 
 **A declared-nameds list is a whitelist of understood adverbs, never an accept/reject
 boundary.** Nothing here can tell you an adverb is *invalid* — only that this method

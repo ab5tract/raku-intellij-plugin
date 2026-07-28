@@ -2,7 +2,7 @@
 
 Loaded automatically at the start of every session in this repo. Kept short on
 purpose — it holds the few things that are wrong to get wrong, and points at
-`org/llm/traces/` for everything else.
+`org/llm/raku/traces/` for everything else.
 
 ## Every gradle invocation needs the rakubrew preamble
 
@@ -22,7 +22,7 @@ rakubrew switch "${RAKUBREW_RAKU_VERSION:-moar-2026.03}"
 Rakudo you are targeting, and the line above follows. `moar-2026.03` is only the
 default because it is what the currently pinned expectations were written
 against; it is not a blessed version, and a version worth keeping should be
-argued for in `org/llm/traces/test-harness-and-environment.md` rather than
+argued for in `org/llm/raku/traces/test-harness-and-environment.md` rather than
 hardcoded here. Note the `moar-` prefix: a bare `2026.03` prints "Sorry, not
 found" and still returns success through the shell function `rakubrew init`
 installs, so `&&` chains march on with the switch unapplied.
@@ -49,14 +49,14 @@ XML, logs, anything — goes in `raku -e '...'` (or a script under `scripts/`).
 Do not reach for `python3`, and do not treat "it was just a quick one-liner" as
 an exception.
 
-**One carve-out, and it is not precedent.** `org/llm/research/raku-tokens/`
+**One carve-out, and it is not precedent.** `org/llm/raku/research/raku-tokens/`
 contains Python under `paired/*/impl.py` as *measured artifact* — the experiment
 is about the token cost of Raku versus Python, so it has to contain both. Every
 harness, tokenizer and analysis script in that directory is Raku. Python may not
 be introduced anywhere else, and nothing in there licenses it for delivered work.
 
 If you are wondering whether the rule costs anything: barely.
-`org/llm/report/raku-tokens/` — Raku costs ~7% more tokens per byte (±2) and needs
+`org/llm/raku/report/raku-tokens/` — Raku costs ~7% more tokens per byte (±2) and needs
 ~15% fewer bytes, so the finished program is token-neutral. Reaching a *working*
 program costs 5–12% more, and the rule itself rests on project coherence, not on
 either number.
@@ -82,7 +82,7 @@ it hands `%options` to `Str.match`), and flags adverbs that were probed and foun
 **inert**. Answers are cached per Rakudo version under `scripts/cache/`.
 
 The rendered cheat sheet is `docs/raku-named-args.md`; how it is built and rebuilt is
-`org/llm/traces/raku-named-args-corpus.md`.
+`org/llm/raku/traces/raku-named-args-corpus.md`.
 
 **Two things it cannot do.** "Not declared" is not "invalid" — the implicit `*%_` means
 a declared list is a whitelist of *understood* adverbs, never an accept/reject boundary.
@@ -91,9 +91,25 @@ adverbs, so `S:i/a/b/` works but `"AAA".subst(/a/, "b", :i)` silently does nothi
 
 ## Read the traces before starting
 
-`org/llm/traces/` is durable, in-repo, agent-authored context, and it travels
-across machines in a way per-machine agent memory does not. Start at
-`org/llm/traces/README.md`, which gives a reading order. In particular:
+`org/llm/raku/traces/` is durable, agent-authored context, and it travels across
+machines in a way per-machine agent memory does not.
+
+**`org/` is a submodule** — [`org-llm-raku`](https://github.com/ab5tract/org-llm-raku),
+so the plugin can be cloned without agent artifacts by anyone who would rather not
+have them, and so the general Raku knowledge is usable by other projects. If `org/` is
+empty, that is a clone without `--recurse-submodules` and everything referenced below
+is missing:
+
+```bash
+git submodule update --init
+```
+
+Nothing in the build reads it, so a checkout without it still builds and tests. Note
+the two-repo consequence: **edits under `org/` commit to `org-llm-raku`, not here**,
+and this repo then needs a follow-up commit to move the gitlink. Commit and push the
+submodule first, or the gitlink points at something nobody else can fetch.
+
+Start at `org/llm/raku/traces/README.md`, which gives a reading order. In particular:
 
 - `test-harness-and-environment.md` — the full version of the section above,
   including which assertions depend on which Rakudo release.

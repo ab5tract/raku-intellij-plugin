@@ -7,7 +7,7 @@ use v6.d;
 #| accepted in silence and dropped. `.dir(:recursive)`, `.dir(:R)`, `.pick(:seed)`
 #| all typecheck, all run, and all return a confident wrong answer. That failure
 #| mode caused 4 of the 4 Raku first-attempt failures in
-#| `org/llm/research/raku-tokens/level3/` -- against 0 for Python -- and three of
+#| `org/llm/raku/research/raku-tokens/level3/` -- against 0 for Python -- and three of
 #| them exited 0 while printing plausible zeros.
 #|
 #| It asks the *running* Rakudo rather than the docs, because docs drift from the

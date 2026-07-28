@@ -23,7 +23,7 @@ my $frag  = $cache.add('fragments');
 
 die "run 10-inventory.raku first" unless $cache.add('named-args.tsv').e;
 die "run 20-harvest.raku first"   unless $cache.add('adverb-tables.tsv').e;
-die "no fragments -- run the agent fan-out (see org/llm/traces/raku-named-args-corpus.md)"
+die "no fragments -- run the agent fan-out (see org/llm/raku/traces/raku-named-args-corpus.md)"
     unless $frag.d && $frag.dir(test => *.ends-with('.tsv'));
 
 sub rows(IO::Path $f, Int $cols) {

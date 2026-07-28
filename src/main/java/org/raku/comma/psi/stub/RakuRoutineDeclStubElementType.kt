@@ -21,7 +21,7 @@ class RakuRoutineDeclStubElementType : IStubElementType<RakuRoutineDeclStub, Rak
         // stub index, and stub building must not depend on index data (the
         // platform logs a hard error; under test it fails the run). The stub
         // only stores the type's name, which the unresolved form supplies just
-        // as well. See org/llm/traces/stub-building-index-queries.md.
+        // as well. See org/llm/raku/traces/stub-building-index-queries.md.
         val returnType = psi.returnTypeForStub
         val returnTypeName = if (returnType is RakuUntyped) "" else returnType.name
         return RakuRoutineDeclStubImpl(

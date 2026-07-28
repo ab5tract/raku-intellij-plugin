@@ -13,7 +13,7 @@ use nqp;
 #|
 #| Writes scripts/cache/named-args.tsv, whose schema is fixed by scripts/named-args.raku.
 #|
-#| See org/llm/traces/raku-named-args-corpus.md for the whole pipeline.
+#| See org/llm/raku/traces/raku-named-args-corpus.md for the whole pipeline.
 
 my $repo  = $*PROGRAM.parent.parent.parent;
 my $cache = $repo.add('scripts/cache');
