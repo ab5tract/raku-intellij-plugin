@@ -1,9 +1,0 @@
-ROBUSTNESS -- Level 1 re-measured with o200k_base (199998 entries)
-
-language       bytes    tokens  byte/tok  vs_Python
---------------------------------------------------
-English       112748     27887     4.043      1.052
-Java         1753980    366577     4.785      1.245
-Kotlin        756136    162460     4.654      1.211
-Python       4018092   1045863     3.842      1.000
-Raku          552946    153954     3.592      0.935

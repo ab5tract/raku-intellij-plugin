@@ -1,1 +1,0 @@
-attempt-01: Initial implementation. Ran cleanly and produced plausible output; manually verified heading counts against `docs/color-principles.md` by reading the file and matched (1,2,2,0,0,0), and the TOTAL line's column sums checked out arithmetically against the per-file rows. No changes needed.

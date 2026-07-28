@@ -1,1 +1,0 @@
-attempt-01: Walk `src/main/java` for `*.java` files, read only the first line of each with `readline()`, classify in order blank/package/comment/other per spec, print the four fixed-order lines. Ran clean on the first try — output was `package 840`, `comment 3`, `blank 0`, `other 0`, stderr empty. No changes needed.
