@@ -19,9 +19,11 @@ machine-local / user-preference stuff; put transmissible engineering history her
 ## Start here (recommended reading order)
 
 1. **`test-harness-and-environment.md`** — how to run tests at all (`rakubrew init`
-   **plus `rakubrew switch 2026.03`**, logged-errors-as-failures, skipping when a Raku
-   module isn't installed). Read this before running anything: on the wrong Rakudo the
-   suite fails in ways that impersonate plugin bugs.
+   **plus `rakubrew switch "${RAKUBREW_RAKU_VERSION:-moar-2026.03}"`**, note the
+   `moar-` prefix; logged-errors-as-failures; skipping when a Raku module isn't
+   installed). Read this before running anything: on the wrong Rakudo the suite fails
+   in ways that impersonate plugin bugs, and `--rerun` is what stops gradle reporting
+   a green `UP-TO-DATE` build that ran nothing.
 1b. **`test-harness-project-reuse.md`** — why the suite used to take ~69 minutes and
    produce flaky, symptom-diverse failures, and what fixed it. Read it if any older
    note tells you the highlighting pipeline is broken or to run a "checkpoint subset";
@@ -73,6 +75,14 @@ per-item plans/journeys (the *why*, companion to the throwaway `~/.claude/plans/
 - **`bumping-supported-idea-version.md`** — releasing RIP for a new IDEA version
   (`.versions/*`, `./gradlew buildPlugin`).
 
+## Sibling directories
+
+- **`org/llm/research/`** — experiment harnesses, raw data and working notes.
+  Method and mess; read when you want to check or extend a result.
+- **`org/llm/report/`** — the tidied findings those experiments produced. Read when
+  you just want the answer. `report/raku-tokens/` measures what Raku's minority
+  status actually costs in tokens (short version: about nothing).
+
 ## Conventions
 
 - One investigation → one Markdown file, kebab-case name by topic (`area-symptom.md`).
@@ -85,3 +95,6 @@ per-item plans/journeys (the *why*, companion to the throwaway `~/.claude/plans/
   numbers over branch/hash references.
 - Prefer verifiable anchors: exact file paths, rule/state numbers, test class names,
   and reproducing one-liners (`raku -e '...'`) over prose.
+- **Ad-hoc text processing goes in Raku, not Python.** Any one-liner you leave behind
+  here — tallying test XML, scraping a log, munging generated output — should be
+  runnable with `raku -e`. See `CLAUDE.md`.

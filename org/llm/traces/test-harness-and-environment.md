@@ -3,7 +3,7 @@
 Practical, load-bearing knowledge for getting tests to run and trusting their
 results. Several of these will waste an hour if you don't know them up front.
 
-## rakubrew must be initialized *and switched to 2026.03* in the same shell as gradle
+## rakubrew must be initialized *and switched to a known Rakudo* in the same shell as gradle
 
 Tests spawn a real `raku` subprocess to load symbols. If `raku` isn't on `PATH`, they
 fail in `setUp()` (`CommaFixtureTestCase.suggestSdkHome()` → "Found a raku in path"
@@ -12,19 +12,27 @@ the same shell**, by:
 
 ```bash
 eval "$(~/.rakubrew/bin/rakubrew init Zsh)"
-rakubrew switch moar-2026.03
+rakubrew switch "${RAKUBREW_RAKU_VERSION:-moar-2026.03}"
 ./gradlew test --rerun --tests "..."
 ```
 
 Shell state does not persist between tool calls, so put all of them in one command.
 
+**`moar-2026.03` is a default, not a blessing.** It is simply the release the
+currently pinned symbol-dependent expectations were written against (see the table
+below). Set `RAKUBREW_RAKU_VERSION` to work against a different Rakudo; the point of
+the `switch` line is that *some* known version is selected deliberately, not that it is
+this one. If you move the default, move the expectations with it and say so here —
+the failure mode documented at the end of this section is exactly what happens when
+the two drift apart.
+
 Three ways this line goes wrong, all of which end in a green build that proves nothing:
 
-- **The version is `moar-2026.03`, not `2026.03`.** A bare `2026.03` prints "Sorry,
-  '2026.03' not found. Did you mean: moar-2026.03" — but through the `rakubrew` shell
-  function that `init` installs it still returns success, so `&&` chains march on with
-  the switch silently not applied. (Called directly as `~/.rakubrew/bin/rakubrew`,
-  outside the hook, the same mistake exits 1.)
+- **Versions carry their backend prefix: `moar-2026.03`, not `2026.03`.** A bare
+  `2026.03` prints "Sorry, '2026.03' not found. Did you mean: moar-2026.03" — but
+  through the `rakubrew` shell function that `init` installs it still returns success,
+  so `&&` chains march on with the switch silently not applied. (Called directly as
+  `~/.rakubrew/bin/rakubrew`, outside the hook, the same mistake exits 1.)
 - **`--rerun` is not optional when you have changed only the environment.** `PATH` and
   the SDK are not declared inputs of the `test` task, so switching Rakudo leaves it
   `UP-TO-DATE`. `./gradlew test` then reports `BUILD SUCCESSFUL in 629ms` having
@@ -32,8 +40,15 @@ Three ways this line goes wrong, all of which end in a green build that proves n
   and confirm the "N tests completed" line is present.
 - **`rakubrew init` alone may already be enough**, which masks the first bullet:
   `init` exports `~/.rakubrew/versions/<CURRENT>/bin` at the front of `PATH`, and
-  `~/.rakubrew/CURRENT` is already `moar-2026.03` here. The `switch` line is insurance
-  against `CURRENT` having drifted, not the thing doing the work.
+  `~/.rakubrew/CURRENT` may already be the version you want. The `switch` line is
+  insurance against `CURRENT` having drifted, not the thing doing the work.
+
+**Omitting the preamble entirely is the most common way to waste an hour**, because the
+resulting failure is plausible. Running `./gradlew test` bare picks up the system Rakudo
+and `testCallArityMismatchAnnotating` fails on the missing `.perl` deprecation — which
+reads as a real regression in whatever you just changed. Stashing your work and
+re-running *also* fails, which looks like confirmation that the failure predates you.
+It does not; it confirms only that you forgot the preamble twice. `raku -v` first.
 
 **The `switch` line is load-bearing, not decoration.** `suggestSdkHome()` takes the
 first `PATH` entry that looks like a Raku SDK home, so without it the system Rakudo in
