@@ -143,9 +143,17 @@ recur.
    wrapping catches it. Mark it handled (`.Bool`) at the point of use.
 3. **A type object is never `.defined`**, so definedness cannot distinguish "resolved"
    from "failed". Use an explicit `Nil` sentinel.
-4. **A List stored in a hash element is itemized, and `.flat` will not descend into
-   it.** `(%h<a>, %h<b>).flat` yielded two long strings instead of 26 adverbs — and the
-   single-set case worked, which is how it stayed invisible. Use `|` slips.
+4. **Itemization, in both directions.** These are the same rule seen from two sides,
+   and both bit:
+   - *Too much flattening.* A Hash or List assigned into an Array flattens —
+     `my @queue = %(:node, :path)` gives you two Pairs, not one record. **Use `.item`
+     to seal it:** `my @queue = %(node => $start, path => []).item`. (Idiom from the
+     user; the first version routed around the problem with `@queue.push:` instead,
+     which works but hides the intent.)
+   - *Too little flattening.* A List already stored **in** a hash element is itemized,
+     and `.flat` will not descend into it. `(%h<a>, %h<b>).flat` yielded two long
+     strings instead of 26 adverbs — and the single-set case worked, which is how it
+     stayed invisible. Use `|` slips there.
 5. **`when EXPR` smartmatches against `$_`**, not against the boolean you wrote. Inside
    a `for` loop with an unrelated topic it silently produced inverted results. Use
    `if`/`elsif` when testing conditions rather than matching a topic.

@@ -102,11 +102,12 @@ sub reachable(Str $start) {
     # Hashes, not nested arrays: `[$node, ()]` silently flattens the empty list away,
     # so the shape of a queue entry changed depending on how long the path was, and
     # $node came back undefined once paths got deep enough.
-    # push, not `= %(...)`: assigning a Hash into an Array flattens it into Pairs, so
-    # the queue would hold `node => "Str.subst"` rather than the record itself.
-    my @queue;
-    @queue.push: %( node => $start, path => [] );
-    my %seen = $start => True;
+    # `.item`: assigning a Hash into an Array flattens it into Pairs, so a bare
+    # `= %(...)` would leave the queue holding `node => "Str.subst"` rather than the
+    # record itself. `.item` seals it into a single element, which says what is meant
+    # directly instead of routing around the flattening with a push.
+    my @queue = %( node => $start, path => [] ).item;
+    my %seen  = $start => True;
     while @queue {
         my %cur  = @queue.shift;
         my $node = %cur<node>;
