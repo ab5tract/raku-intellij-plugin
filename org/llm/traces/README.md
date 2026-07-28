@@ -53,6 +53,12 @@ machine-local / user-preference stuff; put transmissible engineering history her
   using `TextAttributesKey` fallbacks; the bundled `colorSchemes/*.xml` were what
   defeated them. Also: one concept split across three hand-maintained lists, and
   the "Hash Composer" row that edited array composers.
+- **`raku-metaoperators-and-user-infixes.md`** — one plain `sub infix:<smoosh>`
+  declaration gets you `smoosh=`, `[smoosh]`, `Xsmoosh`, `Zsmoosh`, `Rsmoosh`,
+  `<<smoosh>>` for free, no multi required. Verified table, plus two non-obvious
+  constraints (`!op` needs iffiness inherited via `is equiv`, which then blocks
+  `[op]`). Companion to `parser-reduce-metaop-mislexing.md`: the lexer must recognise
+  a metaop shell around an operator name it has never seen.
 - **`raku-named-args-corpus.md`** — Raku silently swallows named arguments it does not
   understand (`.dir(:recursive)` returns one level and exits 0). Measured: 4 of 4
   first-attempt failures in a blind trial. Documents `scripts/named-args.raku`, the
