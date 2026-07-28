@@ -66,7 +66,7 @@ session was visibly a transliteration of Python that had just been written
 Mitigated by writing each arm in its own idiom rather than translating, and by
 reporting Level 2 as indicative. Not eliminated.
 
-### Level 3 — fluency penalty (BLOCKED, not run)
+### Level 3 — fluency penalty (RUN; see `level3/`)
 
 Tokens-to-*working*-code: first-attempt correctness plus every debug round. This is
 the cost actually paid in practice and it is the one H2 speaks to.
@@ -81,8 +81,20 @@ arm order randomised or run blind.
 task spec and the repo; record first-attempt pass/fail against the expected output,
 number of correction rounds, and total tokens emitted until the arm passes.
 
+**This has now been done**, with one extension to the design above: a second factor for
+model strength, so "does a frontier model erase the penalty?" is measured rather than
+guessed. 12 tasks × 2 languages × 2 models = 48 arms. Protocol and controls in
+`level3/README.md`; results in `97-level3-rollup.txt`; discussion in `99-notes.md`.
+
+**H2 was supported.** Raku: 4 first-attempt failures in 24 arms. Python: 0 in 24. The
+Level 2 "wash" becomes a 5–12% penalty once debug rounds are counted. One deviation
+from the letter of the design, recorded: the emitted-token figure counts each arm's
+*code* across all attempts, not its full token usage, which the harness does not
+expose — so those figures are a lower bound.
+
 One incidental Level 3 datapoint fell out of Level 2 and is recorded because it
-happened, not because it was sought: see `99-notes.md`, `t5`.
+happened, not because it was sought: see `99-notes.md`, `t5`. It turned out to be
+representative — the same class of bug accounted for 3 of the 4 failures above.
 
 ## Instrument
 

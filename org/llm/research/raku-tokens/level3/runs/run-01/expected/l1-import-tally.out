@@ -1,0 +1,11 @@
+426	org.jetbrains.annotations.NotNull
+217	com.intellij.psi.PsiElement
+199	com.intellij.lang.ASTNode
+162	org.jetbrains.annotations.Nullable
+136	com.intellij.openapi.project.Project
+134	org.raku.comma.psi.RakuASTWrapperPsiElement
+118	com.intellij.psi.util.PsiTreeUtil
+112	java.util.List
+71	java.util.ArrayList
+58	com.intellij.openapi.editor.Editor
+TOTAL	5405

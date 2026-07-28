@@ -1,0 +1,1 @@
+attempt-01: Non-recursive scan of `docs/*.md`, regex `^ $<hashes>=(<[#]>+)` to capture the leading run of `#`, heading only if the run length is 1-6 and the following character is a single space. Ran clean on the first try; manually cross-checked every heading line in all five docs files by level and the per-file and TOTAL counts matched exactly. No changes needed.

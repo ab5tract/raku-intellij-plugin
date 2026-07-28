@@ -1,0 +1,5 @@
+1028	src/test/kotlin/org/raku/comma/annotation/AnnotationTest.kt
+843	src/test/kotlin/org/raku/comma/docs/DocumentationTest.kt
+289	src/test/kotlin/org/raku/comma/highlighting/RakuHighlightTest.kt
+239	src/test/kotlin/org/raku/comma/completion/TraitCompletionTest.kt
+179	src/test/kotlin/org/raku/comma/completion/AttributesTest.kt

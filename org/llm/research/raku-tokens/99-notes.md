@@ -99,7 +99,134 @@ Two things worth keeping from that:
    would have shipped, printing plausible zeros. The differential-testing property is
    worth more than the measurement it was built for.
 
-n=1. It is an anecdote, not a result. Level 3 remains unrun.
+n=1. It is an anecdote, not a result. **Level 3 has since been run properly — see
+below, where this anecdote turns out to have been representative.**
+
+## Level 3, run properly: H2 holds, and the failures have one shape
+
+48 fresh sub-agent arms: 12 new tasks × Raku/Python × Sonnet/Opus, each arm seeing only
+its spec and one language. Protocol and controls in `level3/README.md`, numbers in
+`97-level3-rollup.txt`.
+
+| | first attempt exactly right | mean correction rounds |
+|---|---|---|
+| Sonnet, Raku | 92% (11/12) | 0.08 |
+| Sonnet, Python | **100%** (12/12) | 0.00 |
+| Opus, Raku | 75% (9/12) | 0.25 |
+| Opus, Python | **100%** (12/12) | 0.00 |
+
+**Python did not fail once in 24 arms. Raku failed 4 times in 24.** H2 predicted this
+and H2 was right, which is worth saying plainly given H1 was wrong.
+
+The cost shows up where Level 2 could not see it:
+
+| | final code | tokens to *working* code |
+|---|---|---|
+| Sonnet | Raku 103.5% of Python | **112.2%** |
+| Opus | Raku 85.1% of Python | **105.3%** |
+
+Level 2's headline was 99.1% — a wash. Counting the debug rounds, the wash becomes a
+5–12% Raku penalty. **The tokenizer was never where the cost lived.**
+
+### All four failures were silent
+
+This is the part worth keeping. Three of the four Raku first-attempt failures exited 0
+with well-formed, plausible, wrong output; only one crashed.
+
+- `.dir(:r)` and `.dir(:recursive)` — twice, on different tasks. **`IO::Path.dir` is not
+  recursive and has no such adverb.** Raku methods carry an implicit `*%_`, so the
+  unknown named argument is silently absorbed. Both arms then walked one level, matched
+  nothing, and printed a full set of zeros.
+- `max 0, $file.lines.map(*.chars)` — the `Seq` goes in as *one* argument, so `max`
+  compares `0` against the whole `Seq` and returns the `Seq`. Every output row's first
+  column became the file's entire list of line lengths. Needed `|` to flatten.
+- `/\.[^.]+$/` — **`[^...]` is not negation in Raku regex**; it matches the literal
+  characters `^` and `.`. The `subst` was a silent no-op, so basenames kept their
+  extensions.
+
+Three of those four are the *same bug*: **a named argument or construct that Raku
+accepts without complaint and then ignores.** The experiment has now hit this class
+four separate times without looking for it — `.pick(:seed)` (which nearly shipped a
+wrong headline, above), `.dir(:R)` (the Level 2 anecdote), and now `:r` and
+`:recursive`. It is the single most expensive thing about writing Raku in this corpus,
+and it has nothing to do with tokens.
+
+Python's stdlib answer to all of these is `os.walk`, which is one obvious thing that
+either works or raises.
+
+### The countermeasure, and why it is not the docs
+
+The obvious response to a silent-named-argument bug is to look the method up. Two
+sources were considered and both rejected:
+
+- **Cloning the Raku docs repo.** Prose drifts from the interpreter, and this repo
+  already pins expectations to a specific Rakudo (`CLAUDE.md`, and the `.perl`
+  deprecation test that got "fixed" wrongly once). A docs answer that disagrees with
+  the running Rakudo is worse than no answer.
+- **Reading `rakudo/src`.** It does not exist on this machine, and grepping core
+  source for a signature is slower and less reliable than asking the object.
+
+The running Rakudo answers directly, which is version-correct by construction:
+`scripts/named-args.raku`.
+
+**The naive version of this does not work**, which is why it is worth writing down.
+`IO::Path.^find_method('dir').signature` returns `(IO::Path $:: |)` — a bare capture
+that declares nothing, so a signature check reports even the *valid* `:test` as
+undeclared. The real parameter lists are on `.candidates`, and the union across
+candidates is what you want:
+
+```
+IO::Path.dir   2 candidates   declares :test   + catch-all  -> :recursive is bogus
+List.pick      6 candidates   declares nothing + catch-all  -> :seed is bogus
+```
+
+Two limitations, both real:
+
+- **`|c` absorbs nameds too**, not just `*%_`. `IO::Path.lines` has one, so a check
+  that only looked for named slurpies would under-report the risk on exactly the
+  methods that use captures. The tool detects `.capture` as well.
+- **Undeclared is not invalid.** `Str.subst` declares no named parameters at all, yet
+  `:g` works — it forwards `*%options` to `Str.match`. Verified:
+  `"aaa".subst("a","b",:g)` gives `bbb` while `:bogus` is dropped. So the tool reports
+  "may be forwarded, verify by running it" rather than a verdict whenever a method
+  declares nothing and has a catch-all. A tool built to prevent confident wrong claims
+  must not make one.
+
+Small irony worth recording: writing the checker, the first version rejected every
+valid type, because `::($type)` returns a **type object and type objects are never
+`.defined`**. Same family of bug as the one being tooled against — Raku accepting
+something and quietly meaning a different thing than expected.
+
+### The model axis, which was not in the original design
+
+Opus scored *worse* on first-attempt Raku than Sonnet (75% vs 92%) while writing
+markedly terser Raku (2144 vs 2685 final tokens). The plausible reading is that the
+stronger model reaches for more of the language — `.dir` adverbs, `max` over a `Seq` —
+and more of the language is more surface area to be silently wrong about. It is a
+guess. 3 failures versus 1 at n=12 is well inside noise, and nothing here supports
+"Opus is worse at Raku" as a claim.
+
+What the model axis does establish: **a frontier model does not erase the penalty.**
+Both models scored a clean 100% on Python.
+
+### Honest limits on this run
+
+- **Emitted-code tokens are not context tokens.** Only the code each arm wrote is
+  counted; reasoning and tool output are not exposed by the harness. Since debugging
+  spends most of its tokens on things that are not code, the 105–112% figures
+  *understate* the effect. Lower bound, not measurement.
+- **Blindness was fresh context plus instruction, not a sandbox.** The other arm's
+  directory was reachable by absolute path. Fresh context is the control that matters
+  and it was real; the filesystem hole was not closed.
+- **Two arms self-reported minor protocol slips**, and both are recorded because they
+  volunteered them: one Python arm ran an `awk` length check on one file *after*
+  writing and running its program, and one Raku arm suspected its `:r` was wrong before
+  running it but ran it unedited as the protocol required. Neither changes a count. No
+  arm was excluded.
+- All 48 arms eventually reached the correct answer, and all 12 tasks came back
+  **4-way unanimous** on final output — 2 languages × 2 models agreeing independently.
+  No hand adjudication was needed, which is a better ground truth than this experiment
+  has had at any previous level.
 
 ## Making the data portable
 
@@ -168,9 +295,13 @@ baseline, not load-bearing, but it is not a fully independent corpus either.
 
 ## What would strengthen this
 
-- Run Level 3 properly, in blind sub-agent arms.
+- ~~Run Level 3 properly, in blind sub-agent arms.~~ Done — see above.
 - Get a real `count_tokens` key and re-measure; report the delta between proxy and
   true tokenizer as an error bar on everything here.
+- Capture arms' *actual* token usage rather than emitted-code tokens, which would turn
+  the Level 3 figures from a lower bound into a measurement.
 - Widen Level 2 to ~20 tasks; five is too few for the per-task spread observed.
+- Re-run Level 3 with a second, independent task set. Four failures is enough to see a
+  pattern and not enough to size it.
 - Add a language further outside the training distribution (APL, J, Factor) to see
   whether the −5% slope steepens or whether byte-level BPE really does floor out.

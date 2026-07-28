@@ -1,0 +1,6 @@
+Attempt to divide by zero when calling .floor on Rational
+  in block <unit> at org/llm/research/raku-tokens/level3/runs/run-01/opus/l8-kt-line-stats/raku/attempt-01.raku line 14
+
+Actually thrown at:
+  in block <unit> at org/llm/research/raku-tokens/level3/runs/run-01/opus/l8-kt-line-stats/raku/attempt-01.raku line 19
+

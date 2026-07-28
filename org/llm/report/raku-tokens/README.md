@@ -1,8 +1,10 @@
 # The token cost of being a minority language
 
-**Finding: Raku costs about 7% more tokens per byte than Python, and needs about 15%
-fewer bytes to do the same work. The two roughly cancel. Choosing Raku over Python
-for text processing is close to token-neutral.**
+**Finding: Raku costs about 7% more tokens per byte than Python and needs about 15%
+fewer bytes to do the same work, so the finished program is token-neutral. The real
+cost is elsewhere: getting to a *working* program takes 5–12% more, because Raku fails
+silently where Python fails loudly — 4 first-attempt failures in 24 blind Raku arms
+against 0 in 24 Python arms.**
 
 Method, raw data and caveats: `org/llm/research/raku-tokens/`.
 Design and hypotheses stated in advance: `../../research/raku-tokens/00-preregistration.md`.
@@ -109,36 +111,93 @@ is least like the training distribution.
 **Net: a wash.** Which is a better answer than either extreme, and not the one the
 hypothesis predicted.
 
+**But this measures the finished program.** It says nothing about what it cost to
+arrive at one. That is Level 3.
+
+## Level 3 — the fluency penalty
+
+The cost actually paid in practice is tokens to *working* code: first-attempt
+correctness plus every debug round. It cannot be measured in one context, because once
+both languages are in context each anchors the other. So: **48 fresh sub-agents** — 12
+new tasks × 2 languages × 2 model strengths — each seeing only a task spec and one
+language, with every version it ran preserved on disk.
+
+| | first attempt exactly right | mean correction rounds | tokens to working code |
+|---|---|---|---|
+| Sonnet, Raku | 92% (11/12) | 0.08 | **112.2%** of Python |
+| Sonnet, Python | **100%** (12/12) | 0.00 | — |
+| Opus, Raku | 75% (9/12) | 0.25 | **105.3%** of Python |
+| Opus, Python | **100%** (12/12) | 0.00 | — |
+
+**Python did not fail once in 24 arms. Raku failed 4 times in 24.** Level 2's wash
+(99.1%) becomes a 5–12% Raku penalty once the debug rounds are counted. A frontier
+model does not erase it — both models scored a clean 100% on Python.
+
+### The failures all have one shape
+
+Three of the four Raku first-attempt failures **exited 0 and printed well-formed,
+plausible, wrong output.** Only one crashed.
+
+- `.dir(:r)` and `.dir(:recursive)`, on two different tasks — `IO::Path.dir` is not
+  recursive and has no such adverb. Raku methods carry an implicit `*%_`, so the unknown
+  named argument is silently absorbed. Both arms walked one level, matched nothing, and
+  printed a full set of zeros.
+- `max 0, $seq` — the `Seq` arrives as one argument, so `max` returns the `Seq` itself.
+- `/[^.]+$/` — `[^...]` is not negation in Raku regex. The substitution silently did
+  nothing.
+
+Three of those four are the same defect: **a construct Raku accepts without complaint
+and then ignores.** This experiment has now hit that class four separate times without
+ever looking for it — `.pick(:seed)` (which nearly shipped a wrong headline),
+`.dir(:R)`, and now `:r` and `:recursive`.
+
+**That, not tokenization, is what being outside the training distribution actually
+costs here.** And the expensive part is not that it fails — it is that it fails quietly.
+
+### What bounds this
+
+Only the *code* each arm emitted is counted; a sub-agent's reasoning and tool output
+are not exposed by the harness. Debugging spends most of its tokens on things that are
+not code, so **105–112% is a lower bound, not a measurement.** Blindness was enforced
+by fresh context plus instruction rather than a sandbox. n=12 per cell, and 4 failures
+is enough to see a pattern but not to size it. Full protocol and caveats:
+`../../research/raku-tokens/level3/README.md`.
+
+All 12 tasks came back **4-way unanimous** — two languages and two models agreeing
+independently — so no ground truth here rests on a single implementation.
+
 ## What this does and does not license
 
-**Supported.** For this repo's Raku-only rule on text processing, token cost is not
-an argument either way. It is roughly free. The rule can rest entirely on project
-coherence — which is where it belonged anyway. Note that this cuts both ways: had
-the result gone the other direction it would not have been an argument for Python
-either, because the rule was never about token cost. The measurement removes an
-objection; it does not supply a justification.
+**Supported.** For this repo's Raku-only rule on text processing, *finished-code* token
+cost is not an argument either way — it is roughly free. What is not free is the
+getting-there: a 5–12% penalty concentrated in a handful of silent failures. That is
+small enough that the rule stands comfortably on project coherence, which is where it
+belonged anyway. Note this cuts both ways: a result in the other direction would not
+have been an argument for Python either, because the rule was never about token cost.
+
+**Supported, and the actionable part.** Raku's expensive failure mode in this corpus is
+**silently-ignored named arguments** — `:r`, `:recursive`, `:R`, `:seed`, all absorbed
+by the implicit `*%_` and all producing confident zeros. If you take one thing from
+this report into daily work, take that, not the percentages.
 
 **Not supported.** Any claim about *absolute* token counts. No Anthropic API key was
 available (`count_tokens` returns 401), so the instrument is a public byte-level BPE
 proxy of the same family, not Claude's tokenizer. Only relative comparisons hold.
 
-**Not measured.** The fluency penalty — tokens to *working* code, including debug
-rounds. This is the cost actually paid in practice, and it is the one place a
-minority language plausibly still hurts. It cannot be measured in a single context,
-because once both languages are in context each anchors the other; it needs blind
-sub-agent arms. Design is written up and ready to run.
-
-One incidental datapoint, recorded because it happened rather than because it was
-sought: writing the five paired tasks, the Raku arm had one first-attempt failure
-(`IO::Path.dir(:R)`, invented — it silently matched nothing) and the Python arm had
-none. n=1. An anecdote, not a result. But it cost more tokens to fix than the entire
-per-byte difference on that task, which is a hint about where the real cost lives.
+**Not measured.** The arms' *true* token usage. Level 3 counts emitted source only,
+because sub-agent reasoning and tool output are not exposed by the harness — so its
+figures are a floor. Also unmeasured: whether the slope steepens for a language further
+outside the distribution than Raku (APL, J, Factor).
 
 ## The methodological keeper
 
 The paired-arm design was built to measure tokens. Its more useful property turned
-out to be that **the Raku bug was caught only because two independent implementations
-had to agree**. A single-arm script would have shipped, printing four plausible zero
-rows. Differential testing against a second implementation is worth more than the
-measurement it was built for — and is worth remembering next time a one-off script's
-output looks reasonable.
+out to be that **every Raku bug in this experiment was caught only because independent
+implementations had to agree.** Level 2 found one that way. Level 3 found three more,
+and all three exited 0 while printing plausible zeros — a single-arm script would have
+shipped every one of them.
+
+That is the finding with the longest shelf life here, and it outranks the token
+numbers that motivated the work: **differential testing against a second implementation
+is worth more than the measurement it was built for.** Worth remembering the next time
+a one-off script's output looks reasonable.
