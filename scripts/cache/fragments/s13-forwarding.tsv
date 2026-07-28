@@ -1,0 +1,10 @@
+Str	contains	|%_	SELF	contains	src/core.e/Fixups.rakumod:366
+Str	ends-with	|%_	SELF	ends-with	src/core.e/Fixups.rakumod:372
+Str	index	|%_	SELF	index	src/core.e/Fixups.rakumod:378
+Str	indices	|%_	SELF	indices	src/core.e/Fixups.rakumod:384
+Str	rindex	|%_	SELF	rindex	src/core.e/Fixups.rakumod:390
+Str	starts-with	|%_	SELF	starts-with	src/core.e/Fixups.rakumod:396
+Str	substr-eq	|%_	SELF	substr-eq	src/core.e/Fixups.rakumod:404
+Format	CALL-ME	|c	UNKNOWN	UNKNOWN	src/core.e/Format.rakumod:39
+sub	zprintf	|c	UNKNOWN	UNKNOWN	src/core.e/Format.rakumod:128
+Cool	zprintf	|c	sub	zprintf	src/core.e/Format.rakumod:132

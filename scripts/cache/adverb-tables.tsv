@@ -1,0 +1,86 @@
+construct	adverb	canonical	implies	kind	source
+m//	P5	P5		compilation-only	Perl6/Actions.nqp
+m//	Perl5	P5		compilation-only	Perl6/Actions.nqp
+m//	c	c		runtime	Perl6/Actions.nqp
+m//	continue	c		runtime	Perl6/Actions.nqp
+m//	ex	ex		repeatable	Perl6/Actions.nqp
+m//	exhaustive	ex		repeatable	Perl6/Actions.nqp
+m//	g	g		repeatable	Perl6/Actions.nqp
+m//	global	g		repeatable	Perl6/Actions.nqp
+m//	i	i		compilation-only	Perl6/Actions.nqp
+m//	ignorecase	i		compilation-only	Perl6/Actions.nqp
+m//	ignoremark	m		compilation-only	Perl6/Actions.nqp
+m//	m	m		compilation-only	Perl6/Actions.nqp
+m//	nd	nth		runtime	Perl6/Actions.nqp
+m//	nth	nth		runtime	Perl6/Actions.nqp
+m//	ov	ov		repeatable	Perl6/Actions.nqp
+m//	overlap	ov		repeatable	Perl6/Actions.nqp
+m//	p	p		runtime	Perl6/Actions.nqp
+m//	pos	p		runtime	Perl6/Actions.nqp
+m//	r	r		compilation-only	Perl6/Actions.nqp
+m//	ratchet	r		compilation-only	Perl6/Actions.nqp
+m//	rd	nth		runtime	Perl6/Actions.nqp
+m//	s	s		compilation-only	Perl6/Actions.nqp
+m//	sigspace	s		compilation-only	Perl6/Actions.nqp
+m//	st	nth		runtime	Perl6/Actions.nqp
+m//	th	nth		runtime	Perl6/Actions.nqp
+m//	x	x		repeatable	Perl6/Actions.nqp
+rx//	P5	P5		compilation-only	Perl6/Actions.nqp
+rx//	Perl5	P5		compilation-only	Perl6/Actions.nqp
+rx//	i	i		compilation-only	Perl6/Actions.nqp
+rx//	ignorecase	i		compilation-only	Perl6/Actions.nqp
+rx//	ignoremark	m		compilation-only	Perl6/Actions.nqp
+rx//	m	m		compilation-only	Perl6/Actions.nqp
+rx//	r	r		compilation-only	Perl6/Actions.nqp
+rx//	ratchet	r		compilation-only	Perl6/Actions.nqp
+rx//	s	s		compilation-only	Perl6/Actions.nqp
+rx//	sigspace	s		compilation-only	Perl6/Actions.nqp
+s///	P5	P5		compilation-only	Perl6/Actions.nqp
+s///	Perl5	P5		compilation-only	Perl6/Actions.nqp
+s///	c	c		runtime	Perl6/Actions.nqp
+s///	continue	c		runtime	Perl6/Actions.nqp
+s///	g	g		repeatable	Perl6/Actions.nqp
+s///	global	g		repeatable	Perl6/Actions.nqp
+s///	i	i		compilation-only	Perl6/Actions.nqp
+s///	ignorecase	i		compilation-only	Perl6/Actions.nqp
+s///	ignoremark	m		compilation-only	Perl6/Actions.nqp
+s///	ii	ii	i	runtime	Perl6/Actions.nqp
+s///	m	m		compilation-only	Perl6/Actions.nqp
+s///	mm	mm	m	runtime	Perl6/Actions.nqp
+s///	nd	nth		runtime	Perl6/Actions.nqp
+s///	nth	nth		runtime	Perl6/Actions.nqp
+s///	p	p		runtime	Perl6/Actions.nqp
+s///	pos	p		runtime	Perl6/Actions.nqp
+s///	r	r		compilation-only	Perl6/Actions.nqp
+s///	ratchet	r		compilation-only	Perl6/Actions.nqp
+s///	rd	nth		runtime	Perl6/Actions.nqp
+s///	s	s		compilation-only	Perl6/Actions.nqp
+s///	samecase	ii	i	runtime	Perl6/Actions.nqp
+s///	samemark	mm	m	runtime	Perl6/Actions.nqp
+s///	samespace	ss	s	runtime	Perl6/Actions.nqp
+s///	sigspace	s		compilation-only	Perl6/Actions.nqp
+s///	ss	ss	s	runtime	Perl6/Actions.nqp
+s///	st	nth		runtime	Perl6/Actions.nqp
+s///	th	nth		runtime	Perl6/Actions.nqp
+s///	x	x		repeatable	Perl6/Actions.nqp
+slice	delete	d		slice	PostcircumfixAdverbs.rakumod
+slice	exists	exists		slice	PostcircumfixAdverbs.rakumod
+slice	k	k		slice	PostcircumfixAdverbs.rakumod
+slice	kv	kv		slice	PostcircumfixAdverbs.rakumod
+slice	p	p		slice	PostcircumfixAdverbs.rakumod
+slice	v	v		slice	PostcircumfixAdverbs.rakumod
+tr///	P5	P5		compilation-only	Perl6/Actions.nqp
+tr///	Perl5	P5		compilation-only	Perl6/Actions.nqp
+tr///	c	c		runtime	Perl6/Actions.nqp
+tr///	complement	c		runtime	Perl6/Actions.nqp
+tr///	d	d		runtime	Perl6/Actions.nqp
+tr///	delete	d		runtime	Perl6/Actions.nqp
+tr///	i	i		compilation-only	Perl6/Actions.nqp
+tr///	ignorecase	i		compilation-only	Perl6/Actions.nqp
+tr///	ignoremark	m		compilation-only	Perl6/Actions.nqp
+tr///	m	m		compilation-only	Perl6/Actions.nqp
+tr///	r	r		compilation-only	Perl6/Actions.nqp
+tr///	ratchet	r		compilation-only	Perl6/Actions.nqp
+tr///	s	s		compilation-only	Perl6/Actions.nqp
+tr///	sigspace	s		compilation-only	Perl6/Actions.nqp
+tr///	squash	s		compilation-only	Perl6/Actions.nqp

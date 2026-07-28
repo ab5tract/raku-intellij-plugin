@@ -53,6 +53,12 @@ machine-local / user-preference stuff; put transmissible engineering history her
   using `TextAttributesKey` fallbacks; the bundled `colorSchemes/*.xml` were what
   defeated them. Also: one concept split across three hand-maintained lists, and
   the "Hash Composer" row that edited array composers.
+- **`raku-named-args-corpus.md`** — Raku silently swallows named arguments it does not
+  understand (`.dir(:recursive)` returns one level and exits 0). Measured: 4 of 4
+  first-attempt failures in a blind trial. Documents `scripts/named-args.raku`, the
+  pipeline that builds its corpus from the Rakudo source, and five silent Raku/Rakudo
+  gotchas hit while building it — including a caught exception that poisons the
+  `.^methods` callsite and loses 762 of 995 types while reporting success.
 
 ## Kotlin-conversion roadmap docs (ongoing Java→Kotlin migration)
 
@@ -81,7 +87,9 @@ per-item plans/journeys (the *why*, companion to the throwaway `~/.claude/plans/
   Method and mess; read when you want to check or extend a result.
 - **`org/llm/report/`** — the tidied findings those experiments produced. Read when
   you just want the answer. `report/raku-tokens/` measures what Raku's minority
-  status actually costs in tokens (short version: about nothing).
+  status actually costs in tokens. Short version: the *finished program* is
+  token-neutral, but getting to a working one costs 5–12% more, and nearly all of
+  that is one failure mode — see `raku-named-args-corpus.md`.
 
 ## Conventions
 

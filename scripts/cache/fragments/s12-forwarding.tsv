@@ -1,0 +1,83 @@
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:26
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:32
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:38
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:44
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:50
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:58
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:75
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:81
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:87
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:93
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:99
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:105
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:173
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:187
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:202
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:217
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:232
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:247
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:111
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:119
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:174
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:188
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:203
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:218
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:233
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:248
+sub	postcircumfix:<[ ]>	%_	Rakudo::Internals	SLICE_POSITIONS_WITH_ADVERBS	src/core.c/array_slice.rakumod:122
+sub	postcircumfix:<[ ]>	%_	Rakudo::Internals	SLICE_WITH_ADVERBS	src/core.c/array_slice.rakumod:256
+sub	postcircumfix:<[ ]>	%_	Rakudo::Internals	SLICE_WITH_ADVERBS	src/core.c/array_slice.rakumod:282
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:177
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:182
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:187
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:192
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:197
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:202
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:178
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:183
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:188
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:193
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:198
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:203
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:217
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:220
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:223
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:226
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:229
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:232
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:236
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:245
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:248
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:251
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:254
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:257
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:260
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:264
+sub	postcircumfix:<{ }>	|%other	Any	ZEN-KEY	src/core.c/hash_slice.rakumod:269
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/native_array.rakumod:5050
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/native_array.rakumod:5305
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/native_array.rakumod:5560
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/native_array.rakumod:5815
+sub	splice	|c	UNKNOWN	splice	src/core.c/array_operators.rakumod:45
+sub	open	|c	IO::Handle	open	src/core.c/io_operators.rakumod:168
+sub	open	|c	IO::Handle	open	src/core.c/io_operators.rakumod:170
+sub	lines	|%_	UNKNOWN	lines	src/core.c/io_operators.rakumod:175
+sub	lines	|%_	UNKNOWN	lines	src/core.c/io_operators.rakumod:180
+sub	lines	|%_	UNKNOWN	lines	src/core.c/io_operators.rakumod:185
+sub	words	|%_	UNKNOWN	words	src/core.c/io_operators.rakumod:192
+sub	words	|%_	UNKNOWN	words	src/core.c/io_operators.rakumod:197
+sub	words	|%_	UNKNOWN	words	src/core.c/io_operators.rakumod:202
+sub	slurp	|%_	UNKNOWN	slurp	src/core.c/io_operators.rakumod:217
+sub	slurp	|%_	IO::Handle	slurp	src/core.c/io_operators.rakumod:218
+sub	spurt	|%_	IO::Handle	spurt	src/core.c/io_operators.rakumod:228
+sub	chdir	|c	UNKNOWN	chdir	src/core.c/io_operators.rakumod:266
+sub	to-json	|c	Rakudo::Internals::JSON	to-json	src/core.c/core_epilogue.rakumod:180
+Mu	perl	|c	Mu	raku	src/core.c/core_epilogue.rakumod:197
+Mu	perlseen	|c	Mu	rakuseen	src/core.c/core_epilogue.rakumod:201
+sub	callwith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:131
+sub	nextwith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:145
+sub	samewith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:212
+sub	samewith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:213
+sub	samewith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:216
+sub	METAOP_HYPER_CALL	|args	UNKNOWN	UNKNOWN	src/core.c/metaops.rakumod:643
+sub	HYPER	|c	Hyper	infix	src/core.c/metaops.rakumod:647

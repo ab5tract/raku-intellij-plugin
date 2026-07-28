@@ -1,0 +1,4 @@
+Mu	WALK	methods	Any.new.WALK("gist").elems > Any.new.WALK("gist", :methods(False)).elems
+Mu	WALK	submethods	do { my class W1 { submethod s {} }; W1.new.WALK("s").elems == 1 && W1.new.WALK("s", :submethods(False)).elems == 0 }
+Mu	WALK	descendant	do { my class W2 { method f {} }; my class W3 is W2 { method f {} }; W3.new.WALK("f", :descendant).head.package.^name eq "W2" && W3.new.WALK("f").head.package.^name eq "W3" }
+Mu	WALK	super	do { my class W4 { method f {} }; my class W5 is W4 { method f {} }; W5.new.WALK("f", :super).elems == 1 && W5.new.WALK("f").elems == 2 }

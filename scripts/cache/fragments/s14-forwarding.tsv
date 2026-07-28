@@ -1,0 +1,13 @@
+sub	comb	|%_	Cool	comb	src/core.e/additions.rakumod:6
+sub	rotor	|%_	UNKNOWN	rotor	src/core.e/additions.rakumod:25
+sub	rotor	|%_	UNKNOWN	rotor	src/core.e/additions.rakumod:29
+sub	trans	|%_	UNKNOWN	trans	src/core.e/additions.rakumod:55
+sub	postcircumfix:<{; }>	|%_	sub	postcircumfix:<{; }>	src/core.e/hash_multislice.rakumod:7
+sub	postcircumfix:<[; ]>	|%_	sub	postcircumfix:<[; ]>	src/core.e/array_multislice.rakumod:69
+Grammar	typed_exception	|%opts	X::Comp	new	src/core.e/Grammar.rakumod:52
+Grammar	parse	|%_	SELF	new	src/core.e/Grammar.rakumod:63
+Grammar	subparse	|%_	SELF	new	src/core.e/Grammar.rakumod:97
+Grammar	parsefile	|%_	SELF	parse	src/core.e/Grammar.rakumod:108
+PseudoStash	NEW-PACKAGE	|%initargs	SELF	new	src/core.e/PseudoStash.rakumod:46
+CtxSymIterator::Keys	new	|c	CtxSymIterator	new	src/core.e/PseudoStash.rakumod:514
+CtxSymIterator::Values	new	|c	CtxSymIterator	new	src/core.e/PseudoStash.rakumod:538

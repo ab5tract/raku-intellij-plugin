@@ -1,0 +1,6 @@
+Blob	decode	strict	Blob.new(0x81,0x8D).decode("windows-1252").chars == 2 && !(try Blob.new(0x81,0x8D).decode("windows-1252", :strict)).defined
+Blob	decode	replacement	Blob.new(0x81,0x8D).decode("windows-1252", :strict, :replacement("?")) eq "??"
+Collation	set	primary	$*COLLATION.set(:!primary).collation-level != $*COLLATION.set().collation-level
+Collation	set	secondary	$*COLLATION.set(:!secondary).collation-level != $*COLLATION.set().collation-level
+Collation	set	tertiary	$*COLLATION.set(:!tertiary).collation-level != $*COLLATION.set().collation-level
+Collation	set	quaternary	$*COLLATION.set(:!quaternary).collation-level != $*COLLATION.set().collation-level

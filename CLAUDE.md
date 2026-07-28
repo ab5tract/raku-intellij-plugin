@@ -55,10 +55,39 @@ is about the token cost of Raku versus Python, so it has to contain both. Every
 harness, tokenizer and analysis script in that directory is Raku. Python may not
 be introduced anywhere else, and nothing in there licenses it for delivered work.
 
-If you are wondering whether the rule costs anything: measured, it does not.
-`org/llm/report/raku-tokens/` — Raku costs ~7% more tokens per byte (±2) and
-needs ~15% fewer bytes, so the two cancel and the choice is roughly
-token-neutral. The rule rests on project coherence, not on that number.
+If you are wondering whether the rule costs anything: barely.
+`org/llm/report/raku-tokens/` — Raku costs ~7% more tokens per byte (±2) and needs
+~15% fewer bytes, so the finished program is token-neutral. Reaching a *working*
+program costs 5–12% more, and the rule itself rests on project coherence, not on
+either number.
+
+## Check named arguments before you trust the output
+
+Nearly all of that 5–12% is one failure mode. **Raku silently swallows named
+arguments it does not understand** — methods carry an implicit `*%_`, so `.dir(:r)`,
+`.dir(:recursive)`, `.dir(:R)` and `.pick(:seed)` are all accepted, all ignored, and
+all return confident zeros. Measured, this caused 4 of 4 Raku first-attempt failures
+against 0 for Python, and three of the four exited 0 while printing plausible output.
+`IO::Path.dir` is **not** recursive; write the walk yourself.
+
+Ask the running Rakudo rather than the docs, which drift from the interpreter:
+
+```bash
+raku scripts/named-args.raku IO::Path dir recursive   # exit status = names not declared
+```
+
+It prints what the method's candidates actually declare, warns when a catch-all will
+eat the rest, resolves forwarding (`Str.subst` declares nothing, yet `:g` works because
+it hands `%options` to `Str.match`), and flags adverbs that were probed and found
+**inert**. Answers are cached per Rakudo version under `scripts/cache/`.
+
+The rendered cheat sheet is `docs/raku-named-args.md`; how it is built and rebuilt is
+`org/llm/traces/raku-named-args-corpus.md`.
+
+**Two things it cannot do.** "Not declared" is not "invalid" — the implicit `*%_` means
+a declared list is a whitelist of *understood* adverbs, never an accept/reject boundary.
+And a valid-looking adverb can still be dead: `:i :m :r :s :P5` are **compilation**
+adverbs, so `S:i/a/b/` works but `"AAA".subst(/a/, "b", :i)` silently does nothing.
 
 ## Read the traces before starting
 

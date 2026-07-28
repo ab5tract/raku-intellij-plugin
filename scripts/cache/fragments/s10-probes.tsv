@@ -1,0 +1,73 @@
+Str	subst	g	"aaa".subst("a","b",:g) ne "aaa".subst("a","b")
+Str	subst	global	"aaa".subst("a","b",:global) ne "aaa".subst("a","b")
+Str	subst	ii	"ABC".subst("ABC","xyz",:ii) ne "ABC".subst("ABC","xyz")
+Str	subst	samecase	"ABC".subst("ABC","xyz",:samecase) ne "ABC".subst("ABC","xyz")
+Str	subst	ss	"a  b".subst("a  b","x y",:ss) ne "a  b".subst("a  b","x y")
+Str	subst	samespace	"a  b".subst("a  b","x y",:samespace) ne "a  b".subst("a  b","x y")
+Str	subst	mm	"ǟb".subst("ǟb","xy",:mm) ne "ǟb".subst("ǟb","xy")
+Str	subst	samemark	"ǟb".subst("ǟb","xy",:samemark) ne "ǟb".subst("ǟb","xy")
+Str	subst	s	"A  B".subst(/"A  B"/,"x y",:ii,:s) ne "A  B".subst(/"A  B"/,"x y",:ii)
+Str	subst	sigspace	"A  B".subst(/"A  B"/,"x y",:ii,:sigspace) ne "A  B".subst(/"A  B"/,"x y",:ii)
+Str	subst	x	"aaa".subst(/a/,"b",:x(2)) ne "aaa".subst(/a/,"b")
+Str	subst	nth	"aaa".subst(/a/,"b",:nth(2)) ne "aaa".subst(/a/,"b")
+Str	subst	st	"aaa".subst(/a/,"b",:st(2)) ne "aaa".subst(/a/,"b")
+Str	subst	nd	"aaa".subst(/a/,"b",:nd(2)) ne "aaa".subst(/a/,"b")
+Str	subst	rd	"aaaa".subst(/a/,"b",:rd(3)) ne "aaaa".subst(/a/,"b")
+Str	subst	th	"aaaa".subst(/a/,"b",:th(4)) ne "aaaa".subst(/a/,"b")
+Str	subst	p	"aaa".subst(/a/,"b",:p(1)) ne "aaa".subst(/a/,"b")
+Str	subst	pos	"aaa".subst(/a/,"b",:pos(1)) ne "aaa".subst(/a/,"b")
+Str	subst	c	"aaa".subst(/a/,"b",:c(1)) ne "aaa".subst(/a/,"b")
+Str	subst	continue	"aaa".subst(/a/,"b",:continue(1)) ne "aaa".subst(/a/,"b")
+Str	subst	as	(try "aaa".subst(/a/,"b",:g,:as(Str))) === Nil
+Str	subst	ov	(try "aaaa".subst(/aa/,"b",:ov)) === Nil
+Str	subst	ex	(try "aaaa".subst(/a+/,"b",:ex)) === Nil
+Str	subst	overlap	"aaaa".subst(/aa/,"b",:overlap) ne "aaaa".subst(/aa/,"b")
+Str	subst	exhaustive	(try "aaaa".subst(/a+/,"b",:exhaustive)) === Nil
+Str	subst	i	"AAA".subst(/a/,"b",:i) ne "AAA".subst(/a/,"b")
+Str	subst	ignorecase	"AAA".subst(/a/,"b",:ignorecase) ne "AAA".subst(/a/,"b")
+Str	subst	m	"ǟ".subst(/a/,"b",:m) ne "ǟ".subst(/a/,"b")
+Str	subst	ignoremark	"ǟ".subst(/a/,"b",:ignoremark) ne "ǟ".subst(/a/,"b")
+Str	subst	r	"aaa".subst(/a+a/,"b",:r) ne "aaa".subst(/a+a/,"b")
+Str	subst	ratchet	"aaa".subst(/a+a/,"b",:ratchet) ne "aaa".subst(/a+a/,"b")
+Str	subst	P5	"a\nb".subst(/a.b/,"x",:P5) ne "a\nb".subst(/a.b/,"x")
+Str	subst	Perl5	"a\nb".subst(/a.b/,"x",:Perl5) ne "a\nb".subst(/a.b/,"x")
+Str	subst-mutate	g	my $a="aaa"; $a.subst-mutate("a","b",:g); my $b="aaa"; $b.subst-mutate("a","b"); $a ne $b
+Str	subst-mutate	global	my $a="aaa"; $a.subst-mutate("a","b",:global); my $b="aaa"; $b.subst-mutate("a","b"); $a ne $b
+Str	subst-mutate	x	my $a="aaa"; $a.subst-mutate(/a/,"b",:x(2)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	nth	my $a="aaa"; $a.subst-mutate(/a/,"b",:nth(2)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	st	my $a="aaa"; $a.subst-mutate(/a/,"b",:st(2)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	nd	my $a="aaa"; $a.subst-mutate(/a/,"b",:nd(2)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	p	my $a="aaa"; $a.subst-mutate(/a/,"b",:p(1)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	pos	my $a="aaa"; $a.subst-mutate(/a/,"b",:pos(1)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	c	my $a="aaa"; $a.subst-mutate(/a/,"b",:c(1)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	continue	my $a="aaa"; $a.subst-mutate(/a/,"b",:continue(1)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	ov	my $a="aaaa"; $a.subst-mutate(/aa/,"b",:ov); my $b="aaaa"; $b.subst-mutate(/aa/,"b"); $a ne $b
+Str	subst-mutate	overlap	my $a="aaaa"; $a.subst-mutate(/aa/,"b",:overlap); my $b="aaaa"; $b.subst-mutate(/aa/,"b"); $a ne $b
+Str	subst-mutate	ex	my $a="aaaa"; (try $a.subst-mutate(/a+/,"b",:ex)) === Nil
+Str	subst-mutate	exhaustive	my $a="aaaa"; (try $a.subst-mutate(/a+/,"b",:exhaustive)) === Nil
+Str	subst-mutate	as	my $a="aaa"; (try $a.subst-mutate(/a/,"b",:g,:as(Str))) === Nil
+Str	subst-mutate	s	my $a="A  B"; $a.subst-mutate(/"A  B"/,"x y",:ii,:s); my $b="A  B"; $b.subst-mutate(/"A  B"/,"x y",:ii); $a ne $b
+Str	subst-mutate	sigspace	my $a="A  B"; $a.subst-mutate(/"A  B"/,"x y",:ii,:sigspace); my $b="A  B"; $b.subst-mutate(/"A  B"/,"x y",:ii); $a ne $b
+Str	subst-mutate	i	my $a="AAA"; $a.subst-mutate(/a/,"b",:i); my $b="AAA"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	match	i	"AAA".match(/a/,:i).Bool != "AAA".match(/a/).Bool
+Str	match	ignorecase	"AAA".match(/a/,:ignorecase).Bool != "AAA".match(/a/).Bool
+Str	match	m	"ǟ".match(/a/,:m).Bool != "ǟ".match(/a/).Bool
+Str	match	ignoremark	"ǟ".match(/a/,:ignoremark).Bool != "ǟ".match(/a/).Bool
+Str	match	s	"ab".match(/a b/,:s).Bool != "ab".match(/a b/).Bool
+Str	match	sigspace	"ab".match(/a b/,:sigspace).Bool != "ab".match(/a b/).Bool
+Str	match	r	"aaa".match(/a+a/,:r).Bool != "aaa".match(/a+a/).Bool
+Str	match	ratchet	"aaa".match(/a+a/,:ratchet).Bool != "aaa".match(/a+a/).Bool
+Str	match	P5	"a\nb".match(/a.b/,:P5).Bool != "a\nb".match(/a.b/).Bool
+Str	match	Perl5	"a\nb".match(/a.b/,:Perl5).Bool != "a\nb".match(/a.b/).Bool
+Str	trans	c	"abc".trans("a" => "x", :c) ne "abc".trans("a" => "x")
+Str	trans	complement	"abc".trans("a" => "x", :complement) ne "abc".trans("a" => "x")
+Str	trans	s	"aab".trans("a" => "x", :s) ne "aab".trans("a" => "x")
+Str	trans	squash	"aab".trans("a" => "x", :squash) ne "aab".trans("a" => "x")
+Str	trans	d	"abc".trans("ab" => "x", :d) ne "abc".trans("ab" => "x")
+Str	trans	delete	"abc".trans("ab" => "x", :delete) ne "abc".trans("ab" => "x")
+Str	substr-eq	i	"ABC".substr-eq("abc",:i) != "ABC".substr-eq("abc")
+Str	substr-eq	ignorecase	"ABC".substr-eq("abc",:ignorecase) != "ABC".substr-eq("abc")
+Str	substr-eq	m	"ǟbc".substr-eq("abc",:m) != "ǟbc".substr-eq("abc")
+Str	substr-eq	ignoremark	"ǟbc".substr-eq("abc",:ignoremark) != "ǟbc".substr-eq("abc")
+Str	IO	CWD	"-".IO(:CWD("/zzz-probe")).CWD eq "/zzz-probe"
+Str	IO	SPEC	"-".IO(:SPEC(IO::Spec::Win32.new)).SPEC.^name eq "IO::Spec::Win32"

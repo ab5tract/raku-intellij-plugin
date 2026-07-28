@@ -1,0 +1,11 @@
+# named-args.tsv is the one corpus file deliberately NOT committed.
+#
+# It is 1.7 MB, it is keyed by Rakudo version (so it is dead weight on any machine
+# running a different Rakudo), and `10-inventory.raku` regenerates it in about three
+# seconds. `named-args.raku` also self-heals: on a cache miss it introspects live and
+# appends the row.
+#
+# Everything else here IS committed. fragments/ especially -- that is ~14 agent-hours
+# of source reading and cannot be regenerated cheaply. See
+# org/llm/traces/raku-named-args-corpus.md.
+named-args.tsv

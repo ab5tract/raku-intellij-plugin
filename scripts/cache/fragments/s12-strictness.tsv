@@ -1,0 +1,29 @@
+sub	postcircumfix:<{ }>	failure	X::Adverb	delete exists kv p k v	src/core.c/hash_slice.rakumod:116
+sub	postcircumfix:<{ }>	throw	X::Bind::Slice	UNKNOWN	src/core.c/hash_slice.rakumod:214
+sub	postcircumfix:<{ }>	throw	X::Bind::ZenSlice	UNKNOWN	src/core.c/hash_slice.rakumod:242
+sub	postcircumfix:<[ ]>	throw	X::Bind::Slice	UNKNOWN	src/core.c/array_slice.rakumod:158
+sub	postcircumfix:<[ ]>	throw	X::Bind::Slice	UNKNOWN	src/core.c/array_slice.rakumod:267
+sub	postcircumfix:<[ ]>	throw	X::Bind::ZenSlice	UNKNOWN	src/core.c/array_slice.rakumod:286
+sub	postcircumfix:<[; ]>	throw	X::Bind::Slice	UNKNOWN	src/core.c/array_multislice.rakumod:150
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:186
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:223
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:260
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:316
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:372
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:421
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:5033
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:5288
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:5543
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:5798
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:6033
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:6173
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:6313
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:6453
+sub	postcircumfix:<[ ]>	throw	X::Bind	UNKNOWN	src/core.c/native_array.rakumod:5017
+sub	postcircumfix:<[ ]>	throw	X::Bind	UNKNOWN	src/core.c/native_array.rakumod:5272
+sub	postcircumfix:<[ ]>	throw	X::Bind	UNKNOWN	src/core.c/native_array.rakumod:5527
+sub	postcircumfix:<[ ]>	throw	X::Bind	UNKNOWN	src/core.c/native_array.rakumod:5782
+sub	postcircumfix:<[ ]>	throw	X::Delete	UNKNOWN	src/core.c/native_array.rakumod:5048
+sub	postcircumfix:<[ ]>	throw	X::Delete	UNKNOWN	src/core.c/native_array.rakumod:5303
+sub	postcircumfix:<[ ]>	throw	X::Delete	UNKNOWN	src/core.c/native_array.rakumod:5558
+sub	postcircumfix:<[ ]>	throw	X::Delete	UNKNOWN	src/core.c/native_array.rakumod:5813

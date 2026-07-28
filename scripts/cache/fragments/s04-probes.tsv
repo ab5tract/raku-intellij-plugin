@@ -1,0 +1,22 @@
+DateTime	new	hour	DateTime.new(:date(Date.new(2020,1,1)),:hour(5)).hour != DateTime.new(:date(Date.new(2020,1,1))).hour
+DateTime	new	minute	DateTime.new(:date(Date.new(2020,1,1)),:minute(5)).minute != DateTime.new(:date(Date.new(2020,1,1))).minute
+DateTime	new	second	DateTime.new(:date(Date.new(2020,1,1)),:second(5)).second != DateTime.new(:date(Date.new(2020,1,1))).second
+DateTime	new	day	DateTime.new(:date(Date.new(2020,1,1)),:day(5)).day != DateTime.new(:date(Date.new(2020,1,1))).day
+DateTime	new	timezone	DateTime.new("2020-01-01T00:00:00",:timezone(3600)).Str ne DateTime.new("2020-01-01T00:00:00").Str
+DateTime	new	formatter	DateTime.new(:date(Date.new(2020,1,1)),:formatter({"X"})).Str ne DateTime.new(:date(Date.new(2020,1,1))).Str
+DateTime	clone	year	DateTime.new(2020,1,1,0,0,0).clone(:year(2021)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	month	DateTime.new(2020,1,1,0,0,0).clone(:month(3)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	day	DateTime.new(2020,1,1,0,0,0).clone(:day(3)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	hour	DateTime.new(2020,1,1,0,0,0).clone(:hour(7)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	minute	DateTime.new(2020,1,1,0,0,0).clone(:minute(3)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	second	DateTime.new(2020,1,1,0,0,0).clone(:second(3)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	timezone	DateTime.new(2020,1,1,0,0,0).clone(:timezone(3600)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	formatter	DateTime.new(2020,1,1,0,0,0).clone(:formatter({"X"})).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	posix	real	DateTime.new(2020,1,1,0,0,0.5).posix(:real) != DateTime.new(2020,1,1,0,0,0.5).posix
+Dateish	later	day	DateTime.new(2020,1,1,0,0,0).later(:day(1)).day != DateTime.new(2020,1,1,0,0,0).day
+Dateish	later	hour	DateTime.new(2020,1,2,0,0,0).later(:hour(1)).hour != DateTime.new(2020,1,2,0,0,0).hour
+Dateish	earlier	day	DateTime.new(2020,1,2,0,0,0).earlier(:day(1)).day != DateTime.new(2020,1,2,0,0,0).day
+Dateish	earlier	month	DateTime.new(2020,1,2,0,0,0).earlier(:month(1)).month != DateTime.new(2020,1,2,0,0,0).month
+Encoding::Builtin	encoder	replacement	(try Encoding::Registry.find("ascii").encoder.encode-chars("\x[263A]")) === Nil && Encoding::Registry.find("ascii").encoder(:replacement("?")).encode-chars("\x[263A]").decode("ascii") eq "?"
+Encoding::Builtin	decoder	strict	do { my $a := Encoding::Registry.find("windows-1252").decoder(:strict); my $b := Encoding::Registry.find("windows-1252").decoder; $a.add-bytes(Blob.new(129)); $b.add-bytes(Blob.new(129)); (try $a.consume-all-chars()) === Nil && (try $b.consume-all-chars()).defined }
+Encoding::Builtin	decoder	translate-nl	do { my $a := Encoding::Registry.find("utf8").decoder(:translate-nl); my $b := Encoding::Registry.find("utf8").decoder; $a.add-bytes("a\r\nb".encode("utf8")); $b.add-bytes("a\r\nb".encode("utf8")); $a.consume-all-chars() ne $b.consume-all-chars() }

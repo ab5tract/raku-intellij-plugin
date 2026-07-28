@@ -1,0 +1,13 @@
+Allomorph	subst	g	<442>.subst("4","5",:g) ne <442>.subst("4","5")
+Allomorph	subst-mutate	g	{ my $x = <442>; $x.subst-mutate("4","5",:g); $x eq "552" }()
+Allomorph	comb	match	(<12>.comb(/\d/,:match).head ~~ Match) && !(<12>.comb(/\d/).head ~~ Match)
+Allomorph	split	skip-empty	<100>.split("0",:skip-empty).elems != <100>.split("0").elems
+Allomorph	split	v	<100>.split("0",:v).elems != <100>.split("0").elems
+Supply	act	done	{ my $d = 0; supply { emit 1 }.act(-> $ {}, done => { $d = 1 }); $d == 1 }()
+Supply	act	quit	{ my $q = 0; supply { die "boom" }.act(-> $ {}, quit => -> $ { $q = 1 }); $q == 1 }()
+Supply	act	tap	{ my $t = 0; supply { emit 1 }.act(-> $ {}, tap => -> $ { $t = 1 }); $t == 1 }()
+Supply	split	skip-empty	supply { emit "a,,b" }.split(",", :skip-empty).list.elems == 2 && supply { emit "a,,b" }.split(",").list.elems == 3
+Supply	split	v	supply { emit "a,b" }.split(",", :v).list.elems != supply { emit "a,b" }.split(",").list.elems
+Thread	start	name	Thread.start(-> {}, :name<zippy>).name eq "zippy" && Thread.start(-> {}).name eq "<anon>"
+Thread	start	app_lifetime	Thread.start(-> {}, :app_lifetime).app_lifetime && !Thread.start(-> {}).app_lifetime
+ThreadPoolScheduler	cue	catch	{ my $p = Promise.new; $*SCHEDULER.cue({ die "x" }, :in(0), :catch(-> $ { $p.keep(1) })); await Promise.anyof($p, Promise.in(5)); $p.status == Kept }()

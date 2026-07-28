@@ -1,0 +1,2 @@
+Code	assuming	|c	UNKNOWN	UNKNOWN	src/core.c/Code.rakumod:328
+CompUnit::PrecompilationStore::FileSystem	new-unit	|c	CompUnit::PrecompilationUnit::File	new	src/core.c/CompUnit/PrecompilationStore/FileSystem.rakumod:26

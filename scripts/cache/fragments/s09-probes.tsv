@@ -1,0 +1,9 @@
+Range	first	end	(1..10).first(* %% 3, :end) != (1..10).first(* %% 3)
+Range	first	k	(1..10).first(* %% 3, :k) != (1..10).first(* %% 3)
+Range	first	p	(1..10).first(* %% 3, :p) ~~ Pair && (1..10).first(* %% 3) !~~ Pair
+Range	first	kv	(1..10).first(* %% 3, :kv) !eqv (1..10).first(* %% 3)
+Rakudo::Internals::ShapedArrayCommon	sort	k	do { my @a[3] = 3,1,2; @a.sort(:k).List !eqv @a.sort.List }
+Rakudo::Internals::HyperRaceSharedImpl	grep	k	(1..10).hyper(:batch(2)).grep(* %% 3, :k).List !eqv (1..10).hyper(:batch(2)).grep(* %% 3).List
+Rakudo::Internals::HyperRaceSharedImpl	grep	p	(1..10).hyper(:batch(2)).grep(* %% 3, :p).List !eqv (1..10).hyper(:batch(2)).grep(* %% 3).List
+Rakudo::Internals::HyperRaceSharedImpl	grep	kv	(1..10).hyper(:batch(2)).grep(* %% 3, :kv).List !eqv (1..10).hyper(:batch(2)).grep(* %% 3).List
+RakuAST::Node	EVAL	check	do { use experimental :rakuast; use MONKEY-SEE-NO-EVAL; RakuAST::IntLiteral.new(42).EVAL(:check) !=== RakuAST::IntLiteral.new(42).EVAL }

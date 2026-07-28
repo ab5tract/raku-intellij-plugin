@@ -1,0 +1,22 @@
+sub	postcircumfix:<[ ]>	delete	my @a = 1,2,3; (@a[1]:delete) == 2 && !(@a[1]:exists)
+sub	postcircumfix:<[ ]>	exists	my @a = 1,2,3; (@a[1]:exists) === True && (@a[9]:exists) === False
+sub	postcircumfix:<[ ]>	kv	my @a = 1,2,3; (@a[1]:kv) eqv (1,2) && @a[1] == 2
+sub	postcircumfix:<[ ]>	p	my @a = 1,2,3; (@a[1]:p) eqv (1 => 2) && @a[1] == 2
+sub	postcircumfix:<[ ]>	k	my @a = 1,2,3; (@a[1]:k) eqv 1 && @a[1] == 2
+sub	postcircumfix:<[ ]>	v	my @a = 1,2,3; (@a[1]:v) eqv 2 && (@a[9]:v) eqv ()
+sub	postcircumfix:<[ ]>	BIND	my @a; my $x = 42; postcircumfix:<[ ]>(@a, 0, BIND => $x); $x = 43; @a[0] == 43
+sub	postcircumfix:<{ }>	delete	my %h = a => 1; (%h<a>:delete) == 1 && !(%h<a>:exists)
+sub	postcircumfix:<{ }>	exists	my %h = a => 1; (%h<a>:exists) === True && (%h<b>:exists) === False
+sub	postcircumfix:<{ }>	kv	my %h = a => 1; (%h<a>:kv) eqv ("a", 1) && %h<a> == 1
+sub	postcircumfix:<{ }>	p	my %h = a => 1; (%h<a>:p) eqv (a => 1) && %h<a> == 1
+sub	postcircumfix:<{ }>	k	my %h = a => 1; (%h<a>:k) eqv "a" && %h<a> == 1
+sub	postcircumfix:<{ }>	v	my %h = a => 1; (%h<a>:v) eqv 1 && (%h<b>:v) eqv ()
+sub	postcircumfix:<{ }>	BIND	my %h; my $x = 42; postcircumfix:<{ }>(%h, "a", BIND => $x); $x = 43; %h<a> == 43
+sub	postcircumfix:<[; ]>	delete	my @a[2;2]; @a[0;0] = 5; (@a[0;0]:delete) == 5 && !(@a[0;0]:exists)
+sub	postcircumfix:<[; ]>	exists	my @a[2;2]; @a[0;0] = 5; (@a[0;0]:exists) === True && (@a[1;1]:exists) === False
+sub	postcircumfix:<[; ]>	kv	my @a[2;2]; @a[0;0] = 5; (@a[0;0]:kv) eqv ((0,0), 5)
+sub	postcircumfix:<[; ]>	p	my @a[2;2]; @a[0;0] = 5; (@a[0;0]:p) eqv ((0,0) => 5)
+sub	postcircumfix:<[; ]>	k	my @a[2;2]; @a[0;0] = 5; (@a[0;0]:k) eqv (0,0)
+sub	postcircumfix:<[; ]>	v	my @a[2;2]; @a[0;0] = 5; (@a[0;0]:v) eqv 5 && (@a[1;1]:v) eqv ()
+sub	postcircumfix:<[; ]>	BIND	my @a[2;2]; postcircumfix:<[; ]>(@a, (0,0), BIND => 42); @a[0;0] == 42 && !(try @a[0;0] = 5)
+sub	postcircumfix:<{; }>	exists	my %h = a => { b => 1 }; (%h{"a";"b"}:exists) === True && (%h{"a";"c"}:exists) === False

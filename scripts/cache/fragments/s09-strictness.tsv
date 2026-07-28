@@ -1,0 +1,6 @@
+Rakudo::Internals	SLICE_HUH	failure	X::Adverb	delete exists kv p k v	src/core.c/Rakudo/Internals.rakumod:85
+Rakudo::Internals	ADVERBS_AND_NAMED_TO_DISPATCH_INDEX	failure	X::Adverb	exists delete kv p k v	src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:307
+Rakudo::Internals	ADVERBS_TO_DISPATCH_INDEX	failure	X::Adverb	exists delete kv p k v	src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:415
+Rakudo::Internals	SLICE_POSITIONS_WITH_ADVERBS	failure	X::Adverb	exists delete kv p k v	src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:441
+Rakudo::Internals	SLICE_WITH_ADVERBS	failure	X::Adverb	exists delete kv p k v	src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:451
+Rakudo::Internals	FAIL_X_ADVERB	failure	X::Adverb		src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:460

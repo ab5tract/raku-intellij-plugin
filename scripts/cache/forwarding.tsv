@@ -1,0 +1,332 @@
+type	method	idiom	target_type	target_method	evidence	slice
+Any	match	|c	Str	match	src/core.c/Any.rakumod:148	s01
+Any	combinations	|c	List	combinations	src/core.c/Any.rakumod:186	s01
+Any	permutations	|c	List	permutations	src/core.c/Any.rakumod:187	s01
+Any	push	|c	Array	push	src/core.c/Any.rakumod:213	s01
+Any	append	|c	Array	append	src/core.c/Any.rakumod:219	s01
+Any	unshift	|c	Array	unshift	src/core.c/Any.rakumod:225	s01
+Any	prepend	|c	Array	prepend	src/core.c/Any.rakumod:231	s01
+Any	first	positional-%_	SELF	!first-regex-end	src/core.c/Any-iterable-methods.rakumod:609	s01
+Any	first	positional-%_	SELF	!first-regex	src/core.c/Any-iterable-methods.rakumod:610	s01
+Any	first	positional-%_	SELF	!first-callable-end	src/core.c/Any-iterable-methods.rakumod:614	s01
+Any	first	positional-%_	SELF	!first-callable	src/core.c/Any-iterable-methods.rakumod:615	s01
+Any	first	positional-%_	SELF	!first-accepts-end	src/core.c/Any-iterable-methods.rakumod:619	s01
+Any	first	positional-%_	SELF	!first-accepts	src/core.c/Any-iterable-methods.rakumod:620	s01
+Any	!first-callable	positional-%_	SELF	!first-result	src/core.c/Any-iterable-methods.rakumod:642	s01
+Any	!first-callable-end	positional-%_	SELF	!first-result	src/core.c/Any-iterable-methods.rakumod:654	s01
+Any	!first-regex	positional-%_	SELF	!first-result	src/core.c/Any-iterable-methods.rakumod:684	s01
+Any	!first-regex-end	positional-%_	SELF	!first-result	src/core.c/Any-iterable-methods.rakumod:705	s01
+Any	!first-accepts	positional-%_	SELF	!first-result	src/core.c/Any-iterable-methods.rakumod:726	s01
+Any	!first-accepts-end	positional-%_	SELF	!first-result	src/core.c/Any-iterable-methods.rakumod:738	s01
+Any	sort	|c	List	sort	src/core.c/Any-iterable-methods.rakumod:793	s01
+Any	head	|c	List	head	src/core.c/Any-iterable-methods.rakumod:1238	s01
+Any	tail	|c	List	tail	src/core.c/Any-iterable-methods.rakumod:1254	s01
+Array::Shaped	DELETE-POS	|c	Any	DELETE-POS	src/core.c/Array/Shaped.rakumod:135	s01
+Array::Shaped	BIND-POS	|c	Any	BIND-POS	src/core.c/Array/Shaped.rakumod:181	s01
+Baggy	classify-list	|c	SELF	classify-list	src/core.c/Baggy.rakumod:556	s01
+Baggy	categorize-list	|c	SELF	categorize-list	src/core.c/Baggy.rakumod:606	s01
+Backtrace::Frame	new	positional-%_	Mu	POPULATE	src/core.c/Backtrace.rakumod:17	s01
+Code	assuming	|c	UNKNOWN	UNKNOWN	src/core.c/Code.rakumod:328	s02
+CompUnit::PrecompilationStore::FileSystem	new-unit	|c	CompUnit::PrecompilationUnit::File	new	src/core.c/CompUnit/PrecompilationStore/FileSystem.rakumod:26	s02
+Cool	encode	|c	Str	encode	src/core.c/Cool.rakumod:77	s03
+Cool	wordcase	|%_	Str	wordcase	src/core.c/Cool.rakumod:87	s03
+Cool	trans	|c	Str	trans	src/core.c/Cool.rakumod:95	s03
+Cool	substr-rw	|c	Str	substr-rw	src/core.c/Cool.rakumod:174	s03
+Cool	substr-eq	|%_	Str	starts-with	src/core.c/Cool.rakumod:182	s03
+Cool	substr-eq	|%_	Str	substr-eq	src/core.c/Cool.rakumod:185	s03
+Cool	contains	|%_	Str	contains	src/core.c/Cool.rakumod:198	s03
+Cool	indices	|%_	Str	indices	src/core.c/Cool.rakumod:234	s03
+Cool	index	|%_	Str	index	src/core.c/Cool.rakumod:264	s03
+Cool	rindex	|%_	Str	rindex	src/core.c/Cool.rakumod:301	s03
+Cool	split	|c	Str	split	src/core.c/Cool.rakumod:313	s03
+Cool	subst	|%options	Str	subst	src/core.c/Cool.rakumod:362	s03
+Cool	subst-mutate	|c	Str	subst-mutate	src/core.c/Cool.rakumod:370	s03
+Cool	EVAL	|%opts	GLOBAL	EVAL	src/core.c/Cool.rakumod:392	s03
+Date	new	positional-%_	SELF	!populate	src/core.c/Date.rakumod:77	s03
+Date	new	positional-%_	SELF	!new-from-daycount	src/core.c/Date.rakumod:145	s03
+Date	new-from-daycount	positional-%_	SELF	!new-from-daycount	src/core.c/Date.rakumod:156	s03
+Date	today	positional-%_	SELF	!populate	src/core.c/Date.rakumod:185	s03
+Date	clone	positional-%_	SELF	!populate	src/core.c/Date.rakumod:354	s03
+Date	!new-from-daycount	positional-%_	SELF	!populate	src/core.c/Date.rakumod:173	s03
+Date	!populate	positional-%_	Mu	POPULATE	src/core.c/Date.rakumod:50	s03
+CompUnit::Repository::Distribution	new	|%_	SELF	bless	src/core.c/CompUnit/Repository/Distribution.rakumod:27	s03
+CompUnit::Repository::Locally	new	|%_	SELF	bless	src/core.c/CompUnit/Repository/Locally.rakumod:36	s03
+DateTime	new	positional-%_	SELF	!populate	src/core.c/DateTime.rakumod:236	s04
+DateTime	new	positional-%_	SELF	!populate	src/core.c/DateTime.rakumod:250	s04
+DateTime	new	|%_	SELF	new	src/core.c/DateTime.rakumod:256	s04
+DateTime	new	|%_	SELF	new	src/core.c/DateTime.rakumod:262	s04
+DateTime	new	|%_	SELF	clone	src/core.c/DateTime.rakumod:264	s04
+DateTime	new	|c	SELF	new	src/core.c/DateTime.rakumod:268	s04
+DateTime	new	positional-%_	SELF	!populate	src/core.c/DateTime.rakumod:411	s04
+DateTime	clone	positional-%_	SELF	!populate	src/core.c/DateTime.rakumod:476	s04
+DateTime	!clone-without-validating	|%_	SELF	clone	src/core.c/DateTime.rakumod:502	s04
+Distribution::Resource	open	|c	IO::Path	open	src/core.c/Distribution/Resource.rakumod:26	s04
+Distribution::Resource	slurp	|c	IO::Path	slurp	src/core.c/Distribution/Resource.rakumod:29	s04
+Distribution::Resource	lines	|c	IO::Path	lines	src/core.c/Distribution/Resource.rakumod:32	s04
+Distribution::Resource	comb	|c	IO::Path	comb	src/core.c/Distribution/Resource.rakumod:35	s04
+Distribution::Resource	split	|c	IO::Path	split	src/core.c/Distribution/Resource.rakumod:38	s04
+Distribution::Resource	words	|c	IO::Path	words	src/core.c/Distribution/Resource.rakumod:41	s04
+Distribution::Resource	copy	|c	IO::Path	copy	src/core.c/Distribution/Resource.rakumod:44	s04
+Distribution::Resource	Str	|c	IO::Path	Str	src/core.c/Distribution/Resource.rakumod:53	s04
+Distribution::Resource	absolute	|c	IO::Path	absolute	src/core.c/Distribution/Resource.rakumod:58	s04
+Distribution::Resource	is-absolute	|c	IO::Path	is-absolute	src/core.c/Distribution/Resource.rakumod:63	s04
+Distribution::Resource	relative	|c	IO::Path	relative	src/core.c/Distribution/Resource.rakumod:68	s04
+Distribution::Resource	is-relative	|c	IO::Path	is-relative	src/core.c/Distribution/Resource.rakumod:73	s04
+Distribution::Resource	parts	|c	IO::Path	parts	src/core.c/Distribution/Resource.rakumod:78	s04
+Distribution::Resource	volume	|c	IO::Path	volume	src/core.c/Distribution/Resource.rakumod:83	s04
+Distribution::Resource	dirname	|c	IO::Path	dirname	src/core.c/Distribution/Resource.rakumod:88	s04
+Distribution::Resource	basename	|c	IO::Path	basename	src/core.c/Distribution/Resource.rakumod:93	s04
+Distribution::Resource	extension	|c	IO::Path	extension	src/core.c/Distribution/Resource.rakumod:98	s04
+Distribution::Resource	resolve	|c	IO::Path	resolve	src/core.c/Distribution/Resource.rakumod:103	s04
+Grammar	parse	|%_	SELF	new	src/core.c/Grammar.rakumod:5	s05
+Grammar	subparse	|%_	SELF	new	src/core.c/Grammar.rakumod:26	s05
+Grammar	parsefile	|%_	SELF	parse	src/core.c/Grammar.rakumod:37	s05
+Hash	classify-list	|c	SELF	classify-list	src/core.c/Hash.rakumod:327	s05
+Hash	classify-list	|c	SELF	classify-list	src/core.c/Hash.rakumod:330	s05
+Hash	classify-list	|c	SELF	classify-list	src/core.c/Hash.rakumod:333	s05
+Hash	categorize-list	|c	SELF	categorize-list	src/core.c/Hash.rakumod:398	s05
+Hash	categorize-list	|c	SELF	categorize-list	src/core.c/Hash.rakumod:401	s05
+Hash	categorize-list	|c	SELF	categorize-list	src/core.c/Hash.rakumod:404	s05
+Hash::Ordered	STORE	|c	Hash	STORE	src/core.c/Hash/Ordered.rakumod:6	s05
+Match	CALL_SUBRULE	|c	UNKNOWN	UNKNOWN	src/core.c/INTERPOLATE.rakumod:546	s05
+Match	INDMETHOD	|c	UNKNOWN	UNKNOWN	src/core.c/INTERPOLATE.rakumod:607	s05
+Match	INDRULE	|c	UNKNOWN	UNKNOWN	src/core.c/INTERPOLATE.rakumod:611	s05
+IO::CatHandle	new	|%_	SELF	bless	src/core.c/IO/CatHandle.rakumod:24	s05
+IO::CatHandle	comb	|c	Str	comb	src/core.c/IO/CatHandle.rakumod:125	s05
+IO::CatHandle	split	|c	Str	split	src/core.c/IO/CatHandle.rakumod:126	s05
+IO::CatHandle	lock	|c	IO::Handle	lock	src/core.c/IO/CatHandle.rakumod:355	s05
+IO::CatHandle	seek	|c	IO::Handle	seek	src/core.c/IO/CatHandle.rakumod:366	s05
+IO::Handle	comb	|c	Str	comb	src/core.c/IO/Handle.rakumod:302	s05
+IO::Handle	split	|c	Str	split	src/core.c/IO/Handle.rakumod:307	s05
+IO::Handle	printf	|c	sub	sprintf	src/core.c/IO/Handle.rakumod:679	s05
+IO::Path	new	positional-%_	SELF	from-dash	src/core.c/IO/Path.rakumod:50	s05
+IO::Path	open	|c	IO::Handle	open	src/core.c/IO/Path.rakumod:229	s05
+IO::Path	chdir	|c	SELF	chdir	src/core.c/IO/Path.rakumod:409	s05
+IO::Path	move	|c	SELF	copy	src/core.c/IO/Path.rakumod:498	s05
+IO::Path	lines	|c	IO::Handle	lines	src/core.c/IO/Path.rakumod:838	s05
+IO::Path	comb	|c	IO::Handle	comb	src/core.c/IO/Path.rakumod:843	s05
+IO::Path	split	|c	IO::Handle	split	src/core.c/IO/Path.rakumod:848	s05
+IO::Path	words	|c	IO::Handle	words	src/core.c/IO/Path.rakumod:853	s05
+IO::Path::Spec	new	|c	IO::Path	new	src/core.c/IO/Path.rakumod:1138	s05
+Failure	new	|c	X::AdHoc	from-slurpy	src/core.c/Failure.rakumod:46	s05
+X::Symbol::NotDynamic	new	|%options	Mu	new	src/core.c/Exception.rakumod:3471	s05
+X::Symbol::NotLexical	new	|%options	Mu	new	src/core.c/Exception.rakumod:3477	s05
+X::Caller::NotDynamic	new	|%options	Mu	new	src/core.c/Exception.rakumod:3483	s05
+IO::Spec::Cygwin	abs2rel	|c	IO::Spec::Win32	abs2rel	src/core.c/IO/Spec/Cygwin.rakumod:52	s06
+IO::Spec::Cygwin	rel2abs	|c	IO::Spec::Win32	rel2abs	src/core.c/IO/Spec/Cygwin.rakumod:55	s06
+IO::Spec::Cygwin	splitpath	|c	IO::Spec::Win32	splitpath	src/core.c/IO/Spec/Cygwin.rakumod:58	s06
+IO::Spec::Cygwin	catpath	|c	IO::Spec::Win32	catpath	src/core.c/IO/Spec/Cygwin.rakumod:61	s06
+IO::Spec::Cygwin	join	|c	IO::Spec::Win32	join	src/core.c/IO/Spec/Cygwin.rakumod:71	s06
+IO::Spec::Unix	catfile	|c	SELF	catdir	src/core.c/IO/Spec/Unix.rakumod:212	s06
+IO::Socket::INET	new	|%options	Mu	bless	src/core.c/IO/Socket/INET.rakumod:63	s06
+IO::Socket::INET	new	|%options	Mu	bless	src/core.c/IO/Socket/INET.rakumod:85	s06
+IO::Socket::Async::Datagram	decode	|c	Blob	decode	src/core.c/IO/Socket/Async.rakumod:55	s06
+IO::Socket::Async::Datagram	encode	|c	Str	encode	src/core.c/IO/Socket/Async.rakumod:60	s06
+Junction	CALL-ME	|c	UNKNOWN	UNKNOWN	src/core.c/Junction.rakumod:317	s06
+Junction	AUTOTHREAD	|c	UNKNOWN	UNKNOWN	src/core.c/Junction.rakumod:419	s06
+Mu	new	|%options	SELF	bless	src/core.c/Mu.rakumod:140	s07
+Mu	new	positional-%_	SELF	POPULATE	src/core.c/Mu.rakumod:139	s07
+Mu	bless	positional-%_	SELF	POPULATE	src/core.c/Mu.rakumod:154	s07
+Mu	clone	positional-%_	SELF	!clone-with-twiddles	src/core.c/Mu.rakumod:1150	s07
+Mu	WALK	|%options	SELF	WALK	src/core.c/Mu.rakumod:1362	s07
+Mu	gistseen	|%options	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:903	s07
+Mu	rakuseen	|%options	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:933	s07
+Mu	dispatch:<var>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1175	s07
+Mu	dispatch:<::>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1208	s07
+Mu	dispatch:<!>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1214	s07
+Mu	dispatch:<.=>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1227	s07
+Mu	dispatch:<.?>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1232	s07
+Mu	dispatch:<.+>	|c	SELF	!batch-call	src/core.c/Mu.rakumod:1260	s07
+Mu	dispatch:<.*>	|c	SELF	!batch-call	src/core.c/Mu.rakumod:1264	s07
+Mu	dispatch:<hyper>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1280	s07
+Map	new	positional-%_	SELF	new	src/core.c/Map.rakumod:11	s07
+Operator	prec	|c	OperatorProperties	prec	src/core.c/Operator.rakumod:9	s07
+Any	min	|%_	SELF	min	src/core.c/Order.rakumod:249	s08
+Any	max	|%_	SELF	max	src/core.c/Order.rakumod:306	s08
+Any	minmax	|%_	SELF	minmax	src/core.c/Order.rakumod:431	s08
+ParallelSequence	grep	positional-%_	Rakudo::Internals::HyperRaceSharedImpl	grep	src/core.c/ParallelSequence.rakumod:33	s08
+ParallelSequence	map	positional-%_	Rakudo::Internals::HyperRaceSharedImpl	map	src/core.c/ParallelSequence.rakumod:38	s08
+Proc::Async	new	|%_	SELF	bless	src/core.c/Proc/Async.rakumod:147	s08
+Proc::Async	stdout	|%_	SELF	stdout	src/core.c/Proc/Async.rakumod:212	s08
+Proc::Async	stderr	|%_	SELF	stderr	src/core.c/Proc/Async.rakumod:234	s08
+Proc::Async	Supply	|%_	SELF	Supply	src/core.c/Proc/Async.rakumod:260	s08
+Proc::Async	put	|c	SELF	print	src/core.c/Proc/Async.rakumod:495	s08
+Proc::Async	say	|c	SELF	print	src/core.c/Proc/Async.rakumod:503	s08
+Promise	start	|c	UNKNOWN	UNKNOWN	src/core.c/Promise.rakumod:370	s08
+REPL	repl-eval	|%adverbs	UNKNOWN	UNKNOWN	src/core.c/REPL.rakumod:378	s08
+REPL	new-repl-eval	|%adverbs	UNKNOWN	UNKNOWN	src/core.c/REPL.rakumod:428	s08
+REPL	repl-loop	|%adverbs	SELF	new-repl-eval	src/core.c/REPL.rakumod:497	s08
+Perl	new	|%_	Raku	new	src/core.c/Raku.rakumod:41	s08
+RakuAST::Deparse	deparse-without-highlighting	|%_	SELF	deparse	src/core.c/RakuAST/Deparse.rakumod:181	s08
+RakuAST::Deparse	deparse	|%_	SELF	deparse	src/core.c/RakuAST/Deparse.rakumod:656	s08
+RakuAST::Deparse	deparse	|%_	SELF	syn-type	src/core.c/RakuAST/Deparse.rakumod:2720	s08
+RakuAST::Doc::Block	from-alias	|%_	SELF	new	src/core.c/RakuAST/Fixups.rakumod:861	s08
+RakuAST::Doc::Block	from-config	|%_	SELF	new	src/core.c/RakuAST/Fixups.rakumod:881	s08
+RakuAST::Doc::Block	from-paragraphs	|%_	SELF	new	src/core.c/RakuAST/Fixups.rakumod:899	s08
+Rakudo::Internals::ShapedArrayCommon	push	|c	Any	push	src/core.c/Rakudo/Internals.rakumod:547	s09
+Rakudo::Internals::ShapedArrayCommon	append	|c	Any	append	src/core.c/Rakudo/Internals.rakumod:550	s09
+Rakudo::Internals::ShapedArrayCommon	unshift	|c	Any	unshift	src/core.c/Rakudo/Internals.rakumod:553	s09
+Rakudo::Internals::ShapedArrayCommon	prepend	|c	Any	prepend	src/core.c/Rakudo/Internals.rakumod:556	s09
+Rakudo::Internals::ShapedArrayCommon	roll	|c	Any	roll	src/core.c/Rakudo/Internals.rakumod:579	s09
+Rakudo::Internals::ShapedArrayCommon	pick	|c	Any	pick	src/core.c/Rakudo/Internals.rakumod:580	s09
+Rakudo::Internals::ShapedArrayCommon	permutations	|c	Any	permutations	src/core.c/Rakudo/Internals.rakumod:581	s09
+Rakudo::Internals::ShapedArrayCommon	combinations	|c	Any	combinations	src/core.c/Rakudo/Internals.rakumod:582	s09
+Rakudo::Internals::ShapedArrayCommon	join	|c	Seq	join	src/core.c/Rakudo/Internals.rakumod:583	s09
+Rakudo::Internals::ShapedArrayCommon	sort	|c	Seq	sort	src/core.c/Rakudo/Internals.rakumod:584	s09
+Rakudo::Internals::ShapedArrayCommon	AT-POS	|c	Any	AT-POS	src/core.c/Rakudo/Internals.rakumod:647	s09
+Rakudo::Internals::ShapedArrayCommon	ASSIGN-POS	|c	Any	ASSIGN-POS	src/core.c/Rakudo/Internals.rakumod:655	s09
+Rakudo::Internals::ShapedArrayCommon	EXISTS-POS	|c	Any	EXISTS-POS	src/core.c/Rakudo/Internals.rakumod:666	s09
+Range	first	|%_	Any	first	src/core.c/Range.rakumod:391	s09
+Range	fmt	|c	List	fmt	src/core.c/Range.rakumod:443	s09
+Rakudo::Internals::HyperRaceSharedImpl	grep	|%options	Any	grep	src/core.c/Rakudo/Internals/HyperRaceSharedImpl.rakumod:39	s09
+Rakudo::Internals::HyperRaceSharedImpl	map	|%options	Any	map	src/core.c/Rakudo/Internals/HyperRaceSharedImpl.rakumod:79	s09
+RakuAST::Node	EVAL	|%options	CORE	EVAL	src/core.c/RakuAST/Raku.rakumod:13	s09
+Str	IO	positional-%_	IO::Path	from-dash	src/core.c/Str.rakumod:38	s10
+Str	substr-eq	|%_	SELF	starts-with	src/core.c/Str.rakumod:305	s10
+Str	substr-eq	|%_	SELF	substr-eq	src/core.c/Str.rakumod:314	s10
+Str	!match-pattern	positional-%_	SELF	!match-cursor	src/core.c/Str.rakumod:1203	s10
+Str	!match-cursor	positional-%_	SELF	!match-nth	src/core.c/Str.rakumod:1248	s10
+Str	!match-nth	positional-%_	SELF	!match-cursor	src/core.c/Str.rakumod:1305	s10
+Str	match	|c	SELF	match	src/core.c/Str.rakumod:1511	s10
+Str	match	positional-%_	SELF	!match-pattern	src/core.c/Str.rakumod:1521	s10
+Str	match	positional-%_	SELF	!match-cursor	src/core.c/Str.rakumod:1542	s10
+Str	match	positional-%_	SELF	!match-nth	src/core.c/Str.rakumod:1602	s10
+Str	subst-mutate	|%options	SELF	match	src/core.c/Str.rakumod:1655	s10
+Str	subst	|%options	SELF	!SUBST	src/core.c/Str.rakumod:1681	s10
+Str	!SUBST	|%options	SELF	match	src/core.c/Str.rakumod:1724	s10
+Str	trans	|%_	SELF	trans	src/core.c/Str.rakumod:3392	s10
+Str	trans	positional-%_	SELF	trans-with-nameds	src/core.c/Str.rakumod:3553	s10
+Seq	sort	|c	List	sort	src/core.c/Seq.rakumod:72	s10
+Sequence	fmt	|c	List	fmt	src/core.c/Sequence.rakumod:72	s10
+Routine	prec	|c	OperatorProperties	prec	src/core.c/Routine.rakumod:323	s10
+Slang	parse	|c	UNKNOWN	UNKNOWN	src/core.c/Slang.rakumod:12	s10
+Allomorph	words	|c	Str	words	src/core.c/allomorphs.rakumod:18	s11
+Allomorph	comb	|c	Str	comb	src/core.c/allomorphs.rakumod:22	s11
+Allomorph	split	|c	Str	split	src/core.c/allomorphs.rakumod:26	s11
+Allomorph	subst	|c	Str	subst	src/core.c/allomorphs.rakumod:30	s11
+Allomorph	subst-mutate	|c	Str	subst-mutate	src/core.c/allomorphs.rakumod:33	s11
+Allomorph	samecase	|c	Str	samecase	src/core.c/allomorphs.rakumod:37	s11
+Allomorph	samemark	|c	Str	samemark	src/core.c/allomorphs.rakumod:40	s11
+Allomorph	samespace	|c	Str	samespace	src/core.c/allomorphs.rakumod:43	s11
+Allomorph	chop	|c	Str	chop	src/core.c/allomorphs.rakumod:47	s11
+Allomorph	substr	|c	Str	substr	src/core.c/allomorphs.rakumod:81	s11
+Supply	act	|%options	SELF	tap	src/core.c/Supply.rakumod:98	s11
+Supply	first	|c	SELF	grep	src/core.c/Supply-factories.rakumod:280	s11
+Supply	comb	|c	Str	comb	src/core.c/Supply-factories.rakumod:645	s11
+Supply	comb	|c	SELF	comb	src/core.c/Supply-factories.rakumod:649	s11
+Supply	split	|%_	Str	split	src/core.c/Supply-factories.rakumod:676	s11
+Supply	split	|%_	SELF	split	src/core.c/Supply-factories.rakumod:688	s11
+Thread	start	|%options	SELF	new	src/core.c/Thread.rakumod:92	s11
+ThreadPoolScheduler	cue	positional-%_	SELF	!CUE_DELAY_TIMES	src/core.c/ThreadPoolScheduler.rakumod:1042	s11
+ThreadPoolScheduler	cue	positional-%_	SELF	!CUE_DELAY_TIMES	src/core.c/ThreadPoolScheduler.rakumod:1054	s11
+ThreadPoolScheduler	cue	positional-%_	SELF	!CUE_DELAY_TIMES	src/core.c/ThreadPoolScheduler.rakumod:1060	s11
+Variable	throw	|c	UNKNOWN	UNKNOWN	src/core.c/Variable.rakumod:21	s11
+WalkList	invoke	|c	SELF	invoke	src/core.c/WalkList.rakumod:33	s11
+WalkList	invoke	|c	UNKNOWN	UNKNOWN	src/core.c/WalkList.rakumod:28	s11
+WalkList	CALL-ME	|c	SELF	invoke	src/core.c/WalkList.rakumod:53	s11
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:26	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:32	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:38	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:44	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:50	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access	src/core.c/array_slice.rakumod:58	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:75	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:81	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:87	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:93	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:99	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:105	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:173	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:187	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:202	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:217	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:232	s12
+sub	postcircumfix:<[ ]>	%_	Array::Element	access-any	src/core.c/array_slice.rakumod:247	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:111	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:119	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:174	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:188	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:203	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:218	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:233	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/array_slice.rakumod:248	s12
+sub	postcircumfix:<[ ]>	%_	Rakudo::Internals	SLICE_POSITIONS_WITH_ADVERBS	src/core.c/array_slice.rakumod:122	s12
+sub	postcircumfix:<[ ]>	%_	Rakudo::Internals	SLICE_WITH_ADVERBS	src/core.c/array_slice.rakumod:256	s12
+sub	postcircumfix:<[ ]>	%_	Rakudo::Internals	SLICE_WITH_ADVERBS	src/core.c/array_slice.rakumod:282	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:177	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:182	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:187	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:192	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:197	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_ONE_HASH	src/core.c/hash_slice.rakumod:202	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:178	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:183	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:188	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:193	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:198	s12
+sub	postcircumfix:<{ }>	%_	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:203	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:217	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:220	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:223	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:226	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:229	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:232	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:236	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:245	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:248	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:251	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:254	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:257	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:260	s12
+sub	postcircumfix:<{ }>	%other	sub	SLICE_MORE_HASH	src/core.c/hash_slice.rakumod:264	s12
+sub	postcircumfix:<{ }>	|%other	Any	ZEN-KEY	src/core.c/hash_slice.rakumod:269	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/native_array.rakumod:5050	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/native_array.rakumod:5305	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/native_array.rakumod:5560	s12
+sub	postcircumfix:<[ ]>	|%_	sub	postcircumfix:<[ ]>	src/core.c/native_array.rakumod:5815	s12
+sub	splice	|c	UNKNOWN	splice	src/core.c/array_operators.rakumod:45	s12
+sub	open	|c	IO::Handle	open	src/core.c/io_operators.rakumod:168	s12
+sub	open	|c	IO::Handle	open	src/core.c/io_operators.rakumod:170	s12
+sub	lines	|%_	UNKNOWN	lines	src/core.c/io_operators.rakumod:175	s12
+sub	lines	|%_	UNKNOWN	lines	src/core.c/io_operators.rakumod:180	s12
+sub	lines	|%_	UNKNOWN	lines	src/core.c/io_operators.rakumod:185	s12
+sub	words	|%_	UNKNOWN	words	src/core.c/io_operators.rakumod:192	s12
+sub	words	|%_	UNKNOWN	words	src/core.c/io_operators.rakumod:197	s12
+sub	words	|%_	UNKNOWN	words	src/core.c/io_operators.rakumod:202	s12
+sub	slurp	|%_	UNKNOWN	slurp	src/core.c/io_operators.rakumod:217	s12
+sub	slurp	|%_	IO::Handle	slurp	src/core.c/io_operators.rakumod:218	s12
+sub	spurt	|%_	IO::Handle	spurt	src/core.c/io_operators.rakumod:228	s12
+sub	chdir	|c	UNKNOWN	chdir	src/core.c/io_operators.rakumod:266	s12
+sub	to-json	|c	Rakudo::Internals::JSON	to-json	src/core.c/core_epilogue.rakumod:180	s12
+Mu	perl	|c	Mu	raku	src/core.c/core_epilogue.rakumod:197	s12
+Mu	perlseen	|c	Mu	rakuseen	src/core.c/core_epilogue.rakumod:201	s12
+sub	callwith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:131	s12
+sub	nextwith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:145	s12
+sub	samewith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:212	s12
+sub	samewith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:213	s12
+sub	samewith	|c	UNKNOWN	UNKNOWN	src/core.c/control.rakumod:216	s12
+sub	METAOP_HYPER_CALL	|args	UNKNOWN	UNKNOWN	src/core.c/metaops.rakumod:643	s12
+sub	HYPER	|c	Hyper	infix	src/core.c/metaops.rakumod:647	s12
+Str	contains	|%_	SELF	contains	src/core.e/Fixups.rakumod:366	s13
+Str	ends-with	|%_	SELF	ends-with	src/core.e/Fixups.rakumod:372	s13
+Str	index	|%_	SELF	index	src/core.e/Fixups.rakumod:378	s13
+Str	indices	|%_	SELF	indices	src/core.e/Fixups.rakumod:384	s13
+Str	rindex	|%_	SELF	rindex	src/core.e/Fixups.rakumod:390	s13
+Str	starts-with	|%_	SELF	starts-with	src/core.e/Fixups.rakumod:396	s13
+Str	substr-eq	|%_	SELF	substr-eq	src/core.e/Fixups.rakumod:404	s13
+Format	CALL-ME	|c	UNKNOWN	UNKNOWN	src/core.e/Format.rakumod:39	s13
+sub	zprintf	|c	UNKNOWN	UNKNOWN	src/core.e/Format.rakumod:128	s13
+Cool	zprintf	|c	sub	zprintf	src/core.e/Format.rakumod:132	s13
+sub	comb	|%_	Cool	comb	src/core.e/additions.rakumod:6	s14
+sub	rotor	|%_	UNKNOWN	rotor	src/core.e/additions.rakumod:25	s14
+sub	rotor	|%_	UNKNOWN	rotor	src/core.e/additions.rakumod:29	s14
+sub	trans	|%_	UNKNOWN	trans	src/core.e/additions.rakumod:55	s14
+sub	postcircumfix:<{; }>	|%_	sub	postcircumfix:<{; }>	src/core.e/hash_multislice.rakumod:7	s14
+sub	postcircumfix:<[; ]>	|%_	sub	postcircumfix:<[; ]>	src/core.e/array_multislice.rakumod:69	s14
+Grammar	typed_exception	|%opts	X::Comp	new	src/core.e/Grammar.rakumod:52	s14
+Grammar	parse	|%_	SELF	new	src/core.e/Grammar.rakumod:63	s14
+Grammar	subparse	|%_	SELF	new	src/core.e/Grammar.rakumod:97	s14
+Grammar	parsefile	|%_	SELF	parse	src/core.e/Grammar.rakumod:108	s14
+PseudoStash	NEW-PACKAGE	|%initargs	SELF	new	src/core.e/PseudoStash.rakumod:46	s14
+CtxSymIterator::Keys	new	|c	CtxSymIterator	new	src/core.e/PseudoStash.rakumod:514	s14
+CtxSymIterator::Values	new	|c	CtxSymIterator	new	src/core.e/PseudoStash.rakumod:538	s14
