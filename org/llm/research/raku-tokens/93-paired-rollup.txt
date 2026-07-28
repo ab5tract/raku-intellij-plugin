@@ -1,0 +1,18 @@
+LEVEL 2 -- tokens to express the same task (both arms verified equivalent)
+
+task                  rk_byt  rk_lin  rk_tok    py_byt  py_lin  py_tok   tok_diff
+------------------------------------------------------------------------------------
+t1-tally                 184       5      65       229       9      71      -8.5%
+t2-skipped               179       4      62       240       8      67      -7.5%
+t3-effect-colors         360       7     111       364       8     107      +3.7%
+t4-frozen-names          211       4      74       224       6      68      +8.8%
+t5-size-histogram        371      10     151       469      12     154      -1.9%
+------------------------------------------------------------------------------------
+TOTAL                   1305             463      1526             467      -0.9%
+
+Raku needed 85.5% of Python's bytes and 99.1% of its tokens.
+Raku bytes/token 2.819 vs Python 3.268 in this set -- both far below their
+Level 1 corpus figures (see 91-rollup.txt), because short punctuation-dense
+scripts are the register where every language tokenizes worst.
+
+all arms agreed: yes
