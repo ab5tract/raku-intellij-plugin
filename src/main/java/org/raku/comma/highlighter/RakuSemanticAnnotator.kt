@@ -38,7 +38,10 @@ class RakuSemanticAnnotator : Annotator {
         when (element) {
             is RakuVariable -> annotateVariable(element, holder)
             is RakuSubCallName -> annotateResolvable(element, element, RakuHighlighter.BUILTIN_CALL, holder)
-            is RakuMethodCall -> annotateResolvable(element, element.simpleName, RakuHighlighter.BUILTIN_CALL, holder)
+            // Quoted method calls (`$a."<"(5)`) have no simple name to annotate.
+            is RakuMethodCall -> element.simpleName?.let {
+                annotateResolvable(element, it, RakuHighlighter.BUILTIN_CALL, holder)
+            }
         }
     }
 
