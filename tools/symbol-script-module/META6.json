@@ -1,0 +1,7 @@
+{
+  "name": "SymbolScriptModule",
+  "description": "A module that is used to test Comma ability to complete variables exported from module",
+  "provides": {
+    "SymbolScriptModule" : "lib/SymbolScriptModule.pm6"
+  }
+}

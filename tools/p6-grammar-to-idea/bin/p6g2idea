@@ -1,0 +1,52 @@
+use P6GrammarToIdea::Parser;
+use P6GrammarToIdea::Actions;
+use P6GrammarToIdea::SanityCheck;
+use P6GrammarToIdea::Tokens;
+use P6GrammarToIdea::Elements;
+use P6GrammarToIdea::GenerateTokenTypes;
+use P6GrammarToIdea::GenerateElementTypes;
+use P6GrammarToIdea::GenerateLexer;
+use P6GrammarToIdea::GenerateParser;
+
+multi sub MAIN('parse', $input-file where .IO.f) {
+    say P6GrammarToIdea::Parser.parse(
+        slurp($input-file),
+        :actions(P6GrammarToIdea::Actions)
+    ).ast.dump;
+}
+
+multi sub MAIN('generate', IO() $input-file where .f, IO() $output-dir where .d,
+        Str $prefix, Str $package) {
+    say "Parsing grammar and building AST";
+    my $ast = P6GrammarToIdea::Parser.parse(
+        slurp($input-file),
+        :actions(P6GrammarToIdea::Actions)
+    ).ast;
+
+    say "Sanity checking";
+    sanity-check($ast);
+
+    say "Building token model";
+    my @token-names = check-and-get-tokens($ast);
+
+    say "Building element model";
+    my $element-model = build-element-model($ast);
+
+    say "Generating {$prefix}TokenTypes.java";
+    spurt $output-dir.add($prefix ~ 'TokenTypes.java'),
+        generate-perl6-token-types(@token-names, $prefix, $package);
+
+    say "Generating {$prefix}ElementTypes.java";
+    spurt $output-dir.add($prefix ~ 'ElementTypes.java'), generate-perl6-element-types
+        $element-model.element-names, $prefix, $package;
+
+    for $ast.braids.kv -> $name, $grammar {
+        my $filename = $name ~ 'Braid.java';
+        say "Generating $filename";
+        spurt $output-dir.add($filename), generate-lexer($grammar, $prefix, $package);
+    }
+
+    say "Generating {$prefix}Parser.java";
+    spurt $output-dir.add($prefix ~ 'Parser.java'), generate-parser($element-model,
+        $prefix, $package);
+}
