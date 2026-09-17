@@ -33,8 +33,9 @@ public class RakuParserDefinition implements ParserDefinition {
         return RakuElementTypes.FILE;
     }
 
-    // Both whitespace and comment tokens are empty, as we want to
-    // match it in our parser. The one exception: an inactive #?if branch is
+    // Whitespace tokens are empty, and comment tokens hold only the
+    // CONDITIONAL_BRANCH element, as we want the parser itself to match
+    // everything else. An inactive #?if branch is
     // carried as a single CONDITIONAL_BRANCH token that the generated parser
     // must never see; registering it as a comment token makes PsiBuilder
     // place it into the tree as a lazy-parseable island behind the parser's

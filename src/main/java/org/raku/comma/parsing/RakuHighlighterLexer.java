@@ -55,6 +55,12 @@ public class RakuHighlighterLexer extends RakuLexer {
         private CharSequence buffer = "";
         private int shift;
         private int endOffset;
+        // The delegate's last real token end (in document coordinates), kept up to date
+        // in advance() while the delegate still has a token. Used as the truthful
+        // getTokenEnd() once the delegate is exhausted, instead of always claiming the
+        // declared endOffset -- so a delegate that bails out early (malformed branch
+        // body) doesn't mask a token-stream gap from LayeredLexer's recovery logic.
+        private int lastTokenEnd;
 
         @Override
         public void start(@NotNull CharSequence buffer, int startOffset, int endOffset, int initialState) {
@@ -62,11 +68,13 @@ public class RakuHighlighterLexer extends RakuLexer {
             this.shift = startOffset;
             this.endOffset = endOffset;
             delegate.start(buffer.subSequence(startOffset, endOffset), 0, endOffset - startOffset, 0);
+            lastTokenEnd = delegate.getTokenType() != null ? delegate.getTokenEnd() + shift : startOffset;
         }
 
         @Override
         public void advance() {
             delegate.advance();
+            if (delegate.getTokenType() != null) lastTokenEnd = delegate.getTokenEnd() + shift;
         }
 
         @Override
@@ -87,7 +95,7 @@ public class RakuHighlighterLexer extends RakuLexer {
 
         @Override
         public int getTokenEnd() {
-            return delegate.getTokenType() != null ? delegate.getTokenEnd() + shift : endOffset;
+            return delegate.getTokenType() != null ? delegate.getTokenEnd() + shift : lastTokenEnd;
         }
 
         @NotNull

@@ -5,7 +5,6 @@ import org.raku.comma.CommaFixtureTestCase
 import org.raku.comma.filetypes.RakuScriptFileType
 import org.raku.comma.parsing.RakuElementTypes
 import org.raku.comma.parsing.RakuHighlighterLexer
-import org.raku.comma.parsing.RakuTokenTypes
 
 class ConditionalBranchHighlightingTest : CommaFixtureTestCase() {
 

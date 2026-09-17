@@ -50,6 +50,6 @@ class RakuFileElementType : IStubFileElementType<RakuFileStub>(RakuLanguage.INST
     }
 
     companion object {
-        const val STUB_VERSION: Int = 29
+        const val STUB_VERSION: Int = 30
     }
 }

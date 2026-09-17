@@ -34,6 +34,12 @@ public class RakuWordsScanner extends VersionedWordsScanner {
                                             RakuTokenTypes.RAT_LITERAL);
     }
 
+    // Bumped when branch-aware lexing changed emitted words, so persisted IdIndex data is rebuilt.
+    @Override
+    public int getVersion() {
+        return 2;
+    }
+
     @Override
     public void processWords(@NotNull CharSequence fileText, @NotNull Processor<? super WordOccurrence> processor) {
         myLexer.start(fileText);
