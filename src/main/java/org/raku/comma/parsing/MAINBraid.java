@@ -12798,6 +12798,22 @@ public class MAINBraid extends Cursor<MAINBraid> {
                 continue;
 
             case 10:
+                /* HAND-EDIT (not generator output): Rakudo has a dedicated
+                 * term:sym<nqp::const> ('nqp::const::' <identifier>) that takes
+                 * NO argument list, unlike ordinary names, which are listops
+                 * whose args may legitimately begin with a bare-sigil term.
+                 * Without this guard, `nqp::const::FOO && $x` swallowed the
+                 * first `&` as an argument and mis-lexed the rest of the
+                 * statement into BAD_CHARACTER. Mirror as term:sym<nqp::const>
+                 * in perl6.pm6 if p6-grammar-to-idea is ever regenerated. */
+                if (this.stack.token == RakuTokenTypes.SUB_CALL_NAME
+                        && startsWithNqpConst(this.stack.target, this.stack.tokenStart, this.pos)) {
+                    /* The parser still needs the zero-width NO_ARGS structural
+                     * token that the args rule's empty fallback would emit. */
+                    this.startToken(RakuTokenTypes.NO_ARGS);
+                    this.state = 12;
+                    return -3;
+                }
                 this.setArgs();
                 this.state = 11;
                 return 117;
@@ -12820,6 +12836,15 @@ public class MAINBraid extends Cursor<MAINBraid> {
 
             }
         }
+    }
+
+    /* HAND-EDIT helper for _105_term_name case 10 (see comment there). */
+    private static boolean startsWithNqpConst(CharSequence target, int start, int end) {
+        final String marker = "nqp::const::";
+        if (end - start <= marker.length()) return false;
+        for (int i = 0; i < marker.length(); i++)
+            if (target.charAt(start + i) != marker.charAt(i)) return false;
+        return true;
     }
 
     private int _106_term_self() {
