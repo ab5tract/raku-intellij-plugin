@@ -50,6 +50,13 @@ class RakuFileElementType : IStubFileElementType<RakuFileStub>(RakuLanguage.INST
     }
 
     companion object {
-        const val STUB_VERSION: Int = 30
+        // Bump whenever a lexer/parser change can alter the stub tree for
+        // unchanged file text (v30: conditional islands; v31: nqp::const::
+        // no-args terms changed SUB_CALL/statement shapes in files using
+        // them, e.g. Rakudo core sources). A missed bump leaves upgraded
+        // installs with "PSI and index do not match" mismatch errors until a
+        // manual invalidation. ParserChangeVersionGuardTest enforces the
+        // pairing with the generated-parser sources.
+        const val STUB_VERSION: Int = 31
     }
 }

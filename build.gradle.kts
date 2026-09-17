@@ -291,4 +291,13 @@ tasks.test {
     // Run with -Draku.test.dump.actual=true to dump actual output of failing
     // golden-file comparisons under build/actual-dumps for review.
     systemProperty("raku.test.dump.actual", System.getProperty("raku.test.dump.actual", "false"))
+    // ParserChangeVersionGuardTest hashes these SOURCES at runtime; without
+    // declaring them as inputs, a comment-only parser edit (identical
+    // bytecode) would leave the test task up-to-date and silently skip the
+    // guard.
+    inputs.files(
+        "src/main/java/org/raku/comma/parsing/MAINBraid.java",
+        "src/main/java/org/raku/comma/parsing/RakuParser.java",
+        "src/main/java/org/raku/comma/parsing/RakuConditionalCompilation.java",
+    )
 }

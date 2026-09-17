@@ -34,10 +34,16 @@ public class RakuWordsScanner extends VersionedWordsScanner {
                                             RakuTokenTypes.RAT_LITERAL);
     }
 
-    // Bumped when branch-aware lexing changed emitted words, so persisted IdIndex data is rebuilt.
+    // Bump whenever a lexer/parser change can alter the emitted words for
+    // unchanged file text, so persisted IdIndex data is rebuilt (v2:
+    // branch-aware lexing; v3: nqp::const:: no-args terms un-swallowed
+    // formerly-BAD_CHARACTER regions). ParserChangeVersionGuardTest enforces
+    // the pairing.
+    public static final int VERSION = 3;
+
     @Override
     public int getVersion() {
-        return 2;
+        return VERSION;
     }
 
     @Override
