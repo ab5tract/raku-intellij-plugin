@@ -79,16 +79,24 @@ public class RakuCondBranchMergingLexer extends LexerBase {
             delegateConsumed = false;
         }
 
-        if (delegate.getTokenType() == null && (regionIndex >= regions.size() || pos >= getBufferEnd())) {
+        RakuConditionalCompilation.Region region =
+            regionIndex < regions.size() ? regions.get(regionIndex) : null;
+
+        // The delegate can exhaust early -- e.g. RakuLexer bailing out on
+        // malformed input before reaching a later inactive #?if region. With
+        // no delegate token to report and no region to enter at/before pos,
+        // there is nothing left to build a wrapper token from; terminate
+        // cleanly here rather than falling into the region-relative branches
+        // below, which (for the "outside any region" case) dereference the
+        // delegate's token end unconditionally and would throw on an
+        // exhausted delegate.
+        if (delegate.getTokenType() == null && (region == null || region.start > pos)) {
             tokenType = null;
             tokenEnd = pos;
             splitting = false;
             delegateConsumed = false;
             return;
         }
-
-        RakuConditionalCompilation.Region region =
-            regionIndex < regions.size() ? regions.get(regionIndex) : null;
 
         if (region != null && region.start <= pos) {
             // Inside a region: one merged token to the region end.
