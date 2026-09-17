@@ -174,7 +174,7 @@ class AnnotationTest : CommaFixtureTestCase() {
         // not be flagged here; !totally-fake-method is guaranteed absent.
         ensureModuleIsLoaded("NativeCall")
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "use <warning descr=\"Cannot find NativeCall which is specified as a dependency in META6.json\">NativeCall</warning>; role A does NativeCall::Native { method !a {} }; class B does A { method b { self<warning descr=\"Private method !totally-fake-method is used, but not declared\">!totally-fake-method</warning>; } }")
+                                  "use NativeCall; role A does NativeCall::Native { method !a {} }; class B does A { method b { self<warning descr=\"Private method !totally-fake-method is used, but not declared\">!totally-fake-method</warning>; } }")
         checkHighlightingDumpable()
     }
 
@@ -208,7 +208,7 @@ class AnnotationTest : CommaFixtureTestCase() {
         // UndeclaredAttributeInspection's own semantics -- not addressed here.
         ensureModuleIsLoaded("NativeCall")
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "use <warning descr=\"Cannot find NativeCall which is specified as a dependency in META6.json\">NativeCall</warning>; class A does NativeCall::Native { method b { say <error descr=\"Attribute \$!totally-fake-attr is used, but not declared\">\$!totally-fake-attr</error>; } }")
+                                  "use NativeCall; class A does NativeCall::Native { method b { say <error descr=\"Attribute \$!totally-fake-attr is used, but not declared\">\$!totally-fake-attr</error>; } }")
         checkHighlightingDumpable()
     }
 

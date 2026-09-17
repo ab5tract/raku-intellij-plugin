@@ -31,6 +31,13 @@ class UsedModuleInspection : RakuInspection() {
         val moduleNameNode = PsiTreeUtil.findChildOfType(element, RakuLongName::class.java) ?: return
         val moduleName = moduleNameNode.firstChild.text
 
+        // We don't need to annotate late-bound modules
+        if (moduleName.startsWith("::")) return
+        // ... or preinstalled ones ...
+        if (RakuServiceConstants.PREINSTALLED_MODULES.contains(moduleName)) return
+        // ... or pragmas ...
+        if (RakuServiceConstants.PRAGMAS.contains(moduleName)) return
+
         // There is no point in doing this highlighting prior to the loading of dependency information
         // ... but let's default to marking them as warnings when not in the provides list
         val metadata = project.service<RakuMetaDataComponent>()
@@ -50,13 +57,6 @@ class UsedModuleInspection : RakuInspection() {
             val key = colonPair.key
             if (key == "from") return
         }
-
-        // We don't need to annotate late-bound modules
-        if (moduleName.startsWith("::")) return
-        // ... or preinstalled ones ...
-        if (RakuServiceConstants.PREINSTALLED_MODULES.contains(moduleName)) return
-        // ... or pragmas ...
-        if (RakuServiceConstants.PRAGMAS.contains(moduleName)) return
 
         if (checkDependency(moduleName, metadata, moduleDetails, element, holder.file.virtualFile)) return
 
