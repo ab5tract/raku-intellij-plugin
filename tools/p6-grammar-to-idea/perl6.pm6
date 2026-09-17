@@ -86,11 +86,18 @@ grammar MAIN {
         <.end-element('LONG_NAME')>
     }
 
+    # MIRROR of MAINBraid.java hand-edit (_10_method_name case 6): indirect
+    # method names -- `method ::($meth)($/)` -- are legal syntax (Rakudo's
+    # morename has an indirect-name branch; the NQP dialect uses it heavily).
+    # The hand edit consumes the '(...)' flat inside the ROUTINE_NAME token
+    # to keep the token shape parser-compatible; on regeneration this richer
+    # alternative supersedes it (both machines regenerate consistently).
     token method_name {
         <.start-element('LONG_NAME')>
         <.start-token('ROUTINE_NAME')>
         [
         || <[ ! ^ ]> <.name>?
+        || <.name>? <?before '::('> '::' '(' ~ ')' <.EXPR('i=')>
         || <.name>
         ]
         <.end-token('ROUTINE_NAME')>

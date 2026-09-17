@@ -1268,6 +1268,38 @@ public class MAINBraid extends Cursor<MAINBraid> {
                 continue;
 
             case 6:
+                /* HAND-EDIT (not generator output): indirect method names --
+                 * `method ::($meth)($/) {...}` (Rakudo's morename grammar has
+                 * an "indirect name" branch: '::' '(' <EXPR> ')'; its
+                 * compile-time rejection in plain Raku is semantic, and the
+                 * NQP dialect of the Rakudo sources uses the form heavily).
+                 * The simplified name rule stops at '::', so `($meth)` was
+                 * mistaken for the signature and the following real signature
+                 * broke the parse to EOF. Consume the balanced paren group
+                 * INSIDE the single ROUTINE_NAME token, so the token-stream
+                 * shape is unchanged and the generated parser needs no edit.
+                 * Depth-only balancing, single-line only; on imbalance the
+                 * old behavior stands. Mirrored (as a richer '::' '(' ~ ')'
+                 * alternative) in tools/p6-grammar-to-idea/perl6.pm6
+                 * token method_name. */
+                if (this.pos >= 2
+                        && this.pos < this.stack.target.length()
+                        && this.stack.target.charAt(this.pos) == '('
+                        && this.stack.target.charAt(this.pos - 1) == ':'
+                        && this.stack.target.charAt(this.pos - 2) == ':') {
+                    int depth = 0;
+                    int scan = this.pos;
+                    int limit = this.stack.target.length();
+                    int closeAt = -1;
+                    while (scan < limit) {
+                        char c = this.stack.target.charAt(scan);
+                        if (c == '(') depth++;
+                        else if (c == ')') { depth--; if (depth == 0) { closeAt = scan + 1; break; } }
+                        else if (c == '\n' || c == '\r') break;
+                        scan++;
+                    }
+                    if (closeAt > this.pos) this.pos = closeAt;
+                }
                 this.state = 7;
                 return -3;
 

@@ -38,9 +38,10 @@ public class RakuWordsScanner extends VersionedWordsScanner {
     // unchanged file text, so persisted IdIndex data is rebuilt (v2:
     // branch-aware lexing; v3: nqp::const:: no-args terms un-swallowed
     // formerly-BAD_CHARACTER regions; v4: assertion colon-args trailing ws
-    // un-swallowed regex-heavy files). ParserChangeVersionGuardTest enforces
+    // un-swallowed regex-heavy files; v5: indirect method names ::($m)
+    // un-swallowed their bodies). ParserChangeVersionGuardTest enforces
     // the pairing.
-    public static final int VERSION = 4;
+    public static final int VERSION = 5;
 
     @Override
     public int getVersion() {
