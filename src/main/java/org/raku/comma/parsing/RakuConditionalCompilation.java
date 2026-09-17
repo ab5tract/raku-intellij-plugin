@@ -38,6 +38,23 @@ public final class RakuConditionalCompilation {
      */
     private static final String BACKEND = "moar";
 
+    /**
+     * A region of source text guarded by a {@code #?if} ... {@code #?endif} pair.
+     */
+    public static final class Region {
+        public final int start;
+        public final int end;
+        public final String condition;
+        public final boolean active;
+
+        Region(int start, int end, String condition, boolean active) {
+            this.start = start;
+            this.end = end;
+            this.condition = condition;
+            this.active = active;
+        }
+    }
+
     private static final String IF_MARKER = "#?if";
     private static final String ENDIF_MARKER = "#?endif";
 
@@ -83,6 +100,71 @@ public final class RakuConditionalCompilation {
     }
 
     /**
+     * Returns all conditional regions in the text, in document order. {@code start} is the
+     * offset of the first character of the first body line, {@code end} is the offset of the
+     * first character of the {@code #?endif} line. Empty bodies produce {@code start == end}.
+     */
+    public static java.util.List<Region> regions(CharSequence text) {
+        java.util.List<Region> result = new java.util.ArrayList<>();
+        if (indexOf(text, IF_MARKER) < 0) return result;
+
+        int length = text.length();
+        int pos = 0;
+        String openCondition = null;
+        int bodyStart = -1;
+
+        while (pos < length) {
+            int lineEnd = lineEnd(text, pos);
+            int nextLine = nextLineStart(text, lineEnd, length);
+
+            if (startsWith(text, pos, ENDIF_MARKER)) {
+                if (openCondition != null) {
+                    result.add(new Region(bodyStart, pos, openCondition, isActive(openCondition)));
+                    openCondition = null;
+                }
+            }
+            else if (startsWith(text, pos, IF_MARKER)) {
+                // A second #?if re-decides (preprocess semantics). The lines
+                // under the first marker still belong to it, so close its
+                // region at this marker line before re-opening.
+                if (openCondition != null) {
+                    result.add(new Region(bodyStart, pos, openCondition, isActive(openCondition)));
+                }
+                String condition = parseCondition(text, pos + IF_MARKER.length(), lineEnd);
+                openCondition = condition;
+                bodyStart = condition == null ? -1 : nextLine;
+            }
+
+            pos = nextLine;
+        }
+        // An unterminated #?if runs to end-of-file, exactly as preprocess blanks it.
+        if (openCondition != null) {
+            result.add(new Region(bodyStart, length, openCondition, isActive(openCondition)));
+        }
+        return result;
+    }
+
+    /**
+     * Returns only the inactive regions (those that are not {@code active}) with non-empty bodies.
+     */
+    public static java.util.List<Region> inactiveRegions(CharSequence text) {
+        java.util.List<Region> result = new java.util.ArrayList<>();
+        for (Region region : regions(text))
+            if (!region.active && region.end > region.start) result.add(region);
+        return result;
+    }
+
+    /**
+     * Returns the condition of the region containing the given offset, or null if no region
+     * contains that offset.
+     */
+    public static String conditionAt(CharSequence text, int offset) {
+        for (Region region : regions(text))
+            if (region.start <= offset && offset < region.end) return region.condition;
+        return null;
+    }
+
+    /**
      * Decides whether the region introduced by an {@code #?if} is dead, given the text
      * between the marker and the end of its line.
      *
@@ -92,20 +174,31 @@ public final class RakuConditionalCompilation {
      * unrecognised marker can never delete code.
      */
     private static boolean isOmitted(CharSequence text, int from, int lineEnd) {
+        String condition = parseCondition(text, from, lineEnd);
+        return condition != null && !isActive(condition);
+    }
+
+    private static boolean isActive(String condition) {
+        boolean negated = condition.startsWith("!");
+        String name = negated ? condition.substring(1) : condition;
+        return negated != name.equals(BACKEND);
+    }
+
+    /** Raw condition ("jvm", "!js") or null when the line is not a marker. */
+    private static String parseCondition(CharSequence text, int from, int lineEnd) {
         int pos = skipSpaces(text, from, lineEnd);
-        if (pos == from) return false; // '#?ifsomething' is not a marker
+        if (pos == from) return null; // '#?ifsomething' is not a marker
 
         boolean negated = pos < lineEnd && text.charAt(pos) == '!';
         if (negated) pos = skipSpaces(text, pos + 1, lineEnd);
 
         int nameStart = pos;
         while (pos < lineEnd && isWordChar(text.charAt(pos))) pos++;
-        if (pos == nameStart) return false;
+        if (pos == nameStart) return null;
 
         String name = text.subSequence(nameStart, pos).toString();
-        if (skipSpaces(text, pos, lineEnd) != lineEnd) return false; // trailing junk
-
-        return negated == name.equals(BACKEND);
+        if (skipSpaces(text, pos, lineEnd) != lineEnd) return null; // trailing junk
+        return negated ? "!" + name : name;
     }
 
     private static boolean isWordChar(char c) {
