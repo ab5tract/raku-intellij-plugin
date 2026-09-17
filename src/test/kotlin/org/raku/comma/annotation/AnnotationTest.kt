@@ -422,7 +422,7 @@ class AnnotationTest : CommaFixtureTestCase() {
     }
 
     fun testUndeclaredAnnotatorRegexVars() {
-        myFixture.configureByText(RakuScriptFileType.INSTANCE, "if <error descr=\"Variable \$sub-key is not declared\">\$sub-key</error> ~~ /^ <[\\w-]>+ \$/ {<error descr=\"Variable \$0 is not declared\">\$0</error>}")
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "if <error descr=\"Variable \$sub-key is not declared\">\$sub-key</error> ~~ /^ <[\\w-]>+ \$/ {\$0}")
         checkHighlightingDumpable()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "when m{ ^ ( '#' .+? ) \\s*? \$ } { say \$0; }")
         checkHighlightingDumpable()
@@ -1296,7 +1296,7 @@ class AnnotationTest : CommaFixtureTestCase() {
 
     fun testDubiousNonHashes() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "given 42 {\n    my \$x = 99;\n    my \$y = 101;\n    say {};\n    say { ; };\n    say { \"I'm a closure\" };\n    say { :a };\n    say { <warning descr=\"Pair literal can be simplified\">a => 66</warning> };\n    say { :\$x };\n    say { :a, :b };\n    say { <warning descr=\"Pair literal can be simplified\">a => 66</warning>, <warning descr=\"Pair literal can be simplified\">b => 666</warning> };\n    say { :\$x, :\$y };\n    say { .foo };\n    say { \$_ };\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ :\$^a }</weak_warning>;\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ :a, :b(\$_) }</weak_warning>;\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ <warning descr=\"Pair literal can be simplified\">a => 1</warning>, <warning descr=\"Pair literal can be simplified\">b => \$_</warning> }</weak_warning>;\n}")
+                                  "given 42 {\n    my \$x = 99;\n    my \$y = 101;\n    say {};\n    say { ; };\n    say { \"I'm a closure\" };\n    say { :a };\n    say { a => 66 };\n    say { :\$x };\n    say { :a, :b };\n    say { a => 66, b => 666 };\n    say { :\$x, :\$y };\n    say { .foo };\n    say { \$_ };\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ :\$^a }</weak_warning>;\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ :a, :b(\$_) }</weak_warning>;\n    say <weak_warning desrc=\"This will be taken as a block, not as a hash as may have been intended\">{ a => 1, b => \$_ }</weak_warning>;\n}")
         checkHighlightingDumpable()
     }
 

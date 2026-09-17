@@ -22,11 +22,13 @@ class UndeclaredVariableInspection : RakuInspection() {
 
         val variableName = element.variableName ?: return
 
+        // Match variables ($0, $<name>) are runtime lookups on $/ and never
+        // need a declaration -- $/ itself is implicitly available wherever
+        // they can appear. The old check only exempted them when $/ was
+        // EXPLICITLY declared (and NPE'd when it resolved to nothing), which
+        // flagged every `$<x>` in ordinary code blocks as an ERROR.
         val regexVarPatterns = Pattern.compile("\\$\\d+|\\$<[\\w\\d_-]+>")
-        if (regexVarPatterns.matcher(variableName).matches()) {
-            val symbol = element.resolveLexicalSymbol(RakuSymbolKind.Variable, "$/")
-            if (! symbol!!.isImplicitlyDeclared) return
-        }
+        if (regexVarPatterns.matcher(variableName).matches()) return
 
         // Check for $=finish section
         if (RakuVariable.getTwigil(variableName) == '=' && variableName == "$=finish") {

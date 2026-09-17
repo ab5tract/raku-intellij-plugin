@@ -16,7 +16,19 @@ class NamedPairArgumentInspection : RakuInspection() {
     }
 
     private fun checkFatArrow(arrow: RakuFatArrow, holder: ProblemsHolder) {
-        processPair(arrow, holder, "FatArrow")
+        // Only a genuinely simplifiable pair (True/False value, or a variable
+        // matching the key) warrants a visible warning. The general
+        // fatarrow-to-colonpair conversion is a style preference, not a
+        // problem: register it invisibly so the quick-fix stays reachable
+        // via the intentions menu without a gutter mark on every `a => $b`.
+        val key = arrow.key ?: return
+        if (getSimplifiedPair(arrow, key, arrow.value) != null) {
+            processPair(arrow, holder, "FatArrow")
+        } else {
+            holder.registerProblem(arrow, DESCRIPTION,
+                                   com.intellij.codeInspection.ProblemHighlightType.INFORMATION,
+                                   FatarrowSimplificationFix("FatArrow"))
+        }
     }
 
     private fun checkColonPair(pair: RakuColonPair, holder: ProblemsHolder) {
