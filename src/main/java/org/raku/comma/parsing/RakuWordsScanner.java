@@ -17,7 +17,8 @@ public class RakuWordsScanner extends VersionedWordsScanner {
     private final TokenSet myLiteralTokenSet;
 
     public RakuWordsScanner() {
-        myLexer = new RakuLexer();
+        // Branch-aware so words inside inactive #?if branches are find-usages-indexed.
+        myLexer = RakuHighlighterLexer.branchAware();
         myIdentifierTokenSet = TokenSet.create(RakuTokenTypes.NAME,
                                                RakuTokenTypes.SUB_CALL_NAME,
                                                RakuTokenTypes.METHOD_CALL_NAME,

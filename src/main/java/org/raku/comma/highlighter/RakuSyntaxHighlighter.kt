@@ -21,7 +21,7 @@ import org.raku.comma.parsing.RakuTokenTypes
  * true of HASH_COMPOSER, which nothing applies at all -- see its declaration.
  */
 class RakuSyntaxHighlighter : SyntaxHighlighterBase() {
-    override fun getHighlightingLexer(): Lexer = RakuHighlighterLexer()
+    override fun getHighlightingLexer(): Lexer = RakuHighlighterLexer.branchAware()
 
     override fun getTokenHighlights(tokenType: IElementType?): Array<TextAttributesKey> =
         pack(ATTRIBUTES[tokenType])
