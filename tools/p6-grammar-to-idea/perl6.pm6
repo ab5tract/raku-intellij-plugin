@@ -4869,9 +4869,13 @@ grammar MAIN {
            <.end-token('REGEX_MISSING_ASSERTION')>
     }
 
+    # MIRROR of MAINBraid.java hand-edit (_254_rxarglist): a colon-argument
+    # list in a regex assertion may be followed by whitespace -- including a
+    # newline -- before the closing '>' (Rakudo's own Grammar.nqp does this).
     token rxarglist {
         :my $*IN_REGEX_ASSERTION = 1;
         <.arglist>
+        <.ws>
     }
 
     token cclass_elem {

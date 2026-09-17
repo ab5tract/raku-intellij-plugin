@@ -14612,6 +14612,14 @@ public class RakuParser implements PsiParser {
         if (!(this.arglist_6(builder))) {
             return false;
         }
+        /* HAND-EDIT (not generator output): matches the MAINBraid.java
+         * _254_rxarglist hand-edit -- a regex assertion's colon-argument list
+         * may be followed by whitespace before the closing '>', so the lexer
+         * now emits ws tokens here and the parser must consume them. Mirrored
+         * in tools/p6-grammar-to-idea/perl6.pm6 token rxarglist. */
+        if (!(this.ws_258(builder))) {
+            return false;
+        }
         return true;
     }
 

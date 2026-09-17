@@ -23,12 +23,23 @@ class ParserChangeVersionGuardTest : TestCase() {
     )
     private val fingerprintFile = File("src/test/resources/parser-shape-fingerprint.txt")
 
+    // The version constants are read from SOURCE, not referenced as compiled
+    // constants: const/static-final ints are inlined into this test's
+    // bytecode at compile time, and Gradle compile avoidance can leave that
+    // bytecode stale after a bump -- the guard would then compare against the
+    // old values (observed in practice).
+    private fun sourceInt(path: String, pattern: String): Int =
+        Regex(pattern).find(File(path).readText())!!.groupValues[1].toInt()
+
     private fun currentLine(): String {
         val digest = MessageDigest.getInstance("SHA-256")
         for (path in shapeSources) digest.update(File(path).readBytes())
         val fingerprint = digest.digest().joinToString("") { "%02x".format(it) }
-        return "$fingerprint stub=${RakuFileElementTypeCompanionAccess.stubVersion()}" +
-               " words=${org.raku.comma.parsing.RakuWordsScanner.VERSION}"
+        val stub = sourceInt("src/main/java/org/raku/comma/psi/stub/RakuFileElementType.kt",
+                             """STUB_VERSION: Int = (\d+)""")
+        val words = sourceInt("src/main/java/org/raku/comma/parsing/RakuWordsScanner.java",
+                              """int VERSION = (\d+)""")
+        return "$fingerprint stub=$stub words=$words"
     }
 
     fun testParserShapeIsPairedWithIndexVersions() {
@@ -49,10 +60,4 @@ class ParserChangeVersionGuardTest : TestCase() {
             current
         )
     }
-}
-
-// STUB_VERSION lives in a Kotlin companion; a tiny accessor keeps this test
-// free of IntelliJ platform initialization (no IElementType construction).
-private object RakuFileElementTypeCompanionAccess {
-    fun stubVersion(): Int = org.raku.comma.psi.stub.RakuFileElementType.STUB_VERSION
 }

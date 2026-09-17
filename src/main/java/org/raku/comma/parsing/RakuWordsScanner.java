@@ -37,9 +37,10 @@ public class RakuWordsScanner extends VersionedWordsScanner {
     // Bump whenever a lexer/parser change can alter the emitted words for
     // unchanged file text, so persisted IdIndex data is rebuilt (v2:
     // branch-aware lexing; v3: nqp::const:: no-args terms un-swallowed
-    // formerly-BAD_CHARACTER regions). ParserChangeVersionGuardTest enforces
+    // formerly-BAD_CHARACTER regions; v4: assertion colon-args trailing ws
+    // un-swallowed regex-heavy files). ParserChangeVersionGuardTest enforces
     // the pairing.
-    public static final int VERSION = 3;
+    public static final int VERSION = 4;
 
     @Override
     public int getVersion() {

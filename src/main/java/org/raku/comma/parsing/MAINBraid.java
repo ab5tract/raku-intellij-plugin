@@ -40631,6 +40631,27 @@ public class MAINBraid extends Cursor<MAINBraid> {
                 } else {
                     this.pos = this.lastResult.getPos();
                 }
+                /* HAND-EDIT (not generator output): a colon-argument list in a
+                 * regex assertion may be followed by whitespace -- including a
+                 * newline -- before the closing '>' (Rakudo's own Grammar.nqp
+                 * writes <.malformed: "..."\n> across lines, and `raku -c`
+                 * accepts it). Without this trailing ws call the '>' never
+                 * matched and everything to EOF became BAD_CHARACTER. Mirrored
+                 * in tools/p6-grammar-to-idea/perl6.pm6 token rxarglist. */
+                this.setArgs();
+                this.state = 2;
+                return 18;
+
+            case 2:
+                if (this.lastResult.isFailed()) {
+                    if (this.backtrack()) {
+                        continue;
+                    } else {
+                        return -2;
+                    }
+                } else {
+                    this.pos = this.lastResult.getPos();
+                }
                 return -1;
 
             }
