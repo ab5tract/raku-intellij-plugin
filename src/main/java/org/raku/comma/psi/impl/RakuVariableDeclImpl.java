@@ -258,31 +258,36 @@ public class RakuVariableDeclImpl extends RakuMemberStubBasedPsi<RakuVariableDec
         return inferType(true);
     }
 
-    // Stub-safe type inference: identical to inferType(), except it skips the
-    // `is`-trait-as-base-type resolution below, which requires cross-file
-    // symbol resolution (RakuIsTraitReference.resolve(), e.g. for `has @!foo
-    // is SomeCustomArrayClass;`). That resolution can query the stub index,
-    // which is illegal from within stub building itself (the platform
-    // detects and refuses this: "Stub building must not rely on data from
-    // indexes..."). Used only by RakuVariableDeclStubElementType.createStub()
-    // to compute the type string cached in the stub; real callers still get
-    // the fully-resolved type via inferType() once the PSI is materialized.
+    // Stub-safe type inference: identical to inferType(), except that nothing
+    // is ever resolved. Resolution (of the declared type name, an `of` trait's
+    // type name, an `is`-trait base type, or the initializer expression) walks
+    // the file's `use` statements and queries the stub index, which is illegal
+    // from within stub building itself (the platform detects this circular
+    // dependency -- "Stub building must not rely on data from indexes..." --
+    // and in a running IDE it can deadlock indexing against resolution). Used
+    // only by RakuVariableDeclStubElementType.createStub() to compute the type
+    // string cached in the stub; real callers still get the fully-resolved
+    // type via inferType() once the PSI is materialized.
     public @NotNull RakuType inferTypeForStub() {
         return inferType(false);
     }
 
-    private @NotNull RakuType inferType(boolean resolveIsTraitBaseType) {
-        RakuType baseType = calculateBaseType(resolveIsTraitBaseType);
+    private @NotNull RakuType inferType(boolean resolve) {
+        RakuType baseType = calculateBaseType(resolve);
 
         RakuTypeName typeName = PsiTreeUtil.getPrevSiblingOfType(this, RakuTypeName.class);
-        RakuType type = typeName != null ? typeName.inferType() : getOfType();
+        RakuType type = typeName != null
+                        ? (resolve ? typeName.inferType() : typeName.inferTypeForStub())
+                        : getOfType(resolve);
         if (type != null) {
             return baseType == null
                    ? type
                    : new RakuParametricType(baseType, new RakuType[]{type});
         }
 
-        if (baseType == null) {
+        // Assignment-based inference runs arbitrary expression inference, which
+        // may resolve; the stub simply goes without it.
+        if (baseType == null && resolve) {
             RakuType assignBasedType = resolveAssign();
             if (assignBasedType != null)
                 return assignBasedType;
@@ -291,7 +296,7 @@ public class RakuVariableDeclImpl extends RakuMemberStubBasedPsi<RakuVariableDec
     }
 
     @Nullable
-    private RakuType calculateBaseType(boolean resolveIsTraitBaseType) {
+    private RakuType calculateBaseType(boolean resolve) {
         // Find the variable, since we need to go on sigil.
         RakuVariable variable = PsiTreeUtil.getChildOfType(this, RakuVariable.class);
         if (variable == null)
@@ -299,7 +304,7 @@ public class RakuVariableDeclImpl extends RakuMemberStubBasedPsi<RakuVariableDec
 
         // If we have an `is` trait with a type, and a % or @ sigil, that is the base type.
         char sigil = variable.getSigil();
-        if (resolveIsTraitBaseType && (sigil == '@' || sigil == '%')) {
+        if (resolve && (sigil == '@' || sigil == '%')) {
             for (RakuTrait trait : getTraits()) {
                 if (!trait.getTraitModifier().equals("is"))
                     continue;
@@ -320,7 +325,7 @@ public class RakuVariableDeclImpl extends RakuMemberStubBasedPsi<RakuVariableDec
     }
 
     @Nullable
-    private RakuType getOfType() {
+    private RakuType getOfType(boolean resolve) {
         // Visit of traits in reverse order, since `my @foo of Array of Array of Int' wants the
         // Int deepest in the structure.
         RakuType result = null;
@@ -332,9 +337,10 @@ public class RakuVariableDeclImpl extends RakuMemberStubBasedPsi<RakuVariableDec
             RakuTypeName typeName = trait.getCompositionTypeName();
             if (typeName == null)
                 continue;
+            RakuType ofType = resolve ? typeName.inferType() : typeName.inferTypeForStub();
             result = result == null
-                     ? typeName.inferType()
-                     : new RakuParametricType(result, new RakuType[]{typeName.inferType()});
+                     ? ofType
+                     : new RakuParametricType(result, new RakuType[]{ofType});
         }
         return result;
     }
