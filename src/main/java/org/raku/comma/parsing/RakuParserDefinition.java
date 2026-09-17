@@ -20,7 +20,7 @@ public class RakuParserDefinition implements ParserDefinition {
     @NotNull
     @Override
     public Lexer createLexer(Project project) {
-        return new RakuLexer();
+        return new RakuCondBranchMergingLexer(new RakuLexer());
     }
 
     @Override
@@ -34,7 +34,18 @@ public class RakuParserDefinition implements ParserDefinition {
     }
 
     // Both whitespace and comment tokens are empty, as we want to
-    // match it in our parser
+    // match it in our parser. The one exception: an inactive #?if branch is
+    // carried as a single CONDITIONAL_BRANCH token that the generated parser
+    // must never see; registering it as a comment token makes PsiBuilder
+    // place it into the tree as a lazy-parseable island behind the parser's
+    // back. It cannot be registered as whitespace instead: PsiBuilderImpl's
+    // leaf-building code checks the whitespace set first and unconditionally
+    // collapses a match to a plain PsiWhiteSpaceImpl, before it ever gets to
+    // the check for ILazyParseableElementType -- so a whitespace-registered
+    // lazy token can never become a real chameleon node. The comment set has
+    // no such short-circuit; JavaDoc's DOC_COMMENT (also a lazy parseable
+    // element registered as a comment token) is the platform's own precedent
+    // for this exact pattern.
     @NotNull
     @Override
     public TokenSet getWhitespaceTokens() {
@@ -44,7 +55,7 @@ public class RakuParserDefinition implements ParserDefinition {
     @NotNull
     @Override
     public TokenSet getCommentTokens() {
-        return TokenSet.EMPTY;
+        return TokenSet.create(RakuElementTypes.CONDITIONAL_BRANCH);
     }
 
     @NotNull
@@ -59,6 +70,8 @@ public class RakuParserDefinition implements ParserDefinition {
         IElementType type = astNode.getElementType();
         if (type == RakuElementTypes.STATEMENT_LIST)
             return new RakuStatementListImpl(astNode);
+        if (type == RakuElementTypes.CONDITIONAL_BRANCH)
+            return new RakuCondBranchImpl(astNode);
         if (type == RakuElementTypes.UNTERMINATED_STATEMENT)
             return new RakuUnterminatedStatementImpl(astNode);
         if (type == RakuElementTypes.SEMI_LIST)

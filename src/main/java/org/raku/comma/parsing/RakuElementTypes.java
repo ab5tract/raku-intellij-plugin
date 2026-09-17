@@ -35,6 +35,7 @@ public interface RakuElementTypes {
     IElementType COLON_PAIR = new RakuElementType("COLON_PAIR");
     IElementType COMMENT = new RakuElementType("COMMENT");
     IElementType COMPLEX_LITERAL = new RakuElementType("COMPLEX_LITERAL");
+    IElementType CONDITIONAL_BRANCH = new RakuCondBranchElementType();
     IElementType CONTEXTUALIZER = new RakuElementType("CONTEXTUALIZER");
     IElementType CONTROL_STATEMENT = new RakuElementType("CONTROL_STATEMENT");
     IElementType CROSS_METAOP = new RakuElementType("CROSS_METAOP");
