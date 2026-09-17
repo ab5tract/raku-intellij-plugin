@@ -227,7 +227,8 @@ public class RakuHighlightVisitor extends RakuElementVisitor implements Highligh
                     if (role instanceof RakuPackageDecl) {
                         RakuParameter[] oldParams = ((RakuPackageDecl) role).getSignature();
                         // Different numbers of args
-                        if (newParams.length == oldParams.length && role.getTextOffset() != decl.getTextOffset()) {
+                        if (newParams.length == oldParams.length && role.getTextOffset() != decl.getTextOffset()
+                                && !RakuConditionalBranches.INSTANCE.inMutuallyExclusiveBranches(role, redecl)) {
                             marked.set(true);
                             myHolder.add(getDuplicateHighlightInfo(role,
                                                                    redecl,
@@ -247,6 +248,7 @@ public class RakuHighlightVisitor extends RakuElementVisitor implements Highligh
                     minRedecl = coexisting.stream().min(Comparator.comparingInt(PsiElement::getTextOffset));
                 }
                 minRedecl.ifPresent(packageDecl -> {
+                    if (RakuConditionalBranches.INSTANCE.inMutuallyExclusiveBranches(packageDecl, redecl)) return;
                     marked.set(true);
                     myHolder.add(getDuplicateHighlightInfo(packageDecl,
                                                            redecl,

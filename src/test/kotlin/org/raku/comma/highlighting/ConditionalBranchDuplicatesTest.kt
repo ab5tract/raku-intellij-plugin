@@ -48,4 +48,26 @@ class ConditionalBranchDuplicatesTest : CommaFixtureTestCase() {
         )
         assertTrue("shared-vs-active-branch duplicate NOT flagged", errors.isNotEmpty())
     }
+
+    fun testExclusiveBranchTwinsAreNeverPairedAgainstEachOther() {
+        // Pins markDuplicateValue's pairwise gap (class/subset path, not the sub path
+        // covered above): an unconditional decl coexists with BOTH the #?if jvm and
+        // #?if js twins, so unconditional-vs-branch collisions are real duplicates
+        // under either backend and must still flag. But jvm and js can never both be
+        // true, so the two branch twins must never be reported against EACH OTHER.
+        // Line 1 is the unconditional decl, line 3 is the jvm twin, line 6 is the js
+        // twin; every "Re-declaration of ... from aaa.raku:N" must cite line 1, never
+        // line 3 or line 6 (which would mean a branch twin was used as the "original"
+        // side of a report against the other branch twin).
+        val errors = errorTexts(
+            "class Foo {}\n#?if jvm\nclass Foo {}\n#?endif\n#?if js\nclass Foo {}\n#?endif\n"
+        )
+        assertTrue("expected unconditional-vs-branch collisions to still flag: $errors", errors.isNotEmpty())
+        for (error in errors) {
+            assertTrue(
+                "duplicate report should cite the unconditional decl (line 1), not a branch twin: $error",
+                error.contains("aaa.raku:1")
+            )
+        }
+    }
 }
