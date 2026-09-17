@@ -16,7 +16,7 @@ public class SigSpaceAnnotator implements Annotator {
         // every whitespace run in every rule lights up as a notice, which is
         // noise at that scale (same switch RakuHighlightVisitor uses).
         if (psiElement instanceof RakuRegexSigspace && psiElement.getTextLength() >= 1
-                && !CommaProjectUtil.isRakudoCoreProject(psiElement.getProject())) {
+                && !CommaProjectUtil.isRakudoCoreFile(psiElement.getContainingFile())) {
             annotationHolder.newAnnotation(HighlightSeverity.INFORMATION, "Implicit <.ws> call")
                 .range(psiElement).textAttributes(RakuHighlighter.REGEX_SIG_SPACE).create();
         }

@@ -77,10 +77,17 @@ grammar MAIN {
         ]*
     }
 
+    # MIRROR of MAINBraid.java hand-edit (indirectNameEnd, used by
+    # _9_routine_name): indirect routine/token names -- `token ::($name)` --
+    # are consumed as part of the name, not mistaken for a signature. See
+    # also method_name below.
     token routine_name {
         <.start-element('LONG_NAME')>
         <.start-token('ROUTINE_NAME')>
-        <.name>
+        [
+        || <.name>? <?before '::('> '::' '(' ~ ')' <.EXPR('i=')>
+        || <.name>
+        ]
         <.end-token('ROUTINE_NAME')>
         <.longname_colonpairs>
         <.end-element('LONG_NAME')>

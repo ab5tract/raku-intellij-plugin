@@ -41,6 +41,22 @@ object CommaProjectUtil {
         return project.service<RakuProjectDetailsService>().isProjectRakudoCore
     }
 
+    // The project-level flag misses the common case of browsing a Rakudo
+    // checkout from some OTHER project (loose files, or a parent directory
+    // opened as the project). A file inside a `rakudo/src/` tree is Rakudo
+    // core regardless of which project it is viewed from.
+    @JvmStatic
+    fun isRakudoCoreFile(file: com.intellij.psi.PsiFile?): Boolean {
+        if (file == null) return false
+        if (isRakudoCoreProject(file.project)) return true
+        return isRakudoCorePath(file.viewProvider.virtualFile.path)
+    }
+
+    @JvmStatic
+    fun isRakudoCorePath(path: String?): Boolean {
+        return path != null && path.contains("/rakudo/src/")
+    }
+
     @JvmStatic
     fun projectContainsRakuCode(project: Project): Boolean {
         val basePath = project.basePath ?: return false

@@ -1163,6 +1163,32 @@ public class MAINBraid extends Cursor<MAINBraid> {
         }
     }
 
+    /* HAND-EDIT helper (not generator output) shared by _9_routine_name and
+     * _10_method_name: indirect names -- `method ::($meth)` / `token
+     * ::($name)` -- are legal syntax (Rakudo's morename has an indirect-name
+     * branch; the NQP dialect of the Rakudo sources uses the form heavily).
+     * When the just-matched name ends with '::' and '(' follows, return the
+     * offset just past the balanced close paren so the caller can extend the
+     * single ROUTINE_NAME token over the whole indirect name -- keeping the
+     * token-stream shape unchanged, so the generated parser needs no edit.
+     * Depth-only balancing, single-line; returns -1 (no-op) on imbalance.
+     * Mirrored in tools/p6-grammar-to-idea/perl6.pm6 (method_name and
+     * routine_name gated '::' '(' ~ ')' alternatives). */
+    private static int indirectNameEnd(CharSequence target, int pos) {
+        if (pos < 2 || pos >= target.length()
+                || target.charAt(pos) != '('
+                || target.charAt(pos - 1) != ':'
+                || target.charAt(pos - 2) != ':') return -1;
+        int depth = 0;
+        for (int scan = pos; scan < target.length(); scan++) {
+            char c = target.charAt(scan);
+            if (c == '(') depth++;
+            else if (c == ')') { depth--; if (depth == 0) return scan + 1; }
+            else if (c == '\n' || c == '\r') break;
+        }
+        return -1;
+    }
+
     private int _9_routine_name() {
         while (true) {
             switch (this.state) {
@@ -1182,6 +1208,11 @@ public class MAINBraid extends Cursor<MAINBraid> {
                     }
                 } else {
                     this.pos = this.lastResult.getPos();
+                }
+                /* HAND-EDIT: see indirectNameEnd. */
+                {
+                    int indirectEnd = indirectNameEnd(this.stack.target, this.pos);
+                    if (indirectEnd > this.pos) this.pos = indirectEnd;
                 }
                 this.state = 2;
                 return -3;
@@ -1268,37 +1299,12 @@ public class MAINBraid extends Cursor<MAINBraid> {
                 continue;
 
             case 6:
-                /* HAND-EDIT (not generator output): indirect method names --
-                 * `method ::($meth)($/) {...}` (Rakudo's morename grammar has
-                 * an "indirect name" branch: '::' '(' <EXPR> ')'; its
-                 * compile-time rejection in plain Raku is semantic, and the
-                 * NQP dialect of the Rakudo sources uses the form heavily).
-                 * The simplified name rule stops at '::', so `($meth)` was
-                 * mistaken for the signature and the following real signature
-                 * broke the parse to EOF. Consume the balanced paren group
-                 * INSIDE the single ROUTINE_NAME token, so the token-stream
-                 * shape is unchanged and the generated parser needs no edit.
-                 * Depth-only balancing, single-line only; on imbalance the
-                 * old behavior stands. Mirrored (as a richer '::' '(' ~ ')'
-                 * alternative) in tools/p6-grammar-to-idea/perl6.pm6
-                 * token method_name. */
-                if (this.pos >= 2
-                        && this.pos < this.stack.target.length()
-                        && this.stack.target.charAt(this.pos) == '('
-                        && this.stack.target.charAt(this.pos - 1) == ':'
-                        && this.stack.target.charAt(this.pos - 2) == ':') {
-                    int depth = 0;
-                    int scan = this.pos;
-                    int limit = this.stack.target.length();
-                    int closeAt = -1;
-                    while (scan < limit) {
-                        char c = this.stack.target.charAt(scan);
-                        if (c == '(') depth++;
-                        else if (c == ')') { depth--; if (depth == 0) { closeAt = scan + 1; break; } }
-                        else if (c == '\n' || c == '\r') break;
-                        scan++;
-                    }
-                    if (closeAt > this.pos) this.pos = closeAt;
+                /* HAND-EDIT: see indirectNameEnd (shared with routine_name).
+                 * Without it, `method ::($meth)($/)` mistook ($meth) for the
+                 * signature and the real signature broke the parse to EOF. */
+                {
+                    int indirectEnd = indirectNameEnd(this.stack.target, this.pos);
+                    if (indirectEnd > this.pos) this.pos = indirectEnd;
                 }
                 this.state = 7;
                 return -3;

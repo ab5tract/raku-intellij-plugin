@@ -25,6 +25,14 @@ class UnusedVariableInspection : RakuInspection() {
             // declaring lexical scope.
             val scope = element.scope
             if (scope == "my" || scope == "state") {
+                // A regex-embedded declaration with an initializer -- Rakudo
+                // grammar idiom `:my $stub := $cursor.define_slang(...);` --
+                // exists to run its initializer per match attempt; the
+                // variable itself is routinely never read. Not a dead store.
+                if (PsiTreeUtil.getParentOfType(element, RakuRegexDecl::class.java) != null
+                        && element.children.any { it is RakuInfix && (it.text == "=" || it.text == ":=") }) {
+                    return
+                }
                 val usageScope = PsiTreeUtil.getParentOfType(element, RakuPsiScope::class.java) ?: return
                 searchScope = LocalSearchScope(usageScope)
                 toCheck = ArrayList()

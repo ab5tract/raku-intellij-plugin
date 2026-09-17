@@ -56,10 +56,11 @@ class RakuFileElementType : IStubFileElementType<RakuFileStub>(RakuLanguage.INST
         // them, e.g. Rakudo core sources; v32: regex assertion colon-args
         // may carry trailing whitespace before '>', un-swallowing files like
         // Rakudo's Grammar.nqp; v33: indirect method names ::($m) parse,
-        // changing routine stubs in NQP-dialect sources). A missed bump leaves upgraded
+        // changing routine stubs in NQP-dialect sources; v34: indirect
+        // token/rule names, removing bogus signature stubs). A missed bump leaves upgraded
         // installs with "PSI and index do not match" mismatch errors until a
         // manual invalidation. ParserChangeVersionGuardTest enforces the
         // pairing with the generated-parser sources.
-        const val STUB_VERSION: Int = 33
+        const val STUB_VERSION: Int = 34
     }
 }

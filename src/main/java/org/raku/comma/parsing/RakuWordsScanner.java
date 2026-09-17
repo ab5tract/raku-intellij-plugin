@@ -39,9 +39,9 @@ public class RakuWordsScanner extends VersionedWordsScanner {
     // branch-aware lexing; v3: nqp::const:: no-args terms un-swallowed
     // formerly-BAD_CHARACTER regions; v4: assertion colon-args trailing ws
     // un-swallowed regex-heavy files; v5: indirect method names ::($m)
-    // un-swallowed their bodies). ParserChangeVersionGuardTest enforces
+    // un-swallowed their bodies; v6: indirect token/rule names). ParserChangeVersionGuardTest enforces
     // the pairing.
-    public static final int VERSION = 5;
+    public static final int VERSION = 6;
 
     @Override
     public int getVersion() {

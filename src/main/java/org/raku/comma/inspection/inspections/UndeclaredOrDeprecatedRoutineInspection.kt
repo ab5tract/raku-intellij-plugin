@@ -11,6 +11,7 @@ import org.raku.comma.inspection.fixes.StubMissingSubroutineFix
 import org.raku.comma.psi.*
 import org.raku.comma.services.project.RakuProjectDetailsService
 import org.raku.comma.services.project.RakuProjectSdkService
+import org.raku.comma.utils.CommaProjectUtil
 
 class UndeclaredOrDeprecatedRoutineInspection : RakuInspection() {
     override fun provideVisitFunction(holder: ProblemsHolder, element: PsiElement) {
@@ -63,6 +64,6 @@ class UndeclaredOrDeprecatedRoutineInspection : RakuInspection() {
         if (! this.callName.startsWith("nqp::")) return false
         return PsiTreeUtil.findChildrenOfType(containingFile, RakuUseStatement::class.java)
                     .any { it.moduleName == "nqp" || it.moduleName == "MONKEY-GUTS" || it.moduleName == "MONKEY" }
-                || this.project.service<RakuProjectDetailsService>().isProjectRakudoCore
+                || CommaProjectUtil.isRakudoCoreFile(containingFile)
     }
 }
