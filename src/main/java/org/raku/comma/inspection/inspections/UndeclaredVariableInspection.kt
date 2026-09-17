@@ -20,6 +20,12 @@ class UndeclaredVariableInspection : RakuInspection() {
         if (element.getParent() is RakuRegexVariable) return
         if (element.getParent() is RakuVariableDecl) return
 
+        // Rakudo core is NQP dialect: its strings do not interpolate (so a
+        // Raku-rules parse invents variables like "$category:sym<$opname>"
+        // out of literal text) and its scoping differs; "not declared" there
+        // is dialect noise, matching the routine inspection's exemption.
+        if (org.raku.comma.utils.CommaProjectUtil.isRakudoCoreFile(element.containingFile)) return
+
         val variableName = element.variableName ?: return
 
         // Match variables ($0, $<name>) are runtime lookups on $/ and never

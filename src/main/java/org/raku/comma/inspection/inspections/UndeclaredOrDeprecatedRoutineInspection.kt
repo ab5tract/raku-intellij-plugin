@@ -31,6 +31,10 @@ class UndeclaredOrDeprecatedRoutineInspection : RakuInspection() {
 
         // If no resolve results, then we've got an error.
         if (results.isEmpty()) {
+            // Rakudo core is NQP dialect: bare names take no listop args and
+            // the NQP setting provides subs (subst, ...) our Raku-rule
+            // resolution cannot see, so "not declared" is dialect noise there.
+            if (CommaProjectUtil.isRakudoCoreFile(element.containingFile)) return
             // Check whether there is an operator of the same name in scope
             if (element.resolvesAsLexicalOperator() ||  element.isValidNqp()) return
 

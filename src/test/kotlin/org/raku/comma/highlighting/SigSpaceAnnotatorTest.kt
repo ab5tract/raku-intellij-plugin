@@ -20,7 +20,12 @@ class SigSpaceAnnotatorTest : CommaFixtureTestCase() {
     }
 
     private fun setRakudoCore(value: Boolean) {
-        project.service<RakuProjectDetailsService>().projectState.isProjectRakudoCore = value
+        val details = project.service<RakuProjectDetailsService>()
+        // getState()'s one-time refresh re-derives the flag from the project
+        // name; mark the scan done first so the manual value sticks
+        // regardless of test order.
+        details.hasScannedForRakuFiles = true
+        details.projectState.isProjectRakudoCore = value
     }
 
     override fun tearDown() {

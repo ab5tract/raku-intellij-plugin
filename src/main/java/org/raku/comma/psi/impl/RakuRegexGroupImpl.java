@@ -14,6 +14,14 @@ public class RakuRegexGroupImpl extends RakuASTWrapperPsiElement implements Raku
 
     @Override
     public boolean mightMatchZeroWidth() {
-        return atomsMightMatchZeroWidth(PsiTreeUtil.getChildrenOfType(this, RakuRegexAtom.class));
+        RakuRegexAtom[] atoms = PsiTreeUtil.getChildrenOfType(this, RakuRegexAtom.class);
+        if (atoms == null) {
+            // An alternation is not wrapped in atoms; ask it directly so
+            // `[ a || b? ]+` keeps its warning.
+            RakuRegexInfixApplicationImpl infix =
+                PsiTreeUtil.getChildOfType(this, RakuRegexInfixApplicationImpl.class);
+            return infix != null && infix.mightMatchZeroWidth();
+        }
+        return atomsMightMatchZeroWidth(atoms);
     }
 }

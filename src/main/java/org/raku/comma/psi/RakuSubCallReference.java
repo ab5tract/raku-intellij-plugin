@@ -37,7 +37,12 @@ public class RakuSubCallReference extends PsiReferenceBase.Poly<RakuSubCallName>
                           .toArray(ResolveResult[]::new);
         }
 
-        if (maybeCoercion) {
+        // A coercion-shaped call (`Foo(...)`), but also any bare argument-less
+        // name, can be a type or constant term: `stop.HOW.curry(...)` on a
+        // lexical `my role stop[...]` is a type object, not a sub call (a
+        // type term could not take listop arguments anyway, so this cannot
+        // shadow a real call).
+        if (maybeCoercion || callHasNoArguments(call)) {
             RakuSymbol type = call.resolveLexicalSymbol(RakuSymbolKind.TypeOrConstant, name);
             if (type != null && type.getPsi() != null) {
                 return new ResolveResult[]{ new PsiElementResolveResult(type.getPsi()) };
@@ -60,6 +65,11 @@ public class RakuSubCallReference extends PsiReferenceBase.Poly<RakuSubCallName>
                                    return sym.getName();
                                }
                            }).toArray();
+    }
+
+    private static boolean callHasNoArguments(RakuSubCallName call) {
+        PsiElement parent = call.getParent();
+        return parent instanceof RakuSubCall subCall && subCall.getCallArguments().length == 0;
     }
 
     private static LookupElementBuilder strikeoutDeprecated(LookupElementBuilder item, PsiElement psi) {

@@ -37,6 +37,10 @@ class UsedModuleInspection : RakuInspection() {
         if (RakuServiceConstants.PREINSTALLED_MODULES.contains(moduleName)) return
         // ... or pragmas ...
         if (RakuServiceConstants.PRAGMAS.contains(moduleName)) return
+        // ... or Rakudo core's internal modules (Raku::Actions, NQPP6QRegex,
+        // ...), which live in the compiler build, never in the ecosystem or
+        // a META6.json.
+        if (CommaProjectUtil.isRakudoCoreFile(holder.file)) return
 
         // There is no point in doing this highlighting prior to the loading of dependency information
         // ... but let's default to marking them as warnings when not in the provides list
