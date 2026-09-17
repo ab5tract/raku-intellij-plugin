@@ -46,11 +46,15 @@ A thin wrapper lexer around `RakuLexer` (returned by
 covering an inactive region body into a single `CONDITIONAL_BRANCH` token,
 splitting any delegate token that straddles a region edge. The cursor-machine
 lexer is untouched. `CONDITIONAL_BRANCH` is registered in
-`ParserDefinition.getWhitespaceTokens()`, so `PsiBuilder` places it into the
+`ParserDefinition.getCommentTokens()`, so `PsiBuilder` places it into the
 tree without `RakuParser` (22.8k generated lines, whitespace-significant)
-seeing it — zero parser changes. Fallback if lazy leaves in the whitespace
-set do not materialize correctly: accept the token in the statement-list loop
-only (a bounded parser change).
+seeing it — zero parser changes. (Amended 2026-09-17: the original
+whitespace-set variant cannot work — `PsiBuilderImpl.createLeaf` returns
+`PsiWhiteSpaceImpl` unconditionally for whitespace-set tokens, verified
+empirically and by decompilation. Comment-set tokens take the normal leaf
+path, where the `ILazyParseableElementType` check engages; JavaDoc's
+`DOC_COMMENT` — a lazy parseable registered as a comment token — is the
+platform precedent for exactly this pattern.)
 
 ### 3. Island PSI
 

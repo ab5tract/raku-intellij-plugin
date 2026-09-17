@@ -503,17 +503,23 @@ In `RakuParserDefinition.java`:
     }
 ```
 
-Replace `getWhitespaceTokens` (keep the existing comment, extend it):
+Replace `getCommentTokens` (keep the existing comment, extend it). NOT the
+whitespace set: `PsiBuilderImpl.createLeaf` returns `PsiWhiteSpaceImpl`
+unconditionally for whitespace-set tokens, so a lazy type there never
+becomes a chameleon. Comment-set tokens take the normal leaf path where the
+`ILazyParseableElementType` check engages — JavaDoc's `DOC_COMMENT` is the
+platform precedent.
 
 ```java
     // Both whitespace and comment tokens are empty, as we want to
     // match it in our parser. The one exception: an inactive #?if branch is
     // carried as a single CONDITIONAL_BRANCH token that the generated parser
-    // must never see; registering it as whitespace makes PsiBuilder place it
-    // into the tree (as a lazy-parseable island) behind the parser's back.
+    // must never see; registering it as a comment token makes PsiBuilder
+    // place it into the tree (as a lazy-parseable island, the same way
+    // JavaDoc's DOC_COMMENT works) behind the parser's back.
     @NotNull
     @Override
-    public TokenSet getWhitespaceTokens() {
+    public TokenSet getCommentTokens() {
         return TokenSet.create(RakuElementTypes.CONDITIONAL_BRANCH);
     }
 ```
