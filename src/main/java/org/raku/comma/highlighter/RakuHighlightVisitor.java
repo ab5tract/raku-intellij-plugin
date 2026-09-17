@@ -20,6 +20,7 @@ import org.raku.comma.utils.CommaProjectUtil;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 @InternalIgnoreDependencyViolation
 public class RakuHighlightVisitor extends RakuElementVisitor implements HighlightVisitor {
@@ -186,13 +187,22 @@ public class RakuHighlightVisitor extends RakuElementVisitor implements Highligh
     }
 
     private boolean markDuplicateValue(RakuPsiElement decl, List<RakuPsiElement> v) {
+        // Elements living in mutually exclusive #?if branches can never both
+        // exist in one build, so they are not candidates for a duplicate
+        // report against `decl` (or against each other).
+        List<RakuPsiElement> coexisting = v.stream()
+                                           .filter(other -> other == decl
+                                                   || !RakuConditionalBranches.INSTANCE.inMutuallyExclusiveBranches(other, decl))
+                                           .collect(Collectors.toList());
+        if (coexisting.size() < 2) return false;
+
         AtomicBoolean marked = new AtomicBoolean(false);
-        Optional<RakuPsiElement> maxRedecl = v.stream()
+        Optional<RakuPsiElement> maxRedecl = coexisting.stream()
                                               .filter(d -> d.getContainingFile()
                                                             .isEquivalentTo(decl.getContainingFile()))
                                               .max(Comparator.comparingInt(PsiElement::getTextOffset));
         if (maxRedecl.isEmpty()) {
-            maxRedecl = v.stream().max(Comparator.comparingInt(PsiElement::getTextOffset));
+            maxRedecl = coexisting.stream().max(Comparator.comparingInt(PsiElement::getTextOffset));
         }
 
         maxRedecl.ifPresent(redecl -> {
@@ -213,7 +223,7 @@ public class RakuHighlightVisitor extends RakuElementVisitor implements Highligh
                 RakuParameter[] newParams = decl instanceof RakuPackageDecl
                                             ? ((RakuPackageDecl) decl).getSignature()
                                             : new RakuParameter[0];
-                for (RakuPsiElement role : v) {
+                for (RakuPsiElement role : coexisting) {
                     if (role instanceof RakuPackageDecl) {
                         RakuParameter[] oldParams = ((RakuPackageDecl) role).getSignature();
                         // Different numbers of args
@@ -229,12 +239,12 @@ public class RakuHighlightVisitor extends RakuElementVisitor implements Highligh
                     }
                 }
             } else {
-                Optional<RakuPsiElement> minRedecl = v.stream()
+                Optional<RakuPsiElement> minRedecl = coexisting.stream()
                                                       .filter(d -> !d.getContainingFile()
                                                                      .isEquivalentTo(decl.getContainingFile()))
                                                       .min(Comparator.comparingInt(PsiElement::getTextOffset));
                 if (minRedecl.isEmpty()) {
-                    minRedecl = v.stream().min(Comparator.comparingInt(PsiElement::getTextOffset));
+                    minRedecl = coexisting.stream().min(Comparator.comparingInt(PsiElement::getTextOffset));
                 }
                 minRedecl.ifPresent(packageDecl -> {
                     marked.set(true);
@@ -280,7 +290,10 @@ public class RakuHighlightVisitor extends RakuElementVisitor implements Highligh
                                                       decl.getNameIdentifier().getTextRange().getEndOffset());
                         }
                     }
-                    if (textRange != null) {
+                    if (textRange != null
+                            && !RakuConditionalBranches.INSTANCE.inMutuallyExclusiveBranches(
+                                    (PsiElement) oldAndNewHolders.first, (PsiElement) oldAndNewHolders.second))
+                    {
                         infoHolder.add(getDuplicateHighlightInfo((RakuPsiElement) oldAndNewHolders.first,
                                                                  (PsiElement) holder,
                                                                  textRange,
@@ -390,29 +403,34 @@ public class RakuHighlightVisitor extends RakuElementVisitor implements Highligh
                 if (v == null) {
                     v = new ArrayList<>();
                 } else {
-                    TextRange finalRange = ranges[finalI];
-                    RakuPsiElement originalDecl = variables[finalI];
-                    for (RakuPsiElement decl : v) {
-                        if (!PsiEquivalenceUtil.areElementsEquivalent(decl.getContainingFile(), variables[finalI].getContainingFile())) {
-                            finalRange = decl.getTextRange();
-                            originalDecl = decl;
-                            break;
-                        } else {
-                            if (finalRange.getEndOffset() < decl.getTextRange().getEndOffset()) {
+                    List<RakuPsiElement> coexisting = v.stream()
+                            .filter(prior -> !RakuConditionalBranches.INSTANCE.inMutuallyExclusiveBranches(prior, variables[finalI]))
+                            .collect(Collectors.toList());
+                    if (!coexisting.isEmpty()) {
+                        TextRange finalRange = ranges[finalI];
+                        RakuPsiElement originalDecl = variables[finalI];
+                        for (RakuPsiElement decl : coexisting) {
+                            if (!PsiEquivalenceUtil.areElementsEquivalent(decl.getContainingFile(), variables[finalI].getContainingFile())) {
                                 finalRange = decl.getTextRange();
-                            }
-                            if (originalDecl.getTextOffset() > decl.getTextOffset()) {
                                 originalDecl = decl;
+                                break;
+                            } else {
+                                if (finalRange.getEndOffset() < decl.getTextRange().getEndOffset()) {
+                                    finalRange = decl.getTextRange();
+                                }
+                                if (originalDecl.getTextOffset() > decl.getTextOffset()) {
+                                    originalDecl = decl;
+                                }
                             }
                         }
+                        myHolder.add(getDuplicateHighlightInfo(originalDecl,
+                                                               variables[finalI],
+                                                               finalRange,
+                                                               varName,
+                                                               varName.contains("!")
+                                                               ? HighlightInfoType.ERROR
+                                                               : HighlightInfoType.WARNING));
                     }
-                    myHolder.add(getDuplicateHighlightInfo(originalDecl,
-                                                           variables[finalI],
-                                                           finalRange,
-                                                           varName,
-                                                           varName.contains("!")
-                                                           ? HighlightInfoType.ERROR
-                                                           : HighlightInfoType.WARNING));
                 }
                 v.add(variables[finalI]);
                 return v;
