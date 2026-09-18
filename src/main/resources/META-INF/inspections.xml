@@ -227,6 +227,15 @@
                          implementationClass="org.raku.comma.inspection.inspections.MonitorUsageInspection"/>
 
         <localInspection language="Raku"
+                         displayName="Usage of unimported type"
+                         shortName="RakuUnimportedType"
+                         groupPath="Raku"
+                         enabledByDefault="true"
+                         level="WARNING"
+                         groupName="Packages"
+                         implementationClass="org.raku.comma.inspection.inspections.UnimportedTypeInspection"/>
+
+        <localInspection language="Raku"
                          displayName="Export of 'my' scope variable"
                          shortName="RakuMyScopedVariableExported"
                          groupPath="Raku"

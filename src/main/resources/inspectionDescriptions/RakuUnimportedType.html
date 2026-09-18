@@ -1,0 +1,27 @@
+<html>
+<body>
+<p>Reports use of a type that another file in the project declares, but that is not imported here.</p>
+<p>
+    A global (<code>our</code>-scoped) class, role, enum or subset declared in one module of the
+    project is only visible to another file after a <code>use</code> of the module that provides
+    it. The quick fix adds the missing <code>use</code> statement; when several project modules
+    declare the type, one fix is offered per candidate. Type names no project file provides are
+    left unreported, since they may arrive through <code>require</code>, indirect lookups, or
+    other means static analysis cannot see.
+</p>
+<pre><code>
+# lib/Amazing/Mazes/Renderer.rakumod
+unit class Amazing::Mazes::Renderer;
+
+# lib/Amazing/Mazes/Maze.rakumod
+unit role Amazing::Mazes::Maze;
+method render(Amazing::Mazes::Renderer $renderer) { }   # Type is not imported
+
+# Correct
+use Amazing::Mazes::Renderer;
+unit role Amazing::Mazes::Maze;
+method render(Amazing::Mazes::Renderer $renderer) { }
+</code></pre>
+<!-- tooltip end -->
+</body>
+</html>

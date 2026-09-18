@@ -38,6 +38,7 @@ import org.raku.comma.inspection.inspections.UndeclaredAttributeInspection
 import org.raku.comma.inspection.inspections.UndeclaredOrDeprecatedRoutineInspection
 import org.raku.comma.inspection.inspections.UndeclaredPrivateMethodInspection
 import org.raku.comma.inspection.inspections.UndeclaredVariableInspection
+import org.raku.comma.inspection.inspections.UnimportedTypeInspection
 import org.raku.comma.inspection.inspections.UnitKeywordInspection
 import org.raku.comma.inspection.inspections.UnitSubInspection
 import org.raku.comma.inspection.inspections.UnknownRegexModInspection
@@ -91,6 +92,7 @@ val ALL_RAKU_INSPECTIONS = arrayOf(
         UndeclaredOrDeprecatedRoutineInspection::class.java,
         UndeclaredPrivateMethodInspection::class.java,
         UndeclaredVariableInspection::class.java,
+        UnimportedTypeInspection::class.java,
         UnitKeywordInspection::class.java,
         UnitSubInspection::class.java,
         UnknownRegexModInspection::class.java,

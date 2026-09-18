@@ -71,6 +71,10 @@ public class InspectionConstants {
         public static final String OO_MONITORS = "OO::Monitors";
     }
 
+    public static class UnimportedType {
+        public static final String DESCRIPTION_FORMAT = "Type %s is provided by a module that is not imported";
+    }
+
     public static class MyScopedVariableExported {
         public static final String DESCRIPTION = "`my` scoped variable cannot be exported";
     }
