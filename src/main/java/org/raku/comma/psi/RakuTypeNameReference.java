@@ -21,6 +21,7 @@ public class RakuTypeNameReference extends PsiReferenceBase<RakuPsiElement> {
         String typeName = ref instanceof RakuTypeName
                 ? ((RakuTypeName)ref).getTypeName()
                 : ref.getText();
+        PsiElement lexical = null;
         RakuSymbol result = ref.resolveLexicalSymbol(RakuSymbolKind.TypeOrConstant, typeName);
         if (result != null) {
             PsiElement psi = result.getPsi();
@@ -28,12 +29,14 @@ public class RakuTypeNameReference extends PsiReferenceBase<RakuPsiElement> {
                 // It's fine if it's either imported or declared ahead of the point
                 // it is being referenced.
                 if (psi.getContainingFile() != ref.getContainingFile())
-                    return psi;
-                if (psi.getTextOffset() < ref.getTextOffset() || result.wasDeferred())
-                    return psi;
+                    lexical = psi;
+                else if (psi.getTextOffset() < ref.getTextOffset() || result.wasDeferred())
+                    lexical = psi;
             }
         }
-        return null;
+        // In Rakudo core, an in-project declaration beats a fileless
+        // SDK-setting symbol (or nothing) -- see RakudoCoreTypeResolution.
+        return RakudoCoreTypeResolution.preferProjectGlobalType(ref, typeName, lexical);
     }
 
     @Override
