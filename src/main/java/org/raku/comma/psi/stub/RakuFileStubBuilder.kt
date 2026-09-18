@@ -24,7 +24,11 @@ class RakuFileStubBuilder : DefaultStubBuilder() {
     }
 
     companion object {
-        private fun generateCompilationUnitName(file: PsiFile): String? {
+        // Also the canonical file-to-module-name mapping: this is the key a
+        // RakuFile is indexed under in PROJECT_MODULES, so a `use` of the
+        // returned name is guaranteed to resolve back to this file.
+        @JvmStatic
+        fun generateCompilationUnitName(file: PsiFile): String? {
             var vf = file.viewProvider.virtualFile
 
             if (vf is LightVirtualFile) {
