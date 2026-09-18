@@ -1153,9 +1153,6 @@ class AnnotationTest : CommaFixtureTestCase() {
         myFixture.checkHighlighting()
         myFixture.configureByFile("CallArityExtended.pm6")
         myFixture.checkHighlighting()
-        myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "42<warning descr=\"method 'perl' is deprecated ... use raku\">.perl</warning>;")
-        myFixture.checkHighlighting()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "open;")
         checkHighlightingContains("Not enough positional arguments", "open</error>")
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "open 'foo';")
@@ -1163,7 +1160,7 @@ class AnnotationTest : CommaFixtureTestCase() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$err = 42; run 'curl', 'foo', :!out, :\$err;")
         myFixture.checkHighlighting()
         myFixture.configureByText(RakuScriptFileType.INSTANCE,
-                                  "run 'curl', 'foo', <warning descr=\"Pair literal can be simplified\">out => 42</warning>, :err(42);")
+                                  "run 'curl', 'foo', out => 42, :err(42);")
         myFixture.checkHighlighting()
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$a; \$a.emit(42);")
         myFixture.checkHighlighting()

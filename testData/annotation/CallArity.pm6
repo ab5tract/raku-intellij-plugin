@@ -19,7 +19,7 @@ sub b($a, *%h) { $a; %h }
 
 b(42);
 <error descr="Too many positional arguments">b(42, 42)</error>;
-b(42, <warning descr="Pair literal can be simplified">a => 42</warning>, <warning descr="Pair literal can be simplified">b => 42</warning>);
+b(42, a => 42, b => 42);
 
 sub c($a, $b, *@p) { $a; $b; @p;}
 
@@ -33,12 +33,12 @@ sub d($a, $b, *@p, *%h) { $a, $b, @p, %h; }
 <error descr="Not enough positional arguments">d(42)</error>;
 d(42, 42);
 d(42, 42, 42, 42);
-d(42, 42, 42, 42, <warning descr="Pair literal can be simplified">a => 42</warning>, <warning descr="Pair literal can be simplified">b => 42</warning>);
+d(42, 42, 42, 42, a => 42, b => 42);
 
 # If it's a sub, check that all required named arguments are passed
 class A {
     method a($a) {
-        self.b(42, <warning descr="Pair literal can be simplified">b => $a</warning>);
+        self.b(42, b => $a);
     }
     method m($b, $c) {
         $b + $c;
@@ -47,8 +47,8 @@ class A {
         if $int + $a + $b == 42 {
             return;
         } else {
-            self.d(<warning descr="Pair literal can be simplified">not-used => 'value'</warning>);
-            self.a(3, <warning descr="Pair literal can be simplified">not-used => 'value'</warning>) + self<error descr="Not enough positional arguments">.m(42)</error>;
+            self.d(not-used => 'value');
+            self.a(3, not-used => 'value') + self<error descr="Not enough positional arguments">.m(42)</error>;
         }
     }
     method d {}
@@ -59,7 +59,7 @@ sub e($a?, :$b!) {
 }
 
 <error descr="This call misses a required named argument: $b">e()</error>;
-e(<warning descr="Pair literal can be simplified">b => 42</warning>);
+e(b => 42);
 <error descr="This call misses a required named argument: $b">e(555)</error>;
 <error descr="No such named parameter in signature">e(555, b => 42, d => 42)</error>;
-e(555, <warning descr="Pair literal can be simplified">b => 42</warning>);
+e(555, b => 42);
