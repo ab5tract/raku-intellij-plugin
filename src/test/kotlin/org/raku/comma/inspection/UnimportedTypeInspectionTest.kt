@@ -83,6 +83,26 @@ class UnimportedTypeInspectionTest : CommaFixtureTestCase() {
         assertEmpty(problems("my Int \$n;"))
     }
 
+    // End-to-end through the real inspection machinery (enableInspections +
+    // the platform's own PSI walk), not the direct provideVisitFunction call
+    // the other cases use -- so a dispatch or registration problem that the
+    // direct style cannot see still fails the suite. The subject is the
+    // reported real-world shape: a qualified type in a method signature of a
+    // `unit role` module file.
+    fun testUnitRoleSignatureHighlightsEndToEnd() {
+        myFixture.addFileToProject("Amazing/Mazes/Renderer.rakumod",
+                                   "unit class Amazing::Mazes::Renderer;\n")
+        myFixture.enableInspections(UnimportedTypeInspection())
+        myFixture.configureByText("Maze.rakumod",
+            "use v6.d;\n\n" +
+            "unit role Amazing::Mazes::Maze;\n\n" +
+            "method Str  { !!! }\n" +
+            "method gist { self.Str }\n\n" +
+            "method render(<warning descr=\"Type Amazing::Mazes::Renderer is provided by a module that is not imported\">" +
+            "Amazing::Mazes::Renderer</warning> \$renderer) {\n\n}\n")
+        myFixture.checkHighlighting(true, false, false)
+    }
+
     fun testQuickFixAddsUseStatement() {
         val p = problems("my C \$c;")
         assertSize(1, p)
