@@ -340,6 +340,20 @@ sub node-at($root, @path) {
     $current
 }
 
+# Reads $node's current value for attribute $name, using the same
+# bind-not-assign and null-Str guard as attrs-of (safe-str), so this can
+# never trip the same MoarVM segfault Task 2 worked around. Returns an
+# undefined Mu when the attribute is unknown, unset, or unsafe to inspect;
+# callers fall back to a heuristic in that case rather than failing.
+sub current-value($node, $name) {
+    my $a = $node.^attributes.first(*.name eq '$!' ~ $name) // return Mu;
+    my $raw := try { $a.get_value($node) };
+    return Mu if nqp::isnull(nqp::decont($raw));
+    return Mu unless (try { $raw.defined }) // False;
+    return Mu unless safe-str($raw);
+    $raw
+}
+
 # Errors must reach the caller as JSON on stdout: RakuCommandLine reads stdout
 # only and discards everything on a non-zero exit.
 CATCH { default { fail-with(.message // .gist); } }
@@ -375,8 +389,26 @@ elsif $verb eq 'edit' {
         $inner
     }
     else {
-        # Scalars: prefer the node's current type. Int stays Int, Str stays Str.
-        $value ~~ /^ '-'? \d+ $/ ?? $value.Int !! $value
+        # Scalars: coerce to match the attribute's *current* type on
+        # $target, so e.g. editing a Str-typed attribute to "42" produces a
+        # Str, not an Int -- pattern-matching the input string's shape
+        # alone can't tell those apart. Bool is checked before Int because
+        # True/False smart-match Int too. Only fall back to guessing from
+        # the input string's shape when the current value is unset or its
+        # type can't be determined safely (current-value returns an
+        # undefined Mu in that case).
+        my $current := current-value($target, $attr);
+        if $current.defined {
+            given $current {
+                when Bool { $value.lc eq 'true' ?? True !! False }
+                when Str  { $value }
+                when Int  { (try { $value.Int }) // $value }
+                default   { $value ~~ /^ '-'? \d+ $/ ?? $value.Int !! $value }
+            }
+        }
+        else {
+            $value ~~ /^ '-'? \d+ $/ ?? $value.Int !! $value
+        }
     };
 
     my $setter = 'set-' ~ $attr;

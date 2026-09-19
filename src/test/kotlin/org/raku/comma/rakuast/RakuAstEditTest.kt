@@ -54,4 +54,38 @@ class RakuAstEditTest : CommaFixtureTestCase() {
         assertNotNull(result.error)
         assertNull(result.text)
     }
+
+    // Regression guard: scalar coercion must key off the attribute's own
+    // current type on the node, not off the shape of the incoming string.
+    // A numeric-looking string edited onto a Str-typed attribute must stay
+    // a Str, not silently become an Int. The only place this surfaces is
+    // in the deparsed/re-parsed structure (JSON `display` uses `.gist`,
+    // which reads identically for Str "42" and Int 42), so this asserts on
+    // the class of the re-parsed result rather than on deparse formatting.
+    fun testEditScalarPreservesAttributeType() {
+        val source = "my \$x = \"hello\";"
+        val path = pathOf(service().analyze(source).tree!!, "RakuAST::StrLiteral")
+
+        val result = service().edit(source, path, "value", "42", "scalar")
+
+        assertNull(result.error)
+        assertNotNull(result.text)
+
+        val reparsed = service().analyze(result.text!!).tree!!
+        val classes = collectClasses(reparsed)
+        assertTrue(
+            "expected a RakuAST::StrLiteral when re-parsing '${result.text}', got $classes",
+            classes.contains("RakuAST::StrLiteral")
+        )
+        assertFalse(
+            "the edited value must not have become a bare Int literal, got $classes",
+            classes.contains("RakuAST::IntLiteral")
+        )
+    }
+
+    private fun collectClasses(node: AstNode): List<String> {
+        val out = mutableListOf(node.nodeClass)
+        node.children.forEach { out += collectClasses(it) }
+        return out
+    }
 }
