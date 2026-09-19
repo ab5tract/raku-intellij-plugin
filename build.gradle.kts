@@ -27,7 +27,7 @@ fun versionFromPropertyPossibly(): String {
     return safeDetermineCurrentRakuBetaPluginVersion(determineCurrentGitBranch())
 }
 
-// The fallback below reads .versions/raku-beta-version, which is a record
+// The fallback below reads .versions/plugin-version, which is a record
 // rather than a source of truth -- the git tag is. That file drifts whenever
 // a tag is cut by hand, and it currently reads months behind the latest tag.
 // Falling back to it locally is harmless; doing so while building something
@@ -49,7 +49,7 @@ fun failIfReleasingWithoutAnExplicitVersion() {
         """
         Refusing to package a plugin on CI without -PpluginVersion.
 
-        The version would otherwise come from .versions/raku-beta-version,
+        The version would otherwise come from .versions/plugin-version,
         which is only a record of the last bump and drifts whenever a tag is
         cut by hand -- so the published artifact would carry a stale version
         in its filename and its plugin.xml, with nothing to flag it.
@@ -81,17 +81,25 @@ fun gitCurrentRakuBetaPluginVersion(): String? =
           .lastOrNull { it.isNotBlank() }
 
 fun safeDetermineCurrentRakuBetaPluginVersion(currentGitBranch: String): String {
-    // On main the tags are the record, not .versions/raku-beta-version. That
-    // file only advances when bumpBetaVersion runs, so it drifts the moment a
-    // tag is cut by hand -- it currently reads 2026.1-beta.2 against a latest
-    // tag of 2026.2-beta.13, which would have bumped the series backwards to
-    // 3. Branches keep using the file, since `--merged main` cannot see a tag
+    // On main, reconcile the file against the tags rather than trusting
+    // either blindly.
+    //
+    // The file is the record we keep, but it only advances when
+    // bumpBetaVersion runs, so a tag cut by hand leaves it behind -- it had
+    // drifted to 2026.1-beta.2 against a latest tag of 2026.2-beta.13, which
+    // would have bumped the series backwards by ten. A released tag is
+    // evidence that a version exists; the file is not evidence that one does
+    // not. So when the tag is ahead, the tag wins, and the next
+    // retrieve/bump writes the agreed value straight back into the file,
+    // which is what keeps the two from drifting again.
+    //
+    // Branches keep reading the file alone: `--merged main` cannot see a tag
     // that has not reached main yet.
     if (currentGitBranch == "main") {
         gitCurrentRakuBetaPluginVersion()?.let { return it }
     }
 
-    val betaVersionPath = Path("${project.projectDir.path}/.versions/raku-beta-version${ formatBranch(currentGitBranch, ".%s") }")
+    val betaVersionPath = Path("${project.projectDir.path}/.versions/plugin-version${ formatBranch(currentGitBranch, ".%s") }")
 
     return when(betaVersionPath.exists()) {
         true  -> betaVersionPath.toFile().readText().trim()
@@ -130,7 +138,7 @@ data class RakuPluginBetaVersion(
     val branch: String,
     val basePath: String
 ) {
-    fun fileName(): String = "$basePath/.versions/raku-beta-version${ maybeBranch(".%s") }"
+    fun fileName(): String = "$basePath/.versions/plugin-version${ maybeBranch(".%s") }"
     fun maybeBranch(format: String = "%s") = if (branch != "main") format.format(branch) else ""
 
     // main reads 2026.2.14; a branch reads 2026.2--some-branch.3.
