@@ -14,11 +14,9 @@ jobs:
       packages: write
 
     steps:
+    # A shallow checkout is fine: -PpluginVersion below short-circuits the
+    # version lookup before it ever consults git.
     - uses: actions/checkout@v5
-      with:
-        # The version task shells out to `git tag`/`git branch`, which a
-        # shallow default checkout cannot answer.
-        fetch-depth: 0
 
     - name: Set up JDK 25
       uses: actions/setup-java@v5
