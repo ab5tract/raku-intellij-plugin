@@ -17,7 +17,8 @@ class RakuAstEditApplierTest : CommaFixtureTestCase() {
     }
 
     // Everything outside the edited node must survive byte-for-byte, including
-    // comments, which DEPARSE cannot reproduce.
+    // comments, which DEPARSE cannot reproduce. This guards against replacement
+    // widening in either direction, which would silently lose what DEPARSE cannot restore.
     fun testCommentsAndFormattingOutsideTheNodeSurvive() {
         val original = "my  \$x   =   41;   # keep me\n# and me\n"
         myFixture.configureByText(RakuScriptFileType.INSTANCE, original)
@@ -25,11 +26,8 @@ class RakuAstEditApplierTest : CommaFixtureTestCase() {
 
         RakuAstEditApplier.apply(project, myFixture.editor, 0, result)
 
-        val text = myFixture.editor.document.text
-        assertTrue("trailing comment lost: $text", text.contains("# keep me"))
-        assertTrue("standalone comment lost: $text", text.contains("# and me"))
-        assertTrue("spacing lost: $text", text.contains("my  \$x   =   "))
-        assertTrue("edit not applied: $text", text.contains("99"))
+        val expected = "my  \$x   =   99;   # keep me\n# and me\n"
+        assertEquals(expected, myFixture.editor.document.text)
     }
 
     fun testRefusesResultCarryingAnError() {
@@ -49,6 +47,28 @@ class RakuAstEditApplierTest : CommaFixtureTestCase() {
 
         val changed = RakuAstEditApplier.apply(
             project, myFixture.editor, 9000, EditResult(text = "99", span = AstSpan(0, 2)))
+
+        assertFalse(changed)
+        assertEquals(before, myFixture.editor.document.text)
+    }
+
+    fun testRefusesReversedSpan() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 41;")
+        val before = myFixture.editor.document.text
+
+        val changed = RakuAstEditApplier.apply(
+            project, myFixture.editor, 0, EditResult(text = "99", span = AstSpan(10, 5)))
+
+        assertFalse(changed)
+        assertEquals(before, myFixture.editor.document.text)
+    }
+
+    fun testRefusesNegativeStart() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 41;")
+        val before = myFixture.editor.document.text
+
+        val changed = RakuAstEditApplier.apply(
+            project, myFixture.editor, -5, EditResult(text = "99", span = AstSpan(0, 2)))
 
         assertFalse(changed)
         assertEquals(before, myFixture.editor.document.text)
