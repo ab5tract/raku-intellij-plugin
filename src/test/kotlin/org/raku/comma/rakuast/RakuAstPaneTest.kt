@@ -7,11 +7,17 @@ import java.awt.datatransfer.DataFlavor
 import org.raku.comma.CommaFixtureTestCase
 import org.raku.comma.filetypes.RakuScriptFileType
 
-class RakuAstViewerPanelTest : CommaFixtureTestCase() {
+class RakuAstPaneTest : CommaFixtureTestCase() {
+
+    // Each pane gets its own options rather than reading the project's stored
+    // preferences, so one test toggling a setting cannot change what another
+    // sees. RakuAstViewerPanel owns the persistence; the pane only reads.
+    private fun newPane(options: RakuAstViewerOptions = RakuAstViewerOptions()) =
+        RakuAstPane(project, options)
 
     fun testShowsErrorTextWhenAnalysisFailed() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
 
         panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;",
                            AnalyzeResult(error = "Invalid typename 'Foo'"))
@@ -22,7 +28,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
 
     fun testPopulatesTreeOnSuccess() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
         val tree = AstNode(
             nodeClass = "RakuAST::StatementList",
             path = emptyList(),
@@ -38,7 +44,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
 
     fun testHighlightIgnoresEditorDisposedAfterStorage() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
 
         // A throwaway editor, independent of the fixture's own editor, so we can
         // dispose it without disturbing fixture teardown.
@@ -60,9 +66,9 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
             factory.releaseEditor(editor)
 
             // Reaches the private highlight() the same way a real tree-selection
-            // click would (RakuAstViewerPanel deliberately exposes no public hook
+            // click would (RakuAstPane deliberately exposes no public hook
             // for this -- see the class's Swing tree, which is private by design).
-            val highlight = RakuAstViewerPanel::class.java.getDeclaredMethod("highlight", AstNode::class.java)
+            val highlight = RakuAstPane::class.java.getDeclaredMethod("highlight", AstNode::class.java)
             highlight.isAccessible = true
             highlight.invoke(panel, leaf) // must not throw on the now-disposed editor
         } finally {
@@ -75,7 +81,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     // wrong.
     fun testCopyGistPutsTheGistOnTheClipboard() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
 
         val gist = "RakuAST::IntLiteral.new(41)"
         seedGistRow(panel, cached = gist, shown = gist)
@@ -89,14 +95,14 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     // worse than the click appearing to do nothing.
     fun testCopyGistRefusesThePlaceholder() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
 
         seedGistRow(panel, cached = null, shown = "Rendering…")
 
         assertFalse("the placeholder must not be copied", invokeCopyGist(panel, 0))
     }
 
-    private fun seedGistRow(panel: RakuAstViewerPanel, cached: String?, shown: String) {
+    private fun seedGistRow(panel: RakuAstPane, cached: String?, shown: String) {
         val model = fieldValue<javax.swing.table.DefaultTableModel>(panel, "attrModel")
         model.rowCount = 0
         model.addRow(arrayOf("(gist)", shown))
@@ -107,8 +113,8 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
         }
     }
 
-    private fun invokeCopyGist(panel: RakuAstViewerPanel, row: Int): Boolean {
-        val method = RakuAstViewerPanel::class.java
+    private fun invokeCopyGist(panel: RakuAstPane, row: Int): Boolean {
+        val method = RakuAstPane::class.java
             .getDeclaredMethod("copyGist", Int::class.javaPrimitiveType)
         method.isAccessible = true
         return method.invoke(panel, row) as Boolean
@@ -118,7 +124,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     // so the tree opens fully by default.
     fun testTreeIsFullyExpandedAfterAnalysis() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
 
         panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;", AnalyzeResult(tree = threeLevelTree()))
 
@@ -130,8 +136,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     // Unchecking it has to actually be honoured, or the preference is a lie.
     fun testTreeStaysCollapsedWhenExpandAllIsOff() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
-        fieldValue<javax.swing.JCheckBox>(panel, "expandAll").isSelected = false
+        val panel = newPane(RakuAstViewerOptions(expandAll = false))
 
         panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;", AnalyzeResult(tree = threeLevelTree()))
 
@@ -162,7 +167,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     // the recursion directly -- which is where the behaviour actually lives.
     fun testExpandAndCollapseSubtreeAreRecursive() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
 
         // Three levels deep, so a one-level toggle could not produce the
         // all-expanded state this asserts.
@@ -195,21 +200,21 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T> fieldValue(panel: RakuAstViewerPanel, name: String): T {
-        val field = RakuAstViewerPanel::class.java.getDeclaredField(name)
+    private fun <T> fieldValue(panel: RakuAstPane, name: String): T {
+        val field = RakuAstPane::class.java.getDeclaredField(name)
         field.isAccessible = true
         return field.get(panel) as T
     }
 
-    private fun invokeWithPath(panel: RakuAstViewerPanel, name: String, path: javax.swing.tree.TreePath) {
-        val method = RakuAstViewerPanel::class.java
+    private fun invokeWithPath(panel: RakuAstPane, name: String, path: javax.swing.tree.TreePath) {
+        val method = RakuAstPane::class.java
             .getDeclaredMethod(name, javax.swing.tree.TreePath::class.java)
         method.isAccessible = true
         method.invoke(panel, path)
     }
 
-    private fun invokeHighlight(panel: RakuAstViewerPanel, node: AstNode) {
-        val highlight = RakuAstViewerPanel::class.java.getDeclaredMethod("highlight", AstNode::class.java)
+    private fun invokeHighlight(panel: RakuAstPane, node: AstNode) {
+        val highlight = RakuAstPane::class.java.getDeclaredMethod("highlight", AstNode::class.java)
         highlight.isAccessible = true
         highlight.invoke(panel, node)
     }
@@ -221,7 +226,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     // jumping the caret. It must now be a no-op.
     fun testHighlightNoOpOnNullSpan() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
         val leaf = AstNode("RakuAST::Type::Setting", listOf(0), span = null)
         val tree = AstNode(
             nodeClass = "RakuAST::StatementList",
@@ -243,7 +248,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     fun testHighlightSelectsAsciiSpanUnchanged() {
         val snippet = "my \$x = 1;"
         myFixture.configureByText(RakuScriptFileType.INSTANCE, snippet)
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
         // "1" sits at grapheme (== UTF-16, all ASCII) 8..9.
         val leaf = AstNode("RakuAST::IntLiteral", listOf(0), AstSpan(8, 9))
         val tree = AstNode(
@@ -274,7 +279,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
         assertEquals("my \$y = 41", snippet.substring(14, 24))
 
         myFixture.configureByText(RakuScriptFileType.INSTANCE, snippet)
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
         // Grapheme indices, as the backend would report them (one grapheme
         // for the astral camel, not two).
         val leaf = AstNode("RakuAST::StatementList", listOf(0), AstSpan(13, 23))
@@ -297,7 +302,7 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
     fun testHighlightRefusesWhenDocumentChangedSinceAnalyze() {
         val snippet = "my \$x = 1;"
         myFixture.configureByText(RakuScriptFileType.INSTANCE, snippet)
-        val panel = RakuAstViewerPanel(project)
+        val panel = newPane()
         // "1" sits at 8..9 in the original snippet.
         val leaf = AstNode("RakuAST::IntLiteral", listOf(0), AstSpan(8, 9))
         val tree = AstNode(
