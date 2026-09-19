@@ -7,6 +7,24 @@ import org.junit.Test
 
 class AstJsonTest {
 
+    // The tree renders nodes via toString(), so this is the tree label.
+    @Test
+    fun treeLabelPrefersRakudoSummary() {
+        val node = AstNode(
+            nodeClass = "RakuAST::Infix",
+            span = AstSpan(0, 1),
+            summary = "Infix 【+】 ⎡+⎤",
+        )
+        assertEquals("Infix 【+】 ⎡+⎤", node.toString())
+    }
+
+    // Without a summary the label must still be usable, not blank.
+    @Test
+    fun treeLabelFallsBackToClassName() {
+        val node = AstNode(nodeClass = "RakuAST::Infix", span = AstSpan(0, 1))
+        assertEquals("Infix", node.toString())
+    }
+
     @Test
     fun decodesAnalyzeTree() {
         val json = """

@@ -7,11 +7,17 @@ import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
+import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 import java.text.BreakIterator
 import javax.swing.JPanel
-import javax.swing.table.DefaultTableModel
 import javax.swing.JTable
+import javax.swing.JTextArea
+import javax.swing.table.DefaultTableModel
+import javax.swing.table.TableCellRenderer
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
@@ -36,6 +42,17 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     private var nodes = 0
 
     init {
+        // Attribute values are frequently whole deparsed expressions. A default
+        // JTable cell paints one clipped line, so wrap instead and let the row
+        // grow to fit. AUTO_RESIZE_LAST_COLUMN gives the value column the slack.
+        attrTable.setDefaultRenderer(Any::class.java, WrappingCellRenderer())
+        attrTable.autoResizeMode = JTable.AUTO_RESIZE_LAST_COLUMN
+        attrTable.columnModel.getColumn(0).preferredWidth = ATTRIBUTE_COLUMN_WIDTH
+        // Wrapping depends on column width, so re-measure whenever that changes.
+        attrTable.addComponentListener(object : ComponentAdapter() {
+            override fun componentResized(event: ComponentEvent) = updateRowHeights()
+        })
+
         val splitter = JBSplitter(true, 0.6f)
         splitter.firstComponent = JBScrollPane(tree)
         splitter.secondComponent = JBScrollPane(attrTable)
@@ -94,7 +111,61 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
 
     private fun showAttributes(node: AstNode) {
         attrModel.rowCount = 0
+        // Rakudo's summary is the tree label (see AstNode.toString), not a row
+        // here -- the identity it carries is what distinguishes sibling nodes,
+        // which is a tree problem rather than a detail-pane one.
         for (attr in node.attrs) attrModel.addRow(arrayOf(attr.name, attr.display))
+        updateRowHeights()
+    }
+
+    /**
+     * Grows each row to whatever height its wrapped content needs. Must run
+     * after the model changes and after any column resize, since wrapping --
+     * and therefore height -- depends on the column's current width.
+     */
+    private fun updateRowHeights() {
+        for (row in 0 until attrTable.rowCount) {
+            var height = attrTable.rowHeight
+            for (column in 0 until attrTable.columnCount) {
+                val renderer = attrTable.getCellRenderer(row, column)
+                val rendered = attrTable.prepareRenderer(renderer, row, column)
+                height = maxOf(height, rendered.preferredSize.height)
+            }
+            if (attrTable.getRowHeight(row) != height) attrTable.setRowHeight(row, height)
+        }
+    }
+
+    /**
+     * Renders a cell as wrapped text rather than one clipped line.
+     *
+     * The [setSize] call before returning is what makes this work: a
+     * [JTextArea] only reports a meaningful wrapped height once it has been
+     * given the width it must wrap within, and [updateRowHeights] reads
+     * `preferredSize.height` straight afterwards.
+     */
+    private class WrappingCellRenderer : JTextArea(), TableCellRenderer {
+        init {
+            lineWrap = true
+            wrapStyleWord = true
+            isOpaque = true
+            border = JBUI.Borders.empty(2, 4)
+        }
+
+        override fun getTableCellRendererComponent(
+            table: JTable,
+            value: Any?,
+            isSelected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int,
+        ): Component {
+            font = table.font
+            text = value?.toString().orEmpty()
+            background = if (isSelected) table.selectionBackground else table.background
+            foreground = if (isSelected) table.selectionForeground else table.foreground
+            setSize(table.columnModel.getColumn(column).width, Short.MAX_VALUE.toInt())
+            return this
+        }
     }
 
     private fun highlight(node: AstNode) {
@@ -178,4 +249,10 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     // handled.
     private fun graphemeUtf16Offset(index: Int): Int? =
         graphemeUtf16Offsets.getOrNull(index)
+
+    companion object {
+        // Attribute names are short; the value column gets the remaining width
+        // so wrapped expressions have room.
+        private const val ATTRIBUTE_COLUMN_WIDTH = 160
+    }
 }

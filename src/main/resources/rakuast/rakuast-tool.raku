@@ -227,7 +227,7 @@ my constant @HIDDEN = <
 # is not Positional) and 421 KB of `display` text overall out of 958 KB
 # total. This caps every display string regardless of which bookkeeping
 # attribute shows up next on a future Rakudo.
-my constant DISPLAY-LIMIT = 200;
+my constant DISPLAY-LIMIT = 512;
 sub cap-display($s) {
     $s.chars > DISPLAY-LIMIT ?? $s.substr(0, DISPLAY-LIMIT) ~ '…' !! $s;
 }
@@ -294,7 +294,15 @@ sub attrs-of($node) {
         my ($kind, $display);
         if $raw ~~ RakuAST::Node {
             $kind    = 'node';
-            $display = (try { $raw.^name ~ " -> '" ~ $raw.DEPARSE.trim ~ "'" }) // '(unrenderable)';
+            # Class name on its own line, deparsed source indented beneath it.
+            # The panel renders attribute cells as wrapped text, so the newlines
+            # survive; indenting every line (not just the first) keeps a
+            # multi-line deparse -- a block or routine body -- readable rather
+            # than running it up against the node class name.
+            $display = (try {
+                my $deparsed = $raw.DEPARSE.trim;
+                $raw.^name ~ " ->\n" ~ $deparsed.lines.map({ '  ' ~ $_ }).join("\n");
+            }) // '(unrenderable)';
         }
         elsif $raw ~~ Positional {
             $kind    = 'list';
@@ -344,9 +352,42 @@ sub node-json($node, @path) {
         class    => $node.^name,
         path     => @path,
         span     => $span,
+        summary  => summary-of($node),
         attrs    => attrs-of($node),
         children => @children,
     )
+}
+
+# Rakudo's own one-line node summary -- the primary line of RakuAST::Node.dump,
+# composed here from its public parts rather than by calling .dump and taking
+# .lines[0], because .dump recurses through every child to build a whole
+# subtree we would immediately throw away.
+#
+# It carries what the tree label cannot: the node's identity (the 【$x】/【+】
+# /【f】 markers that per-class dump-markers overrides supply), its sink and
+# block-statement state (⚓ ▪), whether its origin is a key (𝄞), and a source
+# excerpt Rakudo truncates at 50 characters.
+sub summary-of($node) {
+    my $class   = $node.^name.substr('RakuAST::'.chars);
+    # .trim each part before joining: some dump-markers overrides already end
+    # in a space, which would otherwise double up. Only the joints are
+    # normalised -- the source excerpt inside ⎡⎤ keeps its own spacing.
+    my $markers = ((try { $node.dump-markers() }) // '').trim;
+    my $origin  = ((try { $node.dump-origin()  }) // '').trim;
+
+    # Drop the source excerpt when it merely repeats the identity marker.
+    # `Name 【Int】 ⎡Int⎤` and `Infix 【+】 ⎡+⎤` say the same thing twice; the
+    # excerpt earns its place only when it shows something the marker doesn't.
+    my $identity = $markers ~~ / '【' (.+?) '】' / ?? ~$/[0] !! Str;
+    my $excerpt  = $origin  ~~ / '⎡' (.*?) '⎤' / ?? ~$/[0] !! Str;
+    if $identity.defined && $excerpt.defined && $identity eq $excerpt {
+        $origin = $origin.subst(/ \s* '⎡' .*? '⎤' /, '').trim;
+    }
+
+    my $summary = $class
+        ~ ($markers ?? ' ' ~ $markers !! '')
+        ~ ($origin  ?? ' ' ~ $origin  !! '');
+    cap-display($summary.trim);
 }
 
 sub fail-with($message) {
