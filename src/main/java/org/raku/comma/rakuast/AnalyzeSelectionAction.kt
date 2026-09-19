@@ -18,9 +18,18 @@ import org.raku.comma.psi.RakuPackageDecl
 import org.raku.comma.psi.RakuRoutineDecl
 import org.raku.comma.psi.RakuUseStatement
 
-class AnalyzeSelectionAction : AnAction() {
+open class AnalyzeSelectionAction : AnAction() {
 
-    override fun actionPerformed(event: AnActionEvent) {
+    override fun actionPerformed(event: AnActionEvent) = analyze(event, PaneTarget.ACTIVE)
+
+    /**
+     * Analyzes the editor selection into the pane [target] names.
+     *
+     * Split out from [actionPerformed] so the "other pane" variant can reuse
+     * all of it -- the gating in [update] and the update thread included --
+     * and differ only in where the result lands.
+     */
+    protected fun analyze(event: AnActionEvent, target: PaneTarget) {
         val project = event.project ?: return
         val editor = event.getData(CommonDataKeys.EDITOR) ?: return
         val selection = editor.selectionModel
@@ -45,7 +54,8 @@ class AnalyzeSelectionAction : AnAction() {
                     ApplicationManager.getApplication().invokeLater {
                         RakuAstViewerFactory.findPanel(project)
                             ?.showAnalysis(editor, baseOffset, snippet, result,
-                                           contextAvailable = service.supportsFileContext())
+                                           contextAvailable = service.supportsFileContext(),
+                                           target = target)
                     }
                 }
             })

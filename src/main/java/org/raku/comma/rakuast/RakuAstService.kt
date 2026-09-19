@@ -137,6 +137,64 @@ class RakuAstService(private val project: Project) {
         }
     }
 
+    /**
+     * Inserts into, or replaces part of, the list-valued [attr] of the node at
+     * [path].
+     *
+     * The [edit] verb sets a whole attribute, which cannot name "the third
+     * statement" — so adding, reordering and replacing list items come through
+     * here. [count] of 0 inserts at [index]; 1 or more replaces that many items
+     * starting there.
+     *
+     * @param context MUST be the same list passed to the [analyze] call that
+     *   produced [path], for the reason given on [edit].
+     */
+    fun splice(
+        source: String,
+        path: List<Int>,
+        attr: String,
+        index: Int,
+        count: Int,
+        value: String,
+        context: List<String> = emptyList(),
+    ): EditResult {
+        val sourceFile = writeTemp("rakuast-source", source)
+            ?: return EditResult(error = "Could not write a temporary file for the snippet.")
+        val valueFile = writeTemp("rakuast-value", value)
+            ?: run {
+                sourceFile.delete()
+                return EditResult(error = "Could not write a temporary file for the new value.")
+            }
+        val contextFile = context
+            .takeIf { it.isNotEmpty() }
+            ?.let { statements ->
+                writeTemp("rakuast-context", statements.joinToString("\n"))
+                    ?: run {
+                        sourceFile.delete()
+                        valueFile.delete()
+                        return EditResult(
+                            error = "Could not write a temporary file for the file context.")
+                    }
+            }
+        return try {
+            val args = mutableListOf(
+                "splice",
+                sourceFile.absolutePath,
+                path.joinToString(","),
+                attr,
+                index.toString(),
+                count.toString(),
+                valueFile.absolutePath,
+            )
+            contextFile?.let { args.add(it.absolutePath) }
+            AstJson.decodeEdit(run(args))
+        } finally {
+            sourceFile.delete()
+            valueFile.delete()
+            contextFile?.delete()
+        }
+    }
+
     /** Blocking. Callers must keep this off the EDT. */
     private fun run(args: List<String>): String {
         val script = RakuUtils.getResourceAsFile(SCRIPT)
