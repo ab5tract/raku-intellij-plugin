@@ -26,8 +26,8 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         showGist = PropertiesComponent.getInstance(project).getBoolean(SHOW_GIST_KEY, false),
     )
 
-    private val leftPane = RakuAstPane(project, options, PaneId.LEFT, ::activate)
-    private val rightPane = RakuAstPane(project, options, PaneId.RIGHT, ::activate)
+    private val leftPane = RakuAstPane(project, options, PaneId.LEFT, ::activate, ::editApplied)
+    private val rightPane = RakuAstPane(project, options, PaneId.RIGHT, ::activate, ::editApplied)
 
     private var activePane = leftPane
 
@@ -115,6 +115,23 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         PaneTarget.OTHER -> if (activePane === leftPane) rightPane else leftPane
         PaneTarget.LEFT -> leftPane
         PaneTarget.RIGHT -> rightPane
+    }
+
+    /**
+     * One pane wrote to its document; warn any other pane looking at the same
+     * one.
+     *
+     * Two panes analyzing one file is not an edge case here — moving code
+     * between two places in the same file is a thing this feature is for — and
+     * an edit in one shifts the text under the other's spans. That pane's
+     * staleness guard would catch it either way, but only once the user
+     * clicked something and was refused.
+     */
+    private fun editApplied(pane: RakuAstPane) {
+        val document = pane.analyzedDocument() ?: return
+        panes()
+            .filter { it !== pane && it.analyzedDocument() === document }
+            .forEach { it.noteEditedElsewhere() }
     }
 
     private fun activate(pane: RakuAstPane) {

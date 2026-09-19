@@ -1,6 +1,7 @@
 package org.raku.comma.rakuast
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProgressIndicator
@@ -70,6 +71,9 @@ class RakuAstPane(
     // Called when the user focuses anything in this pane. A lambda rather than
     // a reference back to the container, so the dependency stays one-way.
     private val onActivated: (RakuAstPane) -> Unit = {},
+    // Called after this pane writes to its document, so the container can warn
+    // any other pane analyzing the same one.
+    private val onEdited: (RakuAstPane) -> Unit = {},
 ) : JPanel(BorderLayout()) {
 
     // Names the analysis this pane is showing, and carries the active-pane
@@ -555,6 +559,25 @@ class RakuAstPane(
 
     fun statusText(): String = status.text
 
+    /** The document this pane's analysis came from, if it is still alive. */
+    fun analyzedDocument(): Document? =
+        currentEditor?.takeUnless { it.isDisposed }?.document
+
+    /**
+     * Warns that the document under this analysis was rewritten by the other
+     * pane.
+     *
+     * The spans held here are now measured against text that has moved, so the
+     * next click would be refused by the staleness guard anyway. Saying so up
+     * front turns a confusing refusal into an expected one — and this is the
+     * workflow the second pane exists for, so it is worth pre-empting rather
+     * than letting the user discover it.
+     */
+    fun noteEditedElsewhere() {
+        if (nodes == 0) return
+        setStatus("The other pane changed this file — re-run Analyze")
+    }
+
     /**
      * Sets the status text and re-lays out. The revalidate is required, not
      * defensive: a wrapping [JTextArea] derives its preferred height from the
@@ -727,6 +750,7 @@ class RakuAstPane(
         val newSnippet = forSnippet.replaceRange(fromUtf16, toUtf16, text)
         editor.selectionModel.setSelection(forBase, forBase + newSnippet.length)
         setStatus("")
+        onEdited(this)
         reanalyzeAfterEdit(editor, forBase, newSnippet, node.path)
     }
 

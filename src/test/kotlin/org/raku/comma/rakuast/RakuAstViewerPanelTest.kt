@@ -92,6 +92,48 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
         children = listOf(AstNode("RakuAST::IntLiteral", listOf(0), AstSpan(8, 9))),
     )
 
+    // Two panes on one file is a workflow this feature exists for, and an edit
+    // in one moves the text under the other's spans. The other pane's own
+    // guard would catch that, but only after a click was refused.
+    fun testEditInOnePaneWarnsTheOtherOnTheSameFile() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+
+        // Both panes analyze the same document.
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;",
+                           AnalyzeResult(tree = oneChildTree()), target = PaneTarget.LEFT)
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;",
+                           AnalyzeResult(tree = oneChildTree()), target = PaneTarget.RIGHT)
+
+        invokeEditApplied(panel, panel.pane(PaneId.LEFT))
+
+        assertTrue("the other pane should say its analysis is stale, got: " +
+                   panel.pane(PaneId.RIGHT).statusText(),
+                   panel.pane(PaneId.RIGHT).statusText().contains("re-run Analyze"))
+        assertEquals("the editing pane should not warn itself",
+                     "", panel.pane(PaneId.LEFT).statusText())
+    }
+
+    // A pane showing a different file is unaffected, and a pane showing
+    // nothing has nothing to invalidate.
+    fun testEmptyPaneIsNotWarned() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;",
+                           AnalyzeResult(tree = oneChildTree()), target = PaneTarget.LEFT)
+
+        invokeEditApplied(panel, panel.pane(PaneId.LEFT))
+
+        assertEquals("", panel.pane(PaneId.RIGHT).statusText())
+    }
+
+    private fun invokeEditApplied(panel: RakuAstViewerPanel, pane: RakuAstPane) {
+        val method = RakuAstViewerPanel::class.java
+            .getDeclaredMethod("editApplied", RakuAstPane::class.java)
+        method.isAccessible = true
+        method.invoke(panel, pane)
+    }
+
     private fun toggle(panel: RakuAstViewerPanel, name: String) {
         val box = fieldValue<javax.swing.JCheckBox>(panel, name)
         box.isSelected = !box.isSelected
