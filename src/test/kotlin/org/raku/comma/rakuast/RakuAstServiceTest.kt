@@ -65,6 +65,35 @@ class RakuAstServiceTest : CommaFixtureTestCase() {
         assertEquals("41", source.substring(span.from, span.to))
     }
 
+    // The round trip the editing UI performs: analyze, edit one attribute,
+    // splice the replacement into the snippet, then re-analyze. The gist of
+    // the edited node must show the new value -- if it did not, the panel
+    // would be displaying a rendering of code that is no longer on screen.
+    fun testEditIsReflectedInTheGistAfterReanalysis() {
+        val source = "my \$x = 41;"
+        val before = service().analyze(source).tree!!
+        val lit = findFirst(before, "RakuAST::IntLiteral")!!
+
+        assertTrue("precondition: the gist starts out showing 41",
+                   service().gist(source, lit.path).gist!!.contains("41"))
+
+        val edit = service().edit(source, lit.path, "value", "99", "scalar")
+        assertNull(edit.error)
+
+        // Splice exactly the edited node's span, as the panel does.
+        val span = edit.span!!
+        val edited = source.replaceRange(span.from, span.to, edit.text!!)
+        assertEquals("my \$x = 99;", edited)
+
+        val after = service().analyze(edited).tree!!
+        val editedLit = findFirst(after, "RakuAST::IntLiteral")!!
+        val gist = service().gist(edited, editedLit.path).gist!!
+
+        assertTrue("the gist should show the edited value, got: $gist", gist.contains("99"))
+        assertFalse("the gist should not still show the old value, got: $gist",
+                    gist.contains("41"))
+    }
+
     // .gist is fetched per node rather than shipped with the tree, so the
     // path has to resolve the same way it does for analyze and edit.
     fun testGistResolvesTheSameNodeAsAnalyze() {

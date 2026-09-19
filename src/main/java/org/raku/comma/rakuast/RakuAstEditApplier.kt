@@ -7,30 +7,23 @@ import com.intellij.openapi.project.Project
 object RakuAstEditApplier {
 
     /**
-     * Replaces exactly the edited node's span. Anything wider would delete
-     * ordinary `#` comments, which have no RakuAST node and cannot be restored
-     * by deparsing.
+     * Replaces [start]..[end] with [text]. Nothing wider: anything beyond the
+     * edited node's own span would delete ordinary `#` comments, which have no
+     * RakuAST node and cannot be restored by deparsing.
      *
-     * `result.span` is given in NFG grapheme indices (Raku's `.origin`
-     * units), not UTF-16 code units, so callers MUST convert it to a UTF-16
-     * offset the same way [RakuAstViewerPanel] does in its `highlight()`
-     * before calling this. Callers MUST ALSO verify the document is still
-     * fresh with respect to the analysis -- e.g. the substring-mismatch guard
-     * `highlight()` uses (compare the live document text at the converted
-     * range against the snippet text the backend analyzed). This applier has
-     * no snippet to compare against, so it cannot perform either the
-     * grapheme-to-UTF-16 conversion or the freshness check on its own; it
-     * trusts `result.span` as given, already converted. The (currently
-     * unwired) edit UI follow-up owns doing both before calling [apply].
+     * Takes absolute document offsets in UTF-16 code units, deliberately.
+     * An earlier signature took the backend's `EditResult` plus a base offset
+     * and documented that callers must first convert `span` out of Raku's NFG
+     * grapheme indices and must separately verify the document still matches
+     * the analysed snippet. Both are easy to forget and neither is visible at
+     * the call site when forgotten -- and the failure is silent replacement of
+     * the wrong range, which is the one outcome this whole design exists to
+     * prevent. Requiring finished offsets means the conversion and the
+     * freshness check have to have happened before the call can even be
+     * written. [RakuAstViewerPanel] owns both.
      */
-    fun apply(project: Project, editor: Editor, baseOffset: Int, result: EditResult): Boolean {
-        val text = result.text ?: return false
-        val span = result.span ?: return false
-        if (result.error != null) return false
-
+    fun replace(project: Project, editor: Editor, start: Int, end: Int, text: String): Boolean {
         val document = editor.document
-        val start = baseOffset + span.from
-        val end = baseOffset + span.to
         if (start < 0 || end > document.textLength || start > end) return false
 
         // A RangeMarker keeps the target valid if the document shifts under us.

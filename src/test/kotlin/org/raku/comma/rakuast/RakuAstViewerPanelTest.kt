@@ -2,6 +2,8 @@ package org.raku.comma.rakuast
 
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.ide.CopyPasteManager
+import java.awt.datatransfer.DataFlavor
 import org.raku.comma.CommaFixtureTestCase
 import org.raku.comma.filetypes.RakuScriptFileType
 
@@ -66,6 +68,50 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
         } finally {
             if (!editor.isDisposed) factory.releaseEditor(editor)
         }
+    }
+
+    // Clicking the (gist) label copies it. The balloon needs a real mouse
+    // event, so this drives the copy itself -- which is the part that can be
+    // wrong.
+    fun testCopyGistPutsTheGistOnTheClipboard() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+
+        val gist = "RakuAST::IntLiteral.new(41)"
+        seedGistRow(panel, cached = gist, shown = gist)
+
+        assertTrue("a rendered gist should copy", invokeCopyGist(panel, 0))
+        assertEquals(gist, CopyPasteManager.getInstance().contents!!
+            .getTransferData(DataFlavor.stringFlavor))
+    }
+
+    // Copying the placeholder would be discovered only on paste, which is
+    // worse than the click appearing to do nothing.
+    fun testCopyGistRefusesThePlaceholder() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+
+        seedGistRow(panel, cached = null, shown = "Rendering…")
+
+        assertFalse("the placeholder must not be copied", invokeCopyGist(panel, 0))
+    }
+
+    private fun seedGistRow(panel: RakuAstViewerPanel, cached: String?, shown: String) {
+        val model = fieldValue<javax.swing.table.DefaultTableModel>(panel, "attrModel")
+        model.rowCount = 0
+        model.addRow(arrayOf("(gist)", shown))
+        if (cached != null) {
+            @Suppress("UNCHECKED_CAST")
+            val cache = fieldValue<MutableMap<List<Int>, String>>(panel, "gistCache")
+            cache[listOf(0)] = cached
+        }
+    }
+
+    private fun invokeCopyGist(panel: RakuAstViewerPanel, row: Int): Boolean {
+        val method = RakuAstViewerPanel::class.java
+            .getDeclaredMethod("copyGist", Int::class.javaPrimitiveType)
+        method.isAccessible = true
+        return method.invoke(panel, row) as Boolean
     }
 
     // A root node on its own says nothing about the code you just selected,
