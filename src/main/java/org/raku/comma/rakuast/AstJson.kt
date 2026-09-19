@@ -23,7 +23,9 @@ data class AstNode(
     val span: AstSpan,
     val attrs: List<AstAttr> = emptyList(),
     val children: List<AstNode> = emptyList(),
-)
+) {
+    override fun toString(): String = nodeClass.removePrefix("RakuAST::")
+}
 
 @Serializable
 data class AnalyzeResult(val tree: AstNode? = null, val error: String? = null)

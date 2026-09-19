@@ -34,6 +34,12 @@
             text="REPL Using This Module" description="Launch a Raku REPL with this module used">
       <add-to-group group-id="EditorPopupMenu" anchor="last"/>
     </action>
+    <action id="org.raku.comma.rakuast.AnalyzeSelectionAction"
+            class="org.raku.comma.rakuast.AnalyzeSelectionAction"
+            text="Analyze Selection as RakuAST"
+            description="Show the RakuAST tree for the selected Raku code">
+        <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+    </action>
     <action id="org.raku.comma.grammar.RakuGrammarPreviewAction" class="org.raku.comma.grammar.RakuGrammarPreviewAction"
             text="Preview Raku Grammar"
             description="Opens a tool to preview Raku grammar parsing results">
