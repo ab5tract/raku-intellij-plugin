@@ -24,7 +24,8 @@
   raku -e 'my $n = 0; for "build/test-results/test".IO.dir(test => *.ends-with(".xml")) -> $p {
       $n += +$0 if $p.slurp.substr(0, 600) ~~ / "tests=\"" (\d+) "\"" / }; say "$n tests"'
   ```
-- **Never assert deparse formatting in tests.** Assert tree *structure* — node classes and paths — only. `sub f ($a!)` on 2026.03 became `sub f ($a)` on 2026.08-445; an assertion on that text is red on one Rakudo and green on another.
+- **Never assert deparse *formatting* in tests.** Formatting means multi-token rendering: whitespace, indentation, signature rendering, block layout. `sub f ($a!)` on 2026.03 became `sub f ($a)` on 2026.08-445, so an assertion on that text is red on one Rakudo and green on another. Prefer asserting tree *structure* — node classes and paths.
+  Asserting the deparsed text of a **single literal** (`41`, `99`) is explicitly allowed: it is one token with no formatting choices, and it is stable across every Rakudo tested. Task 3 relies on this.
 - **Text processing in Raku, not Python.** This is a Raku project; ad-hoc parsing and tallying goes in `raku -e '...'`.
 - **The script never signals failure by exit code.** `RakuCommandLine.executeAndRead` reads stdout only and returns an empty list on any non-zero exit, discarding the reason. All errors are printed as `{"error": "..."}` on stdout with `exit 0`.
 - **Replacement is always narrow.** Only the edited node's span is ever replaced. Anything wider silently deletes the user's `#` comments, which have no AST node and cannot be recovered.
