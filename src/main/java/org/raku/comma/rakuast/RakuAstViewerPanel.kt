@@ -4,10 +4,10 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.ui.JBSplitter
-import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.event.ComponentAdapter
@@ -23,7 +23,20 @@ import javax.swing.tree.DefaultTreeModel
 
 class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) {
 
-    private val status = JBLabel("")
+    // A JLabel would clip these to one line, and the messages that matter most
+    // here are Rakudo compile errors: long, already multi-line, and useless
+    // truncated. Editable is off but selection is left on so the text can be
+    // copied out; the label look comes from dropping the border and inheriting
+    // the panel's background.
+    private val status = JTextArea().apply {
+        lineWrap = true
+        wrapStyleWord = true
+        isEditable = false
+        isOpaque = false
+        border = JBUI.Borders.empty(4, 6)
+        font = UIUtil.getLabelFont()
+        foreground = UIUtil.getLabelForeground()
+    }
     private val treeRoot = DefaultMutableTreeNode("(nothing analyzed)")
     private val treeModel = DefaultTreeModel(treeRoot)
     private val tree = Tree(treeModel)
@@ -89,7 +102,7 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         val error = result.error
         val tree = result.tree
         if (error != null || tree == null) {
-            status.text = error ?: "The Raku backend returned no tree."
+            setStatus(error ?: "The Raku backend returned no tree.")
             treeRoot.userObject = "(no tree)"
         } else {
             // Say so when the selection was compiled without its file's
@@ -97,10 +110,10 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
             // an unimported module cannot resolve, and the user should know
             // the difference between "this is what your code means" and "this
             // is what your code means in isolation".
-            status.text =
+            setStatus(
                 if (contextAvailable) ""
                 else "Analyzed without file context: the project root has no META6.json or lib/, " +
-                     "so imports cannot be resolved."
+                     "so imports cannot be resolved.")
             treeRoot.userObject = tree
             addChildren(treeRoot, tree)
             nodes = countNodes(tree)
@@ -109,6 +122,19 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     }
 
     fun statusText(): String = status.text
+
+    /**
+     * Sets the status text and re-lays out. The revalidate is required, not
+     * defensive: a wrapping [JTextArea] derives its preferred height from the
+     * width it is currently wrapping within, so without it a newly-set long
+     * message keeps the height computed for the previous one and is clipped.
+     */
+    private fun setStatus(text: String) {
+        status.text = text
+        status.isVisible = text.isNotEmpty()
+        status.revalidate()
+        status.repaint()
+    }
 
     fun nodeCount(): Int = nodes
 
@@ -211,7 +237,7 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         val fromUtf16 = graphemeUtf16Offset(span.from)
         val toUtf16 = graphemeUtf16Offset(span.to)
         if (fromUtf16 == null || toUtf16 == null || fromUtf16 > toUtf16) {
-            status.text = "Selection has changed since analysis — re-run Analyze"
+            setStatus("Selection has changed since analysis — re-run Analyze")
             return
         }
 
@@ -228,11 +254,11 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         // analyzed before acting on it.
         val expected = snippet.substring(fromUtf16, toUtf16)
         if (document.getText(TextRange(start, end)) != expected) {
-            status.text = "Selection has changed since analysis — re-run Analyze"
+            setStatus("Selection has changed since analysis — re-run Analyze")
             return
         }
 
-        status.text = ""
+        setStatus("")
         editor.selectionModel.setSelection(start, end)
         editor.caretModel.moveToOffset(start)
     }
