@@ -33,6 +33,11 @@ data class AstNode(
     // state (⚓ ▪), and a source excerpt. Null if the backend could not
     // compose one. Declared last so positional construction keeps working.
     val summary: String? = null,
+    // On the root only: the file's `use`/`need` statements that were compiled
+    // in front of the selection so its imports resolve. They are not part of
+    // the selection, so they get no nodes in the tree -- the viewer surfaces
+    // them as rows on the root instead.
+    val context: List<String> = emptyList(),
 ) {
     /**
      * The tree label. Prefers Rakudo's own summary, which already leads with
