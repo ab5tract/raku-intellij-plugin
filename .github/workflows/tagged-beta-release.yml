@@ -32,12 +32,22 @@ jobs:
     # -- so the old `github.event.release.tag_name` expanded to the empty
     # string, the build ran with an empty -PpluginVersion, and the artifact
     # was named without any version at all.
+    # The tag goes through the environment rather than being interpolated
+    # straight into the command. A beta cut from a branch carries parentheses
+    # -- 2026.2-beta(rakuast-viewer).3 -- which the shell reads as a subshell
+    # and rejects with "syntax error near unexpected token `('". Quoting an
+    # expanded variable is also what keeps a tag from being able to inject
+    # shell in the first place.
     - name: Build with Gradle
-      run: ./gradlew buildPlugin -PpluginVersion=${{ github.ref_name }}
+      env:
+        PLUGIN_VERSION: ${{ github.ref_name }}
+      run: ./gradlew buildPlugin "-PpluginVersion=$PLUGIN_VERSION"
 
     - name: Check the artifact is named as expected
+      env:
+        PLUGIN_VERSION: ${{ github.ref_name }}
       run: |
-        expected="raku-intellij-plugin_${{ github.ref_name }}.zip"
+        expected="raku-intellij-plugin_${PLUGIN_VERSION}.zip"
         if [ ! -f "build/distributions/$expected" ]; then
           echo "Expected build/distributions/$expected, but found:"
           ls -1 build/distributions/
