@@ -79,7 +79,10 @@ fun safeDetermineCurrentRakuBetaPluginVersion(currentGitBranch: String): String 
         true  -> betaVersionPath.toFile().readText().trim()
         false -> {
             val idea = File("${project.projectDir.path}/.versions/idea-version").readText(Charsets.UTF_8).trimEnd()
-            "$idea-beta${ formatBranch(currentGitBranch, "(%s)") }.1"
+            // Same double-dash separator as RakuPluginBetaVersion.toString --
+            // these two must agree, or the version a fresh branch reports
+            // would not match the one it bumps to.
+            "$idea-beta${ formatBranch(currentGitBranch, "--%s") }.1"
         }
     }
 }
@@ -112,7 +115,17 @@ data class RakuPluginBetaVersion(
     fun fileName(): String = "$basePath/.versions/raku-beta-version${ maybeBranch(".%s") }"
     fun maybeBranch(format: String = "%s") = if (branch != "main") format.format(branch) else ""
 
-    override fun toString(): String = "$idea-beta${ maybeBranch("(%s)") }.$beta"
+    // A branch beta reads 2026.2-beta--some-branch.3.
+    //
+    // The separator is a double dash because this string becomes a git tag,
+    // a -P property value, a published filename and a download URL. The
+    // parentheses it used to use broke the release workflow outright -- bash
+    // reads `(` as a subshell -- and would have needed quoting or
+    // percent-encoding everywhere afterwards. A single dash would be
+    // ambiguous, since branch names contain dashes themselves; a double dash
+    // marks where the branch name starts without introducing a character
+    // anything has to escape.
+    override fun toString(): String = "$idea-beta${ maybeBranch("--%s") }.$beta"
 }
 
 // TODO: Make this support branches other that 'main'
@@ -125,7 +138,11 @@ abstract class FetchGitTagRakuPluginBetaVersion : IdeaVersionTask() {
 
     @Internal
     // TODO|XXX : this will break for beta releases > 10
-    val version = gitTag.map { it.last().digitToInt() }
+    // The beta number is everything after the final dot, not the final
+    // character: `2026.2-beta.13`.last() is '3', so a two-digit beta parsed
+    // as 3 and bumpBetaVersion would have proposed 4 -- walking the series
+    // backwards from 13. Betas passed 9 some time ago.
+    val version = gitTag.map { it.substringAfterLast('.').toInt() }
     @Internal
     val pluginBetaVersion: Provider<RakuPluginBetaVersion> = version.map { determinePluginVersion(it) }
 
@@ -150,7 +167,11 @@ abstract class GetRakuPluginBetaVersion : IdeaVersionTask() {
     val gitTag: Property<String> = project.objects.property<String>()
 
     @Internal
-    val version = gitTag.map { it.last().digitToInt() }
+    // The beta number is everything after the final dot, not the final
+    // character: `2026.2-beta.13`.last() is '3', so a two-digit beta parsed
+    // as 3 and bumpBetaVersion would have proposed 4 -- walking the series
+    // backwards from 13. Betas passed 9 some time ago.
+    val version = gitTag.map { it.substringAfterLast('.').toInt() }
     @Internal
     val pluginBetaVersion: Provider<RakuPluginBetaVersion> = version.map { determinePluginVersion(it) }
 
