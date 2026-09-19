@@ -59,7 +59,19 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     private val treeRoot = DefaultMutableTreeNode("(nothing analyzed)")
     private val treeModel = DefaultTreeModel(treeRoot)
     private val tree = Tree(treeModel)
-    private val attrModel = DefaultTableModel(arrayOf("Attribute", "Value"), 0)
+    // Only value cells of attributes the backend marked editable. The (gist)
+    // and (context) rows are never edited: a gist is a rendering of the node,
+    // not a field of it, and the context rows are the file's imports rather
+    // than anything belonging to the selection.
+    private val attrModel = object : DefaultTableModel(arrayOf("Attribute", "Value"), 0) {
+        override fun isCellEditable(row: Int, column: Int): Boolean =
+            column == 1 && editableAttrs[row] != null
+    }
+
+    // Row index -> the attribute that row edits, or null for a row that is
+    // not an attribute at all. Kept beside the model because DefaultTableModel
+    // stores only display strings and cannot answer "which attribute is this".
+    private val editableAttrs = mutableMapOf<Int, AstAttr>()
     private val attrTable = object : JTable(attrModel) {
         // Only the gist label advertises itself as clickable; the other rows
         // hold values short enough to read in place.
@@ -113,6 +125,16 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     // since the gist verb has to be given the same one or it walks elsewhere.
     private var analysisContext: List<String> = emptyList()
 
+    // The node whose attributes the table currently shows, so a committed
+    // cell knows which node it belongs to.
+    private var editedNode: AstNode? = null
+
+    // Guards the table listener while the panel rewrites rows itself --
+    // repopulating after an analysis, filling in a gist, restoring a rejected
+    // value. Without it those writes would read as user edits and be sent
+    // back to Raku.
+    private var suppressEditEvents = false
+
     init {
         // Attribute values are frequently whole deparsed expressions. A default
         // JTable cell paints one clipped line, so wrap instead and let the row
@@ -124,6 +146,20 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         attrTable.addComponentListener(object : ComponentAdapter() {
             override fun componentResized(event: ComponentEvent) = updateRowHeights()
         })
+
+        attrModel.addTableModelListener { event ->
+            if (event.type != javax.swing.event.TableModelEvent.UPDATE) return@addTableModelListener
+            if (event.column != 1) return@addTableModelListener
+            val row = event.firstRow
+            val attr = editableAttrs[row] ?: return@addTableModelListener
+            val node = editedNode ?: return@addTableModelListener
+            val entered = attrModel.getValueAt(row, 1) as? String ?: return@addTableModelListener
+            // Rows are also rewritten programmatically -- the gist landing,
+            // a rejected edit being put back. Only a genuine change from the
+            // value the backend reported is an edit.
+            if (entered == attr.display || suppressEditEvents) return@addTableModelListener
+            applyEdit(node, attr, entered, row)
+        }
 
         // A gist is the one value here that is routinely too long to read in
         // a cell and worth taking elsewhere, so clicking its label copies it.
@@ -305,8 +341,10 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         }
     }
 
-    private fun showAttributes(node: AstNode) {
+    private fun showAttributes(node: AstNode) = withoutEditEvents {
         attrModel.rowCount = 0
+        editableAttrs.clear()
+        editedNode = node
         // The imports compiled in front of the selection. They have no nodes in
         // the tree -- they are not part of what the user selected -- so this is
         // the only place they are visible, and without it the tree silently
@@ -315,7 +353,10 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         // Rakudo's summary is the tree label (see AstNode.toString), not a row
         // here -- the identity it carries is what distinguishes sibling nodes,
         // which is a tree problem rather than a detail-pane one.
-        for (attr in node.attrs) attrModel.addRow(arrayOf(attr.name, attr.display))
+        for (attr in node.attrs) {
+            if (attr.editable) editableAttrs[attrModel.rowCount] = attr
+            attrModel.addRow(arrayOf(attr.name, attr.display))
+        }
 
         if (showGist.isSelected) {
             val cached = gistCache[node.path]
@@ -324,6 +365,117 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         }
 
         updateRowHeights()
+    }
+
+    /**
+     * Applies one attribute edit, then re-analyses.
+     *
+     * Re-analysing rather than trusting the `tree` the edit returns: those
+     * nodes carry their PRE-edit origins, so after an edit that changes text
+     * length every span at or after the edit point is wrong. Reusing it would
+     * mean the next click highlights the wrong range. One extra round trip
+     * buys a tree that describes the text now on screen -- which also
+     * refreshes the gist, since its cache belongs to the analysis.
+     */
+    private fun applyEdit(node: AstNode, attr: AstAttr, newValue: String, row: Int) {
+        val editor = currentEditor ?: return
+        val forSnippet = snippet
+        val forContext = analysisContext
+        val forBase = baseOffset
+
+        ProgressManager.getInstance().run(
+            object : Task.Backgroundable(project, "Applying RakuAST edit", true) {
+                override fun run(indicator: ProgressIndicator) {
+                    val result = RakuAstService.getInstance(project)
+                        .edit(forSnippet, node.path, attr.name, newValue, attr.kind, forContext)
+                    ApplicationManager.getApplication().invokeLater {
+                        finishEdit(editor, forSnippet, forBase, node, attr, result, row)
+                    }
+                }
+            })
+    }
+
+    private fun finishEdit(
+        editor: Editor,
+        forSnippet: String,
+        forBase: Int,
+        node: AstNode,
+        attr: AstAttr,
+        result: EditResult,
+        row: Int,
+    ) {
+        fun reject(message: String) {
+            setStatus(message)
+            // Put the old text back, so the table never shows a value the
+            // document does not actually contain.
+            if (row < attrModel.rowCount) {
+                withoutEditEvents { attrModel.setValueAt(attr.display, row, 1) }
+            }
+            updateRowHeights()
+        }
+
+        if (result.error != null) return reject(result.error)
+        val text = result.text ?: return reject("The edit produced no replacement text.")
+        val span = result.span ?: return reject("The edited node has no source span to replace.")
+
+        // Trap one: the backend counts in NFG graphemes, the document in
+        // UTF-16 code units. They diverge on astral characters and combining
+        // marks, so an unconverted span silently replaces the wrong range.
+        val fromUtf16 = graphemeUtf16Offset(span.from) ?: return reject(UNMAPPABLE)
+        val toUtf16 = graphemeUtf16Offset(span.to) ?: return reject(UNMAPPABLE)
+
+        // Trap two: the document may have moved since the analysis this edit
+        // was computed against. Replacing on stale coordinates would corrupt
+        // unrelated text, so verify before writing rather than after.
+        val start = forBase + fromUtf16
+        val end = forBase + toUtf16
+        if (editor.isDisposed) return reject("The editor was closed before the edit could apply.")
+        if (end > editor.document.textLength ||
+            editor.document.getText(TextRange(start, end)) != forSnippet.substring(fromUtf16, toUtf16)
+        ) {
+            return reject("Selection has changed since analysis — re-run Analyze")
+        }
+
+        if (!RakuAstEditApplier.replace(project, editor, start, end, text)) {
+            return reject("The edit could not be written to the document.")
+        }
+
+        // Recompute the selection locally rather than re-reading it: the edit
+        // just changed its length, and the editor's own selection still
+        // describes the text as it was.
+        val newSnippet = forSnippet.replaceRange(fromUtf16, toUtf16, text)
+        editor.selectionModel.setSelection(forBase, forBase + newSnippet.length)
+        setStatus("")
+        reanalyzeAfterEdit(editor, forBase, newSnippet, node.path)
+    }
+
+    private fun reanalyzeAfterEdit(editor: Editor, base: Int, newSnippet: String, path: List<Int>) {
+        ProgressManager.getInstance().run(
+            object : Task.Backgroundable(project, "Re-analyzing RakuAST", true) {
+                override fun run(indicator: ProgressIndicator) {
+                    val service = RakuAstService.getInstance(project)
+                    val context = if (service.supportsFileContext()) analysisContext else emptyList()
+                    val result = service.analyze(newSnippet, context)
+                    ApplicationManager.getApplication().invokeLater {
+                        showAnalysis(editor, base, newSnippet, result)
+                        // Put the user back where they were editing. The path
+                        // survives a scalar edit, since the tree's shape does
+                        // not change -- only the value at one node.
+                        selectPath(path)
+                    }
+                }
+            })
+    }
+
+    private fun selectPath(path: List<Int>) {
+        var current: DefaultMutableTreeNode = treeRoot
+        for (index in path) {
+            if (index >= current.childCount) return
+            current = current.getChildAt(index) as? DefaultMutableTreeNode ?: return
+        }
+        val treePath = TreePath(current.path)
+        tree.selectionPath = treePath
+        tree.scrollPathToVisible(treePath)
     }
 
     private fun selectedNode(): AstNode? =
@@ -385,10 +537,20 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     private fun replaceGistRow(text: String) {
         for (row in 0 until attrModel.rowCount) {
             if (attrModel.getValueAt(row, 0) == GIST_ROW_LABEL) {
-                attrModel.setValueAt(text, row, 1)
+                withoutEditEvents { attrModel.setValueAt(text, row, 1) }
                 updateRowHeights()
                 return
             }
+        }
+    }
+
+    /** Rewrites rows without the table listener mistaking them for edits. */
+    private fun withoutEditEvents(action: () -> Unit) {
+        suppressEditEvents = true
+        try {
+            action()
+        } finally {
+            suppressEditEvents = false
         }
     }
 
@@ -540,5 +702,8 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         private const val GIST_LOADING = "Rendering…"
 
         private const val COPY_CONFIRMATION_MS = 2000L
+
+        private const val UNMAPPABLE =
+            "That node's span could not be mapped into the document — re-run Analyze"
     }
 }
