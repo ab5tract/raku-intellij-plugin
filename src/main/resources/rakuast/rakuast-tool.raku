@@ -332,14 +332,91 @@ sub attrs-of($node) {
         }
         $display = cap-display($display);
 
-        @out.push: {
+        # The slot's DECLARED type, as opposed to `kind`, which describes
+        # whatever happens to be in it right now. This is what makes a drop
+        # checkable before it is attempted: RakuAST declares its slots properly
+        # -- $!expression is a RakuAST::Expression, $!type a RakuAST::Type --
+        # so a node may be dropped here exactly when that type appears in the
+        # node's own conformance list.
+        #
+        # Not every slot constrains usefully. List-valued ones are declared
+        # `List`, which says nothing about their elements, and bookkeeping slots
+        # are `Mu`. Callers treat those as unconstrained and fall back to the
+        # compile check that already guards every edit.
+        #
+        # `Mu` is left out rather than sent, since it is the reader's default
+        # and carries no constraint. Worth only about 1% of the payload on a
+        # 5.8 KB source -- the metadata as a whole costs nearer 19%, nearly all
+        # of it the per-node slot names, which cannot be dropped because they
+        # are what makes a tree position addressable.
+        my $type = (try { $a.type.^name }) // 'Mu';
+
+        my %attr = (
             name     => $name,
             kind     => $kind,
             display  => $display,
             editable => (%setters{$name} ?? True !! False),
-        };
+        );
+        %attr<type> = $type unless $type eq 'Mu';
+        @out.push: %attr;
     }
     @out
+}
+
+# Which of $node's attributes holds each of its RakuAST children, as a list of
+# { attr, index, obj }.
+#
+# The tree's children come from visit-children, which yields them structurally
+# and says nothing about the slot they came from; .^attributes knows the slots
+# but not the traversal order. Matching by object identity is what joins the
+# two, and it is what lets a tree position be named as something writable --
+# "the expression of the statement at this path" -- rather than merely "the
+# Nth child", which no edit can target.
+#
+# Hidden attributes are excluded deliberately. They are bookkeeping rather than
+# structure, and several (owner, outer) are back-references that would match a
+# child by identity and attribute it to the wrong slot.
+sub slots-of($node) {
+    my @slots;
+    for $node.^attributes -> $a {
+        my $name = $a.name.substr(2);
+        next if @HIDDEN.first($name);
+
+        # Bind, never assign, and guard exactly as attrs-of does: a Scalar
+        # container defeats the null check and .defined then dies on VMNull.
+        my $raw := try { $a.get_value($node) };
+        next if nqp::isnull(nqp::decont($raw));
+        next unless (try { $raw.defined }) // False;
+
+        if $raw ~~ RakuAST::Node {
+            @slots.push: { attr => $name, index => Int, obj => nqp::decont($raw) };
+        }
+        elsif $raw ~~ Positional {
+            my @items = (try { @$raw }) // ();
+            for @items.kv -> $i, $e {
+                next unless (try { $e ~~ RakuAST::Node }) // False;
+                @slots.push: { attr => $name, index => $i, obj => nqp::decont($e) };
+            }
+        }
+    }
+    @slots
+}
+
+# Every RakuAST class seen in one analysis, mapped to the class names it
+# conforms to.
+#
+# Sent once per response keyed by class rather than repeated on every node,
+# which keeps it to a few dozen short lists no matter how large the tree.
+# RakuAST uses plain classes throughout -- no roles in the chain -- so .^mro
+# alone is the whole answer, and a drop is legal exactly when the target slot's
+# declared type appears in this list. That makes the check pure set membership
+# on the client, with no round trip, which is what hover feedback needs.
+my %conformance;
+
+sub record-conformance($node) {
+    my $name = $node.^name;
+    return if %conformance{$name}:exists;
+    %conformance{$name} = ((try { $node.^mro.map(*.^name).list }) // ($name,)).List;
 }
 
 # The children of $node that belong in the emitted tree, in emission order.
@@ -366,13 +443,9 @@ sub node-children($node, $offset, $is-root) {
     @kids
 }
 
-sub node-json($node, @path, $offset = 0) {
-    my @children;
-    my $i = 0;
-    for node-children($node, $offset, @path.elems == 0) -> $child {
-        @children.push: node-json($child, [|@path, $i], $offset);
-        $i++;
-    }
+sub node-json($node, @path, $offset = 0, $source = Str, %slot = {}, $inherited-drag = Any) {
+    record-conformance($node);
+
     my $origin := $node.origin;
     # {from:0,to:0} would be indistinguishable from a real zero-length span
     # at offset 0 -- observed on `sub f($a) { $a * 2 }`, where a
@@ -385,14 +458,50 @@ sub node-json($node, @path, $offset = 0) {
     my $span = $origin.defined
         ?? { from => max(0, $origin.from - $offset), to => $origin.to - $offset }
         !! Any;
-    %(
+
+    # Where this node's source text can be lifted from when it is dragged.
+    #
+    # Usually its own span, but a node whose span is not a faithful footprint
+    # for it cannot supply standalone source that way: the StrLiteral in
+    # `my $x = "cool"` spans the bare `cool` between the quotes, and `cool` on
+    # its own parses as a call, not a string. The enclosing quoted construct is
+    # the innermost node that does cover its own rendering, so the answer is
+    # the nearest faithful node at or above this one -- computed by inheriting
+    # the parent's, since node-json descends parent-first.
+    my $drag = $source.defined && footprint-is-faithful($node, $source)
+        ?? $span
+        !! $inherited-drag;
+
+    my @slots = slots-of($node);
+    my @children;
+    my $i = 0;
+    for node-children($node, $offset, @path.elems == 0) -> $child {
+        # Decont BOTH sides: reading a value back out of a hash hands it back
+        # in a Scalar container, and =:= would then be comparing containers
+        # rather than the nodes inside them -- which never matches.
+        my $found = @slots.first({ nqp::decont(.<obj>) =:= nqp::decont($child) });
+        my %child-slot = $found.defined
+            ?? %( attr => $found<attr>, index => $found<index> )
+            !! %();
+        @children.push: node-json($child, [|@path, $i], $offset, $source, %child-slot, $drag);
+        $i++;
+    }
+
+    my %out = (
         class    => $node.^name,
         path     => @path,
         span     => $span,
         summary  => summary-of($node),
         attrs    => attrs-of($node),
         children => @children,
-    )
+    );
+    # Only when they add something: a node whose drag span is its own span, or
+    # which hangs off no identifiable slot, says so by omission rather than by
+    # repeating what the caller already has.
+    %out<drag-span> = $drag if $drag.defined && !($drag === $span);
+    %out<via-attr>  = %slot<attr>  if %slot<attr>.defined;
+    %out<via-index> = %slot<index> if %slot<index>.defined;
+    %out
 }
 
 # Rakudo's own one-line node summary -- the primary line of RakuAST::Node.dump,
@@ -589,9 +698,9 @@ sub parse-with-context($snippet, $context-path) {
 if $verb eq 'analyze' {
     my $source = @*ARGS[1].IO.slurp;
     my %parsed = parse-with-context($source, @*ARGS[2]);
-    my %tree   = node-json(%parsed<ast>, [], %parsed<offset>);
+    my %tree   = node-json(%parsed<ast>, [], %parsed<offset>, %parsed<parsed>);
     %tree<context> = %parsed<context>;
-    say to-json({ tree => %tree });
+    say to-json({ tree => %tree, conformance => %conformance });
 }
 elsif $verb eq 'gist' {
     # One node's .gist, fetched on demand.
@@ -753,12 +862,17 @@ elsif $verb eq 'edit' {
     fail-with('The edit produced invalid Raku and was not applied.')
         unless (try { $text.AST; True }) // False;
 
-    my %tree = node-json($ast, [], $offset);
+    # The tree is rebuilt from the mutated AST, but against the PRE-edit source
+    # text -- the document has not been written yet, and the caller re-analyzes
+    # once it has. Drag spans in this tree are therefore only as fresh as the
+    # spans beside them, which is why the panel discards it and re-analyzes.
+    my %tree = node-json($ast, [], $offset, $parse-source);
     %tree<context> = %parsed<context>;
     say to-json({
-        text => $text,
-        span => $span,
-        tree => %tree,
+        text        => $text,
+        span        => $span,
+        tree        => %tree,
+        conformance => %conformance,
     });
 }
 else {
