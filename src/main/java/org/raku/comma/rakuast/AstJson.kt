@@ -98,11 +98,38 @@ data class AnalyzeResult(
      * An unknown [nodeClass] is permitted for the same reason: refusing on
      * missing metadata would silently disable dropping rather than explain it.
      */
-    fun accepts(nodeClass: String, declaredType: String): Boolean {
-        if (declaredType == "Mu" || declaredType == "List") return true
-        val conforms = conformance[nodeClass] ?: return true
+    fun accepts(nodeClass: String, declaredType: String): Boolean =
+        RakuAstTypes.accepts(conformance[nodeClass], declaredType)
+}
+
+/**
+ * The one place the drop-legality rule lives.
+ *
+ * Both callers need it: [AnalyzeResult.accepts] looks the node's conformance up
+ * in its own tree, while a drag that crossed panes carries the list with it —
+ * the target pane cannot look up a class its own analysis never saw.
+ */
+object RakuAstTypes {
+
+    /**
+     * Whether a node conforming to [conforms] may be dropped into a slot
+     * declared to hold [declaredType].
+     *
+     * A null [conforms] means we have no metadata for that class, which is
+     * permitted for the same reason `Mu` is: refusing on missing information
+     * would silently disable dropping rather than explain it, and the compile
+     * check that already guards every edit remains the real arbiter.
+     */
+    fun accepts(conforms: List<String>?, declaredType: String): Boolean {
+        if (declaredType in UNCONSTRAINED) return true
+        if (conforms == null) return true
         return declaredType in conforms
     }
+
+    // `Mu` is what bookkeeping slots declare. `List` is what every list-valued
+    // slot declares, and it says nothing about its elements — there is no
+    // element type to recover, so those defer to the compile check.
+    private val UNCONSTRAINED = setOf("Mu", "List")
 }
 
 @Serializable

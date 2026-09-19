@@ -24,6 +24,7 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.EventQueue
 import java.awt.datatransfer.StringSelection
+import java.awt.datatransfer.Transferable
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.FocusAdapter
@@ -33,12 +34,16 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.text.BreakIterator
 import javax.swing.BorderFactory
+import javax.swing.DropMode
 import javax.swing.event.TreeExpansionEvent
 import javax.swing.event.TreeExpansionListener
 import javax.swing.tree.TreePath
+import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.JTextArea
+import javax.swing.JTree
+import javax.swing.TransferHandler
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableCellRenderer
 import javax.swing.tree.DefaultMutableTreeNode
@@ -148,6 +153,16 @@ class RakuAstPane(
     // since the gist verb has to be given the same one or it walks elsewhere.
     private var analysisContext: List<String> = emptyList()
 
+    // What each class in this analysis conforms to, so a drag leaving this
+    // pane can carry its own list rather than hoping the destination happens
+    // to have seen the same class.
+    private var conformance: Map<String, List<String>> = emptyMap()
+
+    // The analysis root, kept so a drop can resolve a path back to the node it
+    // names. The Swing tree holds the same objects, but walking a path is
+    // cheaper and clearer against the AstNode tree itself.
+    private var rootNode: AstNode? = null
+
     // The node whose attributes the table currently shows, so a committed
     // cell knows which node it belongs to.
     private var editedNode: AstNode? = null
@@ -181,7 +196,13 @@ class RakuAstPane(
             // a rejected edit being put back. Only a genuine change from the
             // value the backend reported is an edit.
             if (entered == attr.display || suppressEditEvents) return@addTableModelListener
-            applyEdit(node, attr, entered, row)
+            applyEdit(node, attr.name, attr.kind, entered) {
+                // Put the old text back, so the table never shows a value the
+                // document does not actually contain.
+                if (row < attrModel.rowCount) {
+                    withoutEditEvents { attrModel.setValueAt(attr.display, row, 1) }
+                }
+            }
         }
 
         // A gist is the one value here that is routinely too long to read in
@@ -228,6 +249,18 @@ class RakuAstPane(
                 status.revalidate()
             }
         })
+
+        // One handler on both widgets: it resolves the drop through whichever
+        // DropLocation it is handed, so the tree and the attribute table need
+        // no separate implementations. DropMode.ON because every target here
+        // is an existing slot to overwrite; inserting into a list needs an
+        // index the edit verb cannot yet express.
+        val transfer = NodeTransferHandler()
+        tree.dragEnabled = true
+        tree.dropMode = DropMode.ON
+        tree.transferHandler = transfer
+        attrTable.dropMode = DropMode.ON
+        attrTable.transferHandler = transfer
 
         tree.addTreeSelectionListener {
             val selected = tree.lastSelectedPathComponent as? DefaultMutableTreeNode
@@ -287,6 +320,116 @@ class RakuAstPane(
         if (options.expandAll) withBulkToggle { expandSubtree(TreePath(treeRoot)) }
     }
 
+    /**
+     * Resolves "replace this node" into the slot that actually gets written.
+     *
+     * Dropping onto a tree node means putting something in its place, and a
+     * node's place is a slot on its *parent* — which is what via-attr names.
+     * Returns null when there is nowhere to write: the root hangs off nothing,
+     * and an element held in a list needs an index that the edit verb cannot
+     * express.
+     */
+    private fun replacementSlotFor(target: AstNode): DropSlot? {
+        val attrName = target.viaAttr ?: return null
+        if (target.viaIndex != null) return null
+        val parent = nodeAt(target.path.dropLast(1)) ?: return null
+        val declaredType = parent.attrs.firstOrNull { it.name == attrName }?.type ?: return null
+        return DropSlot(parent, attrName, declaredType)
+    }
+
+    /**
+     * Drag out of the tree, and drop onto either widget.
+     *
+     * Copy only. A drop writes the dragged source into the target slot and
+     * leaves the source alone — removing a node from a slot that requires one
+     * would leave the AST with a hole and nothing valid to put in it.
+     *
+     * The same handler serves as source and target, and the same instance is
+     * installed on both widgets, because the drop resolves through
+     * [slotUnder] either way.
+     */
+    private inner class NodeTransferHandler : TransferHandler() {
+
+        override fun getSourceActions(c: JComponent): Int = COPY
+
+        override fun createTransferable(c: JComponent): Transferable? {
+            val node = selectedNode() ?: return null
+            val text = sourceTextOf(node) ?: return null
+            return RakuAstTransferable(
+                RakuAstDragPayload(paneId, node.nodeClass, conformance[node.nodeClass], text))
+        }
+
+        override fun canImport(support: TransferSupport): Boolean {
+            val payload = payloadOf(support) ?: return false
+            val slot = slotUnder(support) ?: return false
+            return payload.fitsSlot(slot.declaredType)
+        }
+
+        override fun importData(support: TransferSupport): Boolean {
+            val payload = payloadOf(support) ?: return false
+            val slot = slotUnder(support) ?: return false
+            if (!payload.fitsSlot(slot.declaredType)) return false
+            // 'node' rather than 'scalar': the text is Raku source for the
+            // backend to parse into a node, which is what the edit verb
+            // already does for a node-valued attribute.
+            applyEdit(slot.node, slot.attrName, "node", payload.text) {}
+            return true
+        }
+
+        private fun payloadOf(support: TransferSupport): RakuAstDragPayload? {
+            if (!support.isDataFlavorSupported(RakuAstDragPayload.FLAVOR)) return null
+            return runCatching {
+                support.transferable.getTransferData(RakuAstDragPayload.FLAVOR)
+            }.getOrNull() as? RakuAstDragPayload
+        }
+
+        /** Resolves wherever the cursor is into a writable slot, or null. */
+        private fun slotUnder(support: TransferSupport): DropSlot? =
+            when (val location = support.dropLocation) {
+                is JTree.DropLocation -> treeSlot(location)
+                is JTable.DropLocation -> tableSlot(location)
+                else -> null
+            }
+
+        private fun treeSlot(location: JTree.DropLocation): DropSlot? {
+            val path = location.path ?: return null
+            val target = (path.lastPathComponent as? DefaultMutableTreeNode)?.userObject as? AstNode
+                ?: return null
+            return replacementSlotFor(target)
+        }
+
+        /** Dropping onto an attribute row names its slot outright. */
+        private fun tableSlot(location: JTable.DropLocation): DropSlot? {
+            val attr = editableAttrs[location.row] ?: return null
+            val node = editedNode ?: return null
+            return DropSlot(node, attr.name, attr.type)
+        }
+    }
+
+    /** Walks [path] from the analysis root. */
+    private fun nodeAt(path: List<Int>): AstNode? {
+        var current = rootNode ?: return null
+        for (index in path) {
+            current = current.children.getOrNull(index) ?: return null
+        }
+        return current
+    }
+
+    /**
+     * The Raku source for [node], lifted from the analyzed snippet.
+     *
+     * Taken from the text rather than deparsed so a dragged node keeps its
+     * formatting and comments; [AstNode.sourceSpan] already accounts for the
+     * nodes whose own span would not yield standalone source.
+     */
+    private fun sourceTextOf(node: AstNode): String? {
+        val span = node.sourceSpan() ?: return null
+        val from = graphemeUtf16Offset(span.from) ?: return null
+        val to = graphemeUtf16Offset(span.to) ?: return null
+        if (from > to || to > snippet.length) return null
+        return snippet.substring(from, to).takeIf { it.isNotBlank() }
+    }
+
     private fun shiftHeld(): Boolean =
         (EventQueue.getCurrentEvent() as? InputEvent)?.isShiftDown == true
 
@@ -344,6 +487,8 @@ class RakuAstPane(
         // Paths and gists both belong to one analysis. A stale gist would be
         // for a node that no longer exists at that path.
         this.analysisContext = result.tree?.context ?: emptyList()
+        this.conformance = result.conformance
+        this.rootNode = result.tree
         gistCache.clear()
         gistRequest++
         header.text = FileDocumentManager.getInstance().getFile(editor.document)?.name
@@ -440,7 +585,16 @@ class RakuAstPane(
      * buys a tree that describes the text now on screen -- which also
      * refreshes the gist, since its cache belongs to the analysis.
      */
-    private fun applyEdit(node: AstNode, attr: AstAttr, newValue: String, row: Int) {
+    private fun applyEdit(
+        node: AstNode,
+        attrName: String,
+        attrKind: String,
+        newValue: String,
+        // What to undo in the UI if the edit is refused. A table edit has to
+        // put the old cell text back; a drop changed nothing on screen, so it
+        // has nothing to restore.
+        restore: () -> Unit,
+    ) {
         val editor = currentEditor ?: return
         val forSnippet = snippet
         val forContext = analysisContext
@@ -450,9 +604,9 @@ class RakuAstPane(
             object : Task.Backgroundable(project, "Applying RakuAST edit", true) {
                 override fun run(indicator: ProgressIndicator) {
                     val result = RakuAstService.getInstance(project)
-                        .edit(forSnippet, node.path, attr.name, newValue, attr.kind, forContext)
+                        .edit(forSnippet, node.path, attrName, newValue, attrKind, forContext)
                     ApplicationManager.getApplication().invokeLater {
-                        finishEdit(editor, forSnippet, forBase, node, attr, result, row)
+                        finishEdit(editor, forSnippet, forBase, node, result, restore)
                     }
                 }
             })
@@ -463,17 +617,12 @@ class RakuAstPane(
         forSnippet: String,
         forBase: Int,
         node: AstNode,
-        attr: AstAttr,
         result: EditResult,
-        row: Int,
+        restore: () -> Unit,
     ) {
         fun reject(message: String) {
             setStatus(message)
-            // Put the old text back, so the table never shows a value the
-            // document does not actually contain.
-            if (row < attrModel.rowCount) {
-                withoutEditEvents { attrModel.setValueAt(attr.display, row, 1) }
-            }
+            restore()
             updateRowHeights()
         }
 
