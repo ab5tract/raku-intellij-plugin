@@ -98,12 +98,62 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
         assertEquals(3, myFixture.editor.selectionModel.selectionEnd)
     }
 
-    // Findings 2+3, one shared guard: Raku's origin offsets are NFG grapheme
-    // indices into the analyzed snippet, not IntelliJ's UTF-16 document
-    // offsets, and the document can also simply have changed (e.g. a line
-    // typed above the selection) since analyze() ran. Either way, the text
-    // at baseOffset+span no longer matches what the backend analyzed, and
-    // highlight() must refuse rather than select unrelated text.
+    // Happy path, pure ASCII: the grapheme-to-UTF-16 map is the identity here,
+    // so this must select exactly the same range highlight() always has.
+    fun testHighlightSelectsAsciiSpanUnchanged() {
+        val snippet = "my \$x = 1;"
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, snippet)
+        val panel = RakuAstViewerPanel(project)
+        // "1" sits at grapheme (== UTF-16, all ASCII) 8..9.
+        val leaf = AstNode("RakuAST::IntLiteral", listOf(0), AstSpan(8, 9))
+        val tree = AstNode(
+            nodeClass = "RakuAST::StatementList",
+            path = emptyList(),
+            span = AstSpan(0, snippet.length),
+            children = listOf(leaf),
+        )
+        panel.showAnalysis(myFixture.editor, 0, snippet, AnalyzeResult(tree = tree))
+
+        invokeHighlight(panel, leaf)
+
+        assertEquals("", panel.statusText())
+        assertEquals(8, myFixture.editor.selectionModel.selectionStart)
+        assertEquals(9, myFixture.editor.selectionModel.selectionEnd)
+        assertEquals("1", myFixture.editor.selectionModel.selectedText)
+    }
+
+    // The finding's own repro: an astral character (🐪, one NFG grapheme but
+    // a UTF-16 surrogate pair -- two code units) before the target node
+    // shifts every UTF-16 offset after it by one relative to the grapheme
+    // count. The backend reports "my $y = 41" at grapheme 13..23; the
+    // document (UTF-16) holds that same text at 14..24. Without grapheme
+    // conversion, highlight() would select one character short/offset.
+    fun testHighlightConvertsGraphemeIndicesAcrossAstralCharacter() {
+        val snippet = "my \$e = \"🐪\"; my \$y = 41;"
+        // Sanity-check the repro's own claimed offsets before relying on them.
+        assertEquals("my \$y = 41", snippet.substring(14, 24))
+
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, snippet)
+        val panel = RakuAstViewerPanel(project)
+        // Grapheme indices, as the backend would report them (one grapheme
+        // for the astral camel, not two).
+        val leaf = AstNode("RakuAST::StatementList", listOf(0), AstSpan(13, 23))
+        panel.showAnalysis(myFixture.editor, 0, snippet, AnalyzeResult(tree = leaf))
+
+        invokeHighlight(panel, leaf)
+
+        assertEquals("", panel.statusText())
+        assertEquals(14, myFixture.editor.selectionModel.selectionStart)
+        assertEquals(24, myFixture.editor.selectionModel.selectionEnd)
+        assertEquals("my \$y = 41", myFixture.editor.selectionModel.selectedText)
+    }
+
+    // Separate from the grapheme-vs-UTF-16 conversion above: even with a
+    // correctly-converted span, the document can simply have changed (e.g. a
+    // line typed above the selection) since analyze() ran, shifting
+    // baseOffset out from under the computed range. The substring-mismatch
+    // guard in highlight() must catch that too and refuse rather than select
+    // unrelated text.
     fun testHighlightRefusesWhenDocumentChangedSinceAnalyze() {
         val snippet = "my \$x = 1;"
         myFixture.configureByText(RakuScriptFileType.INSTANCE, snippet)

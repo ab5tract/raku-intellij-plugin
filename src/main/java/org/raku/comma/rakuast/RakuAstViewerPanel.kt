@@ -8,6 +8,7 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import java.awt.BorderLayout
+import java.text.BreakIterator
 import javax.swing.JPanel
 import javax.swing.table.DefaultTableModel
 import javax.swing.JTable
@@ -26,6 +27,12 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     private var currentEditor: Editor? = null
     private var baseOffset: Int = 0
     private var snippet: String = ""
+    // graphemeUtf16Offsets[g] is the UTF-16 offset into `snippet` of the start
+    // of the g-th grapheme cluster; the array has one extra trailing entry
+    // equal to snippet.length so a span's exclusive `to` (which can equal the
+    // grapheme count) still resolves. Built once per showAnalysis() call --
+    // see graphemeUtf16Offset().
+    private var graphemeUtf16Offsets: IntArray = IntArray(0)
     private var nodes = 0
 
     init {
@@ -50,6 +57,7 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         this.currentEditor = editor.takeUnless { it.isDisposed }
         this.baseOffset = baseOffset
         this.snippet = snippet
+        this.graphemeUtf16Offsets = buildGraphemeUtf16Offsets(snippet)
         this.nodes = 0
 
         treeRoot.removeAllChildren()
@@ -102,25 +110,33 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         // from a real zero-length span at offset 0. Nothing to highlight.
         val span = node.span ?: return
 
-        val document = editor.document
-        val start = baseOffset + span.from
-        val end = baseOffset + span.to
-        if (start < 0 || end > document.textLength || start > end) return
-
-        // Raku's origin offsets are NFG grapheme indices into the analyzed
-        // snippet; IntelliJ document offsets are UTF-16 code units. The two
-        // can diverge even immediately after analyze() (combining marks,
-        // astral characters), and further still if the document changed
-        // since analyze (e.g. a line typed above the selection shifts
-        // baseOffset out from under the computed range). Rather than track
-        // those two causes separately, verify the text actually at the
-        // computed range still matches the snippet text the backend
-        // analyzed before acting on it -- one guard for both.
-        if (span.from < 0 || span.to > snippet.length || span.from > span.to) {
+        // Raku's origin offsets (span.from/span.to) are NFG grapheme indices
+        // into the analyzed snippet; IntelliJ document/string offsets are
+        // UTF-16 code units. The two diverge on astral characters (one
+        // grapheme, a UTF-16 surrogate pair) and combining marks. Convert
+        // grapheme indices to UTF-16 offsets into `snippet` via the map built
+        // once in showAnalysis() before treating them as document offsets.
+        // graphemeUtf16Offset() also rejects an out-of-range index, which
+        // doubles as the old "span.from/to within snippet bounds" check.
+        val fromUtf16 = graphemeUtf16Offset(span.from)
+        val toUtf16 = graphemeUtf16Offset(span.to)
+        if (fromUtf16 == null || toUtf16 == null || fromUtf16 > toUtf16) {
             status.text = "Selection has changed since analysis — re-run Analyze"
             return
         }
-        val expected = snippet.substring(span.from, span.to)
+
+        val document = editor.document
+        val start = baseOffset + fromUtf16
+        val end = baseOffset + toUtf16
+        if (start < 0 || end > document.textLength || start > end) return
+
+        // The grapheme conversion above only accounts for encoding -- it says
+        // nothing about whether the document has actually changed since
+        // analyze() ran (e.g. a line typed above the selection shifts
+        // baseOffset out from under the computed range). Verify the live text
+        // at the converted range still matches the snippet text the backend
+        // analyzed before acting on it.
+        val expected = snippet.substring(fromUtf16, toUtf16)
         if (document.getText(TextRange(start, end)) != expected) {
             status.text = "Selection has changed since analysis — re-run Analyze"
             return
@@ -130,4 +146,36 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         editor.selectionModel.setSelection(start, end)
         editor.caretModel.moveToOffset(start)
     }
+
+    // Builds the grapheme-index -> UTF-16-offset map for `text`, using
+    // java.text.BreakIterator's character-instance (grapheme cluster)
+    // boundaries. BreakIterator's grapheme clusters and Raku's NFG graphemes
+    // agree for the cases this feature cares about (astral characters,
+    // common combining marks), but the two are not guaranteed identical in
+    // every exotic case (e.g. some multi-codepoint NFG synthetics) -- this is
+    // a practical approximation, not a proven equivalence.
+    //
+    // The result has one entry per grapheme boundary, including a trailing
+    // entry equal to text.length, so index g is valid for
+    // 0..numberOfGraphemes inclusive (an exclusive span `to` can equal the
+    // grapheme count). For pure-ASCII text this is the identity map.
+    private fun buildGraphemeUtf16Offsets(text: String): IntArray {
+        val boundary = BreakIterator.getCharacterInstance()
+        boundary.setText(text)
+        val offsets = mutableListOf(boundary.first())
+        var end = boundary.next()
+        while (end != BreakIterator.DONE) {
+            offsets.add(end)
+            end = boundary.next()
+        }
+        return offsets.toIntArray()
+    }
+
+    // Converts a grapheme index (as used by span.from/span.to) into a
+    // UTF-16 offset into `snippet`, or null if the index is out of range for
+    // the map built in showAnalysis() -- callers must refuse rather than
+    // highlight in that case, the same way an invalid span was already
+    // handled.
+    private fun graphemeUtf16Offset(index: Int): Int? =
+        graphemeUtf16Offsets.getOrNull(index)
 }

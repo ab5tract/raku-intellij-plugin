@@ -1,6 +1,7 @@
 package org.raku.comma.rakuast
 
 import org.raku.comma.CommaFixtureTestCase
+import java.nio.file.Files
 
 class RakuAstServiceTest : CommaFixtureTestCase() {
 
@@ -99,6 +100,42 @@ class RakuAstServiceTest : CommaFixtureTestCase() {
         val setting = findFirst(root, "RakuAST::Type::Setting")
         assertNotNull("expected a RakuAST::Type::Setting node in the tree", setting)
         assertNull("a node with no .origin must report a null span, not (0,0)", setting!!.span)
+    }
+
+    // Regression guard for run()'s stdout handling: code that runs at compile
+    // time can print stray stdout before the wire-format JSON line, which
+    // .joinToString("\n")-ing every stdout line would splice into the JSON
+    // and corrupt it. run() now takes the last non-blank stdout line instead.
+    //
+    // A `BEGIN { say ... }` block is the obvious way to reproduce this, but
+    // on the pinned Rakudo (moar-2026.03) it hits an unrelated backend
+    // limitation: `.AST` on ANY snippet containing a BEGIN or CHECK phaser
+    // fails outright with "Unknown compilation input 'qast'", regardless of
+    // whether the phaser prints anything at all. Confirmed directly against
+    // the interpreter: `BEGIN { 1 }` (no output) fails identically to
+    // `BEGIN { say "noise" }`. So a BEGIN-based test cannot exercise this fix
+    // on this Rakudo version -- it never gets past `.AST` to reach the stdout
+    // handling at all.
+    //
+    // A module that prints when it is loaded reproduces the same "stray
+    // stdout before the JSON line" scenario -- `use` also runs at compile
+    // time -- without going through BEGIN/CHECK, and does not trip the qast
+    // bug (also confirmed directly against the interpreter).
+    fun testModuleLoadStdoutNoiseDoesNotCorruptOutput() {
+        val libDir = Files.createTempDirectory("rakuast-noisy-lib")
+        val moduleFile = libDir.resolve("NoisyModule.rakumod").toFile()
+        moduleFile.writeText("say \"noise-from-module-load\";")
+        try {
+            val snippet = "use lib \"${libDir}\"; use NoisyModule; my \$x = 1;"
+            val result = service().analyze(snippet)
+            assertNull("expected no error, got: ${result.error}", result.error)
+            assertNotNull(result.tree)
+        } finally {
+            // Rakudo may leave a .precomp cache directory under libDir after
+            // loading NoisyModule, so clean up recursively rather than
+            // assuming libDir only ever contains moduleFile.
+            libDir.toFile().deleteRecursively()
+        }
     }
 
     private fun findFirst(node: AstNode, cls: String): AstNode? {

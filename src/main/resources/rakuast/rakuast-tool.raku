@@ -218,7 +218,7 @@ my constant @HIDDEN = <
     lowered-array-init lowered-to-local initializer-in-method is-parameter
     attribute-package generics-package conflicting-type unit-package
     qualified-root original-type
-    lexical-lookup-hash owner outer origin-comp-unit resolution
+    lexical-lookup-hash owner outer origin-comp-unit resolution routine
 >;
 
 # Bound how much text a single attribute can contribute to the payload.
