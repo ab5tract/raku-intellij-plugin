@@ -91,6 +91,34 @@ Any snippet containing a `BEGIN` or `CHECK` block fails `.AST` with
 `Unknown compilation input 'qast'`. Unrelated to this feature, but users
 selecting such code will get an error rather than a tree.
 
+### `Failed to determine cwd` when the working directory is gone
+
+Unrelated to this feature; recorded here because it was hit during the same
+work and has not been triaged.
+
+```
+$ raku -MZef::CLI -e'' install Raylib::Bindings
+Failed to determine cwd: no such file or directory
+  at SETTING::src/core.c/Process.rakumod:227
+```
+
+Line 227 is `IO::Path.new(:CWD(INIT nqp::cwd()), nqp::execname())` in the
+`$*EXECUTABLE` initialiser, so `nqp::cwd()` — i.e. `getcwd()` — failed with
+ENOENT. That happens when the process's working directory has been removed
+out from under it, which is a shell-state problem rather than a zef or module
+problem. `cd` to any directory that exists and it goes away.
+
+Two things are still worth triaging:
+
+1. **Diagnosis quality.** The failure surfaces during setting load with a
+   30-frame NQP backtrace and no mention of the working directory being the
+   culprit. Raku cannot do much when `getcwd()` fails this early, but the
+   message could name the likely cause rather than leaving the user reading
+   `ModuleLoader.nqp` frames.
+2. **Whether it should be fatal at all.** `$*EXECUTABLE` needs a CWD to build
+   an absolute path, but a missing CWD arguably warrants a degraded
+   `$*EXECUTABLE` rather than refusing to start. Worth deciding deliberately.
+
 ### Performance is not the design's ~310ms for real files
 
 Measured on a 378-line Raku file: ~2.1 s and 568 KB of JSON (was 958 KB before
