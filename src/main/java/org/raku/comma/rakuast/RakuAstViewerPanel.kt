@@ -26,8 +26,10 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         showGist = PropertiesComponent.getInstance(project).getBoolean(SHOW_GIST_KEY, false),
     )
 
-    private val leftPane = RakuAstPane(project, options, PaneId.LEFT)
-    private val rightPane = RakuAstPane(project, options, PaneId.RIGHT)
+    private val leftPane = RakuAstPane(project, options, PaneId.LEFT, ::activate)
+    private val rightPane = RakuAstPane(project, options, PaneId.RIGHT, ::activate)
+
+    private var activePane = leftPane
 
     // On by default: an AST tree is deep and narrow, and a root node alone
     // tells you nothing about the code you just selected. Remembered per
@@ -74,19 +76,51 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
             PropertiesComponent.getInstance(project).setValue(EXPAND_ALL_KEY, options.expandAll, true)
             panes().forEach { it.onExpandAllChanged() }
         }
+
+        // Paint the initial state, so one pane is visibly the target before
+        // anything has been focused.
+        activate(leftPane)
     }
 
     fun panes(): List<RakuAstPane> = listOf(leftPane, rightPane)
 
     fun pane(id: PaneId): RakuAstPane = if (id == PaneId.LEFT) leftPane else rightPane
 
+    fun activePaneId(): PaneId = activePane.paneId
+
+    /**
+     * Shows [result] in the pane [target] names, and makes that pane active.
+     *
+     * Analyzing into a pane activates it so the iterate-in-place loop needs no
+     * extra clicks: the next analysis goes where the last one went.
+     *
+     * [target] is last and defaulted so the original single-pane call site
+     * still compiles unchanged.
+     */
     fun showAnalysis(
         editor: Editor,
         baseOffset: Int,
         snippet: String,
         result: AnalyzeResult,
         contextAvailable: Boolean = true,
-    ) = leftPane.showAnalysis(editor, baseOffset, snippet, result, contextAvailable)
+        target: PaneTarget = PaneTarget.ACTIVE,
+    ) {
+        val pane = resolve(target)
+        pane.showAnalysis(editor, baseOffset, snippet, result, contextAvailable)
+        activate(pane)
+    }
+
+    private fun resolve(target: PaneTarget): RakuAstPane = when (target) {
+        PaneTarget.ACTIVE -> activePane
+        PaneTarget.OTHER -> if (activePane === leftPane) rightPane else leftPane
+        PaneTarget.LEFT -> leftPane
+        PaneTarget.RIGHT -> rightPane
+    }
+
+    private fun activate(pane: RakuAstPane) {
+        activePane = pane
+        panes().forEach { it.setActiveAppearance(it === pane) }
+    }
 
     companion object {
         private const val EXPAND_ALL_KEY = "org.raku.comma.rakuast.expandAll"

@@ -56,6 +56,42 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
         }
     }
 
+    // The left pane is the target until something says otherwise, so the
+    // viewer is usable without first learning that panes have focus.
+    fun testLeftPaneStartsActive() {
+        assertEquals(PaneId.LEFT, RakuAstViewerPanel(project).activePaneId())
+    }
+
+    // Analyzing follows the active pane, and analyzing also *sets* it. That
+    // pairing is what makes the iterate-in-place loop need no extra clicks:
+    // re-analyzing goes back to where the last analysis landed, leaving the
+    // other pane untouched as a reference.
+    fun testOtherTargetLandsInTheInactivePaneAndActivatesIt() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;",
+                           AnalyzeResult(tree = oneChildTree()), target = PaneTarget.OTHER)
+
+        assertEquals(PaneId.RIGHT, panel.activePaneId())
+        assertEquals(2, panel.pane(PaneId.RIGHT).nodeCount())
+        assertEquals(0, panel.pane(PaneId.LEFT).nodeCount())
+
+        // Now the default target has moved with it: a second analysis stays
+        // in the right pane rather than bouncing back to the left.
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;",
+                           AnalyzeResult(tree = oneChildTree()))
+
+        assertEquals(PaneId.RIGHT, panel.activePaneId())
+        assertEquals(0, panel.pane(PaneId.LEFT).nodeCount())
+    }
+
+    private fun oneChildTree() = AstNode(
+        nodeClass = "RakuAST::StatementList",
+        span = AstSpan(0, 10),
+        children = listOf(AstNode("RakuAST::IntLiteral", listOf(0), AstSpan(8, 9))),
+    )
+
     private fun toggle(panel: RakuAstViewerPanel, name: String) {
         val box = fieldValue<javax.swing.JCheckBox>(panel, name)
         box.isSelected = !box.isSelected

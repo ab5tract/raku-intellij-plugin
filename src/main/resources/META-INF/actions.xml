@@ -40,6 +40,12 @@
             description="Show the RakuAST tree for the selected Raku code">
         <add-to-group group-id="EditorPopupMenu" anchor="last"/>
     </action>
+    <!-- Not in EditorPopupMenu: one RakuAST entry there is enough. Reachable
+         through Find Action, and bindable by anyone who wants a key for it. -->
+    <action id="org.raku.comma.rakuast.AnalyzeSelectionIntoOtherPaneAction"
+            class="org.raku.comma.rakuast.AnalyzeSelectionIntoOtherPaneAction"
+            text="Analyze Selection as RakuAST in Other Pane"
+            description="Show the RakuAST tree for the selected Raku code in the inactive viewer pane"/>
     <action id="org.raku.comma.grammar.RakuGrammarPreviewAction" class="org.raku.comma.grammar.RakuGrammarPreviewAction"
             text="Preview Raku Grammar"
             description="Opens a tool to preview Raku grammar parsing results">

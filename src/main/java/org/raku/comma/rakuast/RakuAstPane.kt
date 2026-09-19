@@ -2,6 +2,7 @@ package org.raku.comma.rakuast
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -12,7 +13,9 @@ import com.intellij.openapi.ui.popup.Balloon
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.TextRange
 import com.intellij.ui.awt.RelativePoint
+import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
@@ -23,10 +26,13 @@ import java.awt.EventQueue
 import java.awt.datatransfer.StringSelection
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import java.awt.event.FocusAdapter
+import java.awt.event.FocusEvent
 import java.awt.event.InputEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.text.BreakIterator
+import javax.swing.BorderFactory
 import javax.swing.event.TreeExpansionEvent
 import javax.swing.event.TreeExpansionListener
 import javax.swing.tree.TreePath
@@ -56,7 +62,19 @@ class RakuAstPane(
     private val project: Project,
     private val options: RakuAstViewerOptions,
     val paneId: PaneId,
+    // Called when the user focuses anything in this pane. A lambda rather than
+    // a reference back to the container, so the dependency stays one-way.
+    private val onActivated: (RakuAstPane) -> Unit = {},
 ) : JPanel(BorderLayout()) {
+
+    // Names the analysis this pane is showing, and carries the active-pane
+    // accent. Without it "active" would be invisible state -- the analyze
+    // action fires from the editor, where the tool window is not focused, so
+    // the user has no other way to know which pane their next analysis lands in.
+    private val header = JBLabel(NOTHING_ANALYZED).apply {
+        font = UIUtil.getLabelFont(UIUtil.FontSize.SMALL)
+        foreground = UIUtil.getInactiveTextColor()
+    }
 
     // A JLabel would clip these to one line, and the messages that matter most
     // here are Rakudo compile errors: long, already multi-line, and useless
@@ -184,8 +202,20 @@ class RakuAstPane(
         val splitter = JBSplitter(true, "$TREE_SPLIT_KEY.$paneId", 0.6f)
         splitter.firstComponent = JBScrollPane(tree)
         splitter.secondComponent = JBScrollPane(attrTable)
-        add(status, BorderLayout.NORTH)
+        add(JPanel(BorderLayout()).apply {
+            add(header, BorderLayout.NORTH)
+            add(status, BorderLayout.CENTER)
+        }, BorderLayout.NORTH)
         add(splitter, BorderLayout.CENTER)
+        setActiveAppearance(false)
+
+        // Focusing anything in the pane makes it the target for the next
+        // analysis. Both widgets, since either can be what the user clicks.
+        val activate = object : FocusAdapter() {
+            override fun focusGained(event: FocusEvent) = onActivated(this@RakuAstPane)
+        }
+        tree.addFocusListener(activate)
+        attrTable.addFocusListener(activate)
 
         // The status area wraps, so its height depends on the width it is
         // wrapping within, and it only recomputes that on revalidate. Before
@@ -224,6 +254,20 @@ class RakuAstPane(
                 if (shiftHeld()) withBulkToggle { collapseSubtree(event.path) }
             }
         })
+    }
+
+    /**
+     * Marks this pane as the one the next analysis will land in.
+     *
+     * Both states reserve the same two pixels so switching panes does not
+     * shift the layout.
+     */
+    fun setActiveAppearance(active: Boolean) {
+        header.border = BorderFactory.createCompoundBorder(
+            if (active) JBUI.Borders.customLine(ACCENT, 0, 0, 2, 0) else JBUI.Borders.emptyBottom(2),
+            JBUI.Borders.empty(2, 6),
+        )
+        header.repaint()
     }
 
     /**
@@ -302,6 +346,8 @@ class RakuAstPane(
         this.analysisContext = result.tree?.context ?: emptyList()
         gistCache.clear()
         gistRequest++
+        header.text = FileDocumentManager.getInstance().getFile(editor.document)?.name
+            ?: NOTHING_ANALYZED
 
         treeRoot.removeAllChildren()
         attrModel.rowCount = 0
@@ -725,6 +771,12 @@ class RakuAstPane(
         // Application-scoped, unlike the project-scoped display preferences --
         // a divider position is about this screen, not about this project.
         private const val TREE_SPLIT_KEY = "org.raku.comma.rakuast.treeAttrSplit"
+
+        private const val NOTHING_ANALYZED = "(nothing analyzed)"
+
+        // The IDE's own focus accent, so the active pane reads the same way as
+        // every other focused component rather than inventing a colour.
+        private val ACCENT = JBColor.namedColor("Component.focusColor", JBColor.BLUE)
 
         private const val UNMAPPABLE =
             "That node's span could not be mapped into the document — re-run Analyze"
