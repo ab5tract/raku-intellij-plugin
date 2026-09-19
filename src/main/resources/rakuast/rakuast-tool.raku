@@ -294,7 +294,15 @@ sub attrs-of($node) {
         my ($kind, $display);
         if $raw ~~ RakuAST::Node {
             $kind    = 'node';
-            $display = (try { $raw.^name ~ " -> '" ~ $raw.DEPARSE.trim ~ "'" }) // '(unrenderable)';
+            # Class name on its own line, deparsed source indented beneath it.
+            # The panel renders attribute cells as wrapped text, so the newlines
+            # survive; indenting every line (not just the first) keeps a
+            # multi-line deparse -- a block or routine body -- readable rather
+            # than running it up against the node class name.
+            $display = (try {
+                my $deparsed = $raw.DEPARSE.trim;
+                $raw.^name ~ " ->\n" ~ $deparsed.lines.map({ '  ' ~ $_ }).join("\n");
+            }) // '(unrenderable)';
         }
         elsif $raw ~~ Positional {
             $kind    = 'list';
