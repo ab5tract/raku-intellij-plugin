@@ -332,14 +332,127 @@ sub attrs-of($node) {
         }
         $display = cap-display($display);
 
-        @out.push: {
+        # The slot's DECLARED type, as opposed to `kind`, which describes
+        # whatever happens to be in it right now. This is what makes a drop
+        # checkable before it is attempted: RakuAST declares its slots properly
+        # -- $!expression is a RakuAST::Expression, $!type a RakuAST::Type --
+        # so a node may be dropped here exactly when that type appears in the
+        # node's own conformance list.
+        #
+        # Not every slot constrains usefully. List-valued ones are declared
+        # `List`, which says nothing about their elements, and bookkeeping slots
+        # are `Mu`. Callers treat those as unconstrained and fall back to the
+        # compile check that already guards every edit.
+        #
+        # `Mu` is left out rather than sent, since it is the reader's default
+        # and carries no constraint. Worth only about 1% of the payload on a
+        # 5.8 KB source -- the metadata as a whole costs nearer 19%, nearly all
+        # of it the per-node slot names, which cannot be dropped because they
+        # are what makes a tree position addressable.
+        my $type = (try { $a.type.^name }) // 'Mu';
+
+        my %attr = (
             name     => $name,
             kind     => $kind,
             display  => $display,
             editable => (%setters{$name} ?? True !! False),
-        };
+        );
+        %attr<type> = $type unless $type eq 'Mu';
+        @out.push: %attr;
     }
     @out
+}
+
+# Which of $node's attributes holds each of its RakuAST children, as a list of
+# { attr, index, obj }.
+#
+# The tree's children come from visit-children, which yields them structurally
+# and says nothing about the slot they came from; .^attributes knows the slots
+# but not the traversal order. Matching by object identity is what joins the
+# two, and it is what lets a tree position be named as something writable --
+# "the expression of the statement at this path" -- rather than merely "the
+# Nth child", which no edit can target.
+#
+# Hidden attributes are excluded deliberately. They are bookkeeping rather than
+# structure, and several (owner, outer) are back-references that would match a
+# child by identity and attribute it to the wrong slot.
+sub slots-of($node) {
+    my @slots;
+    for $node.^attributes -> $a {
+        my $name = $a.name.substr(2);
+        next if @HIDDEN.first($name);
+
+        # Bind, never assign, and guard exactly as attrs-of does: a Scalar
+        # container defeats the null check and .defined then dies on VMNull.
+        my $raw := try { $a.get_value($node) };
+        next if nqp::isnull(nqp::decont($raw));
+        next unless (try { $raw.defined }) // False;
+
+        if $raw ~~ RakuAST::Node {
+            @slots.push: { attr => $name, index => Int, obj => nqp::decont($raw) };
+        }
+        elsif $raw ~~ Positional {
+            my @items = (try { @$raw }) // ();
+            for @items.kv -> $i, $e {
+                next unless (try { $e ~~ RakuAST::Node }) // False;
+                @slots.push: { attr => $name, index => $i, obj => nqp::decont($e) };
+            }
+        }
+    }
+    @slots
+}
+
+# Every RakuAST class seen in one analysis, mapped to the class names it
+# conforms to.
+#
+# Sent once per response keyed by class rather than repeated on every node,
+# which keeps it to a few dozen short lists no matter how large the tree.
+# RakuAST uses plain classes throughout -- no roles in the chain -- so .^mro
+# alone is the whole answer, and a drop is legal exactly when the target slot's
+# declared type appears in this list. That makes the check pure set membership
+# on the client, with no round trip, which is what hover feedback needs.
+my %conformance;
+
+# The RakuAST items held in $node's $attr, in order and un-filtered, so an
+# index here means the same thing it means to the caller.
+sub list-elements($node, $attr) {
+    my $a = $node.^attributes.first(*.name eq '$!' ~ $attr)
+        // fail-with("'$attr' is not an attribute of {$node.^name}.");
+    my $raw := try { $a.get_value($node) };
+    fail-with("'$attr' holds nothing that can be spliced.")
+        if nqp::isnull(nqp::decont($raw));
+    fail-with("'$attr' is not a list.") unless (try { $raw ~~ Positional }) // False;
+    my @items = (try { @$raw }) // ();
+    fail-with("'$attr' is empty, so there is no position to insert into.")
+        unless @items.elems;
+    @items
+}
+
+# What separates two items of this list in the source.
+#
+# Read from between two existing items rather than guessed, so an inserted item
+# is punctuated and spaced exactly like the ones already there, whatever kind
+# of list it is -- this code never has to know that statements end in `;` and
+# arguments are comma-separated.
+#
+# With only one item there is nothing to read, so fall back to the one thing
+# the owner's type does tell us. A wrong guess here cannot corrupt anything:
+# the spliced result is re-parsed before it is returned.
+sub separator-for($text, @elems, $owner) {
+    if @elems.elems >= 2 {
+        my $a := @elems[0].origin;
+        my $b := @elems[1].origin;
+        if $a.defined && $b.defined && $a.to <= $b.from {
+            return $text.substr($a.to, $b.from - $a.to);
+        }
+    }
+    $owner ~~ RakuAST::StatementList ?? ";\n" !! ", "
+}
+
+sub record-conformance($node) {
+    my $name = $node.^name;
+    return if %conformance{$name}:exists;
+    %conformance{$name} = ((try { $node.^mro.map(*.^name).list }) // ($name,)).List;
 }
 
 # The children of $node that belong in the emitted tree, in emission order.
@@ -366,13 +479,9 @@ sub node-children($node, $offset, $is-root) {
     @kids
 }
 
-sub node-json($node, @path, $offset = 0) {
-    my @children;
-    my $i = 0;
-    for node-children($node, $offset, @path.elems == 0) -> $child {
-        @children.push: node-json($child, [|@path, $i], $offset);
-        $i++;
-    }
+sub node-json($node, @path, $offset = 0, $source = Str, %slot = {}, $inherited-drag = Any) {
+    record-conformance($node);
+
     my $origin := $node.origin;
     # {from:0,to:0} would be indistinguishable from a real zero-length span
     # at offset 0 -- observed on `sub f($a) { $a * 2 }`, where a
@@ -385,14 +494,50 @@ sub node-json($node, @path, $offset = 0) {
     my $span = $origin.defined
         ?? { from => max(0, $origin.from - $offset), to => $origin.to - $offset }
         !! Any;
-    %(
+
+    # Where this node's source text can be lifted from when it is dragged.
+    #
+    # Usually its own span, but a node whose span is not a faithful footprint
+    # for it cannot supply standalone source that way: the StrLiteral in
+    # `my $x = "cool"` spans the bare `cool` between the quotes, and `cool` on
+    # its own parses as a call, not a string. The enclosing quoted construct is
+    # the innermost node that does cover its own rendering, so the answer is
+    # the nearest faithful node at or above this one -- computed by inheriting
+    # the parent's, since node-json descends parent-first.
+    my $drag = $source.defined && footprint-is-faithful($node, $source)
+        ?? $span
+        !! $inherited-drag;
+
+    my @slots = slots-of($node);
+    my @children;
+    my $i = 0;
+    for node-children($node, $offset, @path.elems == 0) -> $child {
+        # Decont BOTH sides: reading a value back out of a hash hands it back
+        # in a Scalar container, and =:= would then be comparing containers
+        # rather than the nodes inside them -- which never matches.
+        my $found = @slots.first({ nqp::decont(.<obj>) =:= nqp::decont($child) });
+        my %child-slot = $found.defined
+            ?? %( attr => $found<attr>, index => $found<index> )
+            !! %();
+        @children.push: node-json($child, [|@path, $i], $offset, $source, %child-slot, $drag);
+        $i++;
+    }
+
+    my %out = (
         class    => $node.^name,
         path     => @path,
         span     => $span,
         summary  => summary-of($node),
         attrs    => attrs-of($node),
         children => @children,
-    )
+    );
+    # Only when they add something: a node whose drag span is its own span, or
+    # which hangs off no identifiable slot, says so by omission rather than by
+    # repeating what the caller already has.
+    %out<drag-span> = $drag if $drag.defined && !($drag === $span);
+    %out<via-attr>  = %slot<attr>  if %slot<attr>.defined;
+    %out<via-index> = %slot<index> if %slot<index>.defined;
+    %out
 }
 
 # Rakudo's own one-line node summary -- the primary line of RakuAST::Node.dump,
@@ -438,16 +583,48 @@ sub fail-with($message) {
 
 # Walks a path produced by analyze. Uses node-children so the filtering and
 # ordering match analyze's exactly -- see the note there.
-sub node-at($root, @path, $offset = 0) {
-    my $current = $root;
+# Walks @path from $root and returns every node passed through: the root
+# first, the selected node last.
+#
+# RakuAST nodes carry no parent pointer, so this walk is the only place an
+# ancestor chain can be recovered. Callers wanting just the target take the
+# last element; the edit verb needs the whole chain, because the span it
+# replaces sometimes has to widen to an ancestor (see footprint-is-faithful).
+sub node-chain($root, @path, $offset = 0) {
+    my @chain = $root;
     my $depth = 0;
     for @path -> $index {
-        my @kids = node-children($current, $offset, $depth == 0);
+        my @kids = node-children(@chain[*-1], $offset, $depth == 0);
         fail-with("The selected node is no longer present.") unless @kids[$index].defined;
-        $current = @kids[$index];
+        @chain.push(@kids[$index]);
         $depth++;
     }
-    $current
+    @chain
+}
+
+sub node-at($root, @path, $offset = 0) {
+    node-chain($root, @path, $offset)[*-1]
+}
+
+# Is $node's origin span a faithful footprint for $node's own rendering --
+# that is, does the source it covers say the same thing its DEPARSE says?
+#
+# For most nodes it does, and replacing that span with that rendering is
+# exactly the narrow edit we want. But some nodes sit *inside* delimiters
+# that their own DEPARSE re-emits. In `my $x = "cool";` the StrLiteral's
+# origin covers the bare `cool` between the quotes while .DEPARSE renders
+# `"cool"`, so splicing the one over the other doubles them:
+# `my $x = ""cool"";`.
+#
+# Whitespace is ignored on both sides. DEPARSE normalises formatting, and a
+# node written `my  $x=1` rendering as `my $x = 1` is still covering its own
+# source -- treating that as unfaithful would widen edits for no reason.
+sub footprint-is-faithful($node, $source) {
+    my $o = $node.origin;
+    return False unless $o.defined;
+    my $covered  = (try { $source.substr($o.from, $o.to - $o.from) }) // return False;
+    my $rendered = (try { $node.DEPARSE }) // return False;
+    $covered.subst(/\s+/, '', :g) eq $rendered.subst(/\s+/, '', :g)
 }
 
 # Reads $node's current value for attribute $name, using the same
@@ -535,7 +712,10 @@ sub parse-with-context($snippet, $context-path) {
     unless $context {
         my $ast = (try { $snippet.AST })
             // fail-with("Could not parse the selection: " ~ ($! // 'unknown error'));
-        return %( ast => $ast, offset => 0, context => [] );
+        # `parsed` is the exact text the AST's origins index into, which is
+        # not the snippet once a context prefix is involved. Anything reading
+        # the source at an origin offset needs this rather than the snippet.
+        return %( ast => $ast, offset => 0, context => [], parsed => $snippet );
     }
 
     my $prefix = $context ~ "\n";
@@ -547,15 +727,16 @@ sub parse-with-context($snippet, $context-path) {
                      ~ "together with this file's imports: " ~ ($! // 'unknown error'));
     %( ast     => $ast,
        offset  => $prefix.chars,
-       context => $context.lines.grep({ .trim }).list )
+       context => $context.lines.grep({ .trim }).list,
+       parsed  => $prefix ~ $snippet )
 }
 
 if $verb eq 'analyze' {
     my $source = @*ARGS[1].IO.slurp;
     my %parsed = parse-with-context($source, @*ARGS[2]);
-    my %tree   = node-json(%parsed<ast>, [], %parsed<offset>);
+    my %tree   = node-json(%parsed<ast>, [], %parsed<offset>, %parsed<parsed>);
     %tree<context> = %parsed<context>;
-    say to-json({ tree => %tree });
+    say to-json({ tree => %tree, conformance => %conformance });
 }
 elsif $verb eq 'gist' {
     # One node's .gist, fetched on demand.
@@ -598,7 +779,27 @@ elsif $verb eq 'edit' {
     my %parsed = parse-with-context($source, @*ARGS[6]);
     my $ast    = %parsed<ast>;
     my $offset = %parsed<offset>;
-    my $target = node-at($ast, @path, $offset);
+    # The text origins index into, which is the snippet plus any context
+    # prefix -- not the snippet alone.
+    my $parse-source = %parsed<parsed>;
+    my @chain  = node-chain($ast, @path, $offset);
+    my $target = @chain[*-1];
+
+    # The node whose span gets replaced is not always the node being edited.
+    # Pick the innermost node from the target outwards whose span faithfully
+    # covers its own rendering; editing a StrLiteral's value has to replace
+    # the enclosing quoted construct, or the delimiters get written twice.
+    #
+    # Measured before any mutation, so both sides of the comparison describe
+    # the code as it currently stands in the file.
+    #
+    # The root is not a candidate unless it is itself the target: replacing
+    # the whole selection with a re-deparse of the entire tree would discard
+    # the user's formatting and comments wholesale, which is a worse answer
+    # than the narrow replacement we started with. For the same reason, an
+    # unfaithful target with no faithful ancestor falls back to itself.
+    my @candidates = @path ?? @chain[1 .. *-1].reverse !! @chain;
+    my $replaced   = @candidates.first({ footprint-is-faithful($_, $parse-source) }) // $target;
 
     # Validate before mutating, so a bad snippet never reaches the file.
     my $new-value = do if $kind eq 'node' {
@@ -639,7 +840,7 @@ elsif $verb eq 'edit' {
     # Read .origin BEFORE mutating: hoisted so that if some setter ever
     # incidentally resets .origin, the span returned still reflects the
     # node's pre-edit location rather than silently going stale or null.
-    my $origin := $target.origin;
+    my $origin := $replaced.origin;
     # Rebased past any prepended context, so the caller receives a span in the
     # user's selection rather than in the combined text we actually compiled.
     my $span = $origin.defined
@@ -667,18 +868,125 @@ elsif $verb eq 'edit' {
         fail-with("'$attr' cannot be set on {$target.^name}.") unless $applied;
     }
 
-    my $text = (try { $target.DEPARSE }) // fail-with('The edit produced source that could not be rendered.');
+    # Deparse the node being replaced, which contains the mutated target.
+    my $text = (try { $replaced.DEPARSE }) // fail-with('The edit produced source that could not be rendered.');
+
+    # Put back the statement terminator, when one is needed and not already
+    # there.
+    #
+    # A `;` is a separator emitted by the enclosing StatementList, not part of
+    # any statement node, so a statement deparsed on its own never carries
+    # one. Nor does a statement's origin span cover it: `my $x = 1;` spans
+    # `my $x = 1` with the `;` sitting just outside. That combination usually
+    # works out -- replace the span and the document's own `;` survives -- but
+    # it breaks for a statement that never had one, such as a block-bodied
+    # `sub f() { ... }`. Editing that into an expression statement produced
+    # `my $x = $cool` with nothing to terminate it.
+    #
+    # So: only for statements, only when the source has no `;` directly after
+    # the span, and only when the deparse does not already end in something
+    # that terminates it -- a trailing `}` needs no `;` in Raku.
+    if $replaced ~~ RakuAST::Statement {
+        my $end = $origin.defined ?? $origin.to !! -1;
+        my $next = $end >= 0 && $end < $parse-source.chars ?? $parse-source.substr($end, 1) !! '';
+        if $next ne ';' && $text.trim.chars && $text.trim.substr(*-1) !~~ /<[ ; } ]>/ {
+            $text ~= ';';
+        }
+    }
 
     # Sanity check: never hand back source that cannot be re-parsed.
     fail-with('The edit produced invalid Raku and was not applied.')
         unless (try { $text.AST; True }) // False;
 
-    my %tree = node-json($ast, [], $offset);
+    # The tree is rebuilt from the mutated AST, but against the PRE-edit source
+    # text -- the document has not been written yet, and the caller re-analyzes
+    # once it has. Drag spans in this tree are therefore only as fresh as the
+    # spans beside them, which is why the panel discards it and re-analyzes.
+    my %tree = node-json($ast, [], $offset, $parse-source);
     %tree<context> = %parsed<context>;
     say to-json({
-        text => $text,
-        span => $span,
-        tree => %tree,
+        text        => $text,
+        span        => $span,
+        tree        => %tree,
+        conformance => %conformance,
+    });
+}
+elsif $verb eq 'splice' {
+    # Insert into, or replace part of, a list-valued attribute.
+    #
+    # The edit verb sets a whole attribute, which cannot express "the third
+    # statement" -- so reordering, adding and replacing list items come through
+    # here instead.
+    #
+    # Unlike edit, this does not mutate the AST. A list item's position in the
+    # source is fully described by the origins of its neighbours, so the change
+    # is a pure text splice, and the result is validated by re-parsing. Going
+    # through the AST would mean deparsing the whole list to render it back,
+    # destroying the formatting and comments of every item that was not touched.
+    my $source  = @*ARGS[1].IO.slurp;
+    my @path    = @*ARGS[2] ?? @*ARGS[2].split(',').map(*.Int) !! ();
+    my $attr    = @*ARGS[3];
+    my $index   = (@*ARGS[4] // '0').Int;
+    my $count   = (@*ARGS[5] // '0').Int;
+    my $value   = @*ARGS[6].IO.slurp.trim;
+    my %parsed  = parse-with-context($source, @*ARGS[7]);
+    my $offset  = %parsed<offset>;
+    my $text    = %parsed<parsed>;
+    my $owner   = node-at(%parsed<ast>, @path, $offset);
+
+    fail-with('Nothing to insert.') unless $value.chars;
+    # Reject before touching anything, so a bad snippet never reaches the file.
+    (try { $value.AST }) // fail-with("Could not parse '$value' as Raku.");
+
+    my @elems = list-elements($owner, $attr);
+    fail-with("Index $index is outside '$attr', which has {@elems.elems} items.")
+        unless 0 <= $index <= @elems.elems;
+    fail-with("Cannot replace {$count} items from index {$index}.")
+        unless $index + $count <= @elems.elems;
+
+    my ($from, $to, $replacement);
+    if $count > 0 {
+        # Replacing items: the span is simply the source they occupy.
+        my $first := @elems[$index].origin;
+        my $last  := @elems[$index + $count - 1].origin;
+        fail-with('Those items have no source span to replace.')
+            unless $first.defined && $last.defined;
+        $from        = $first.from;
+        $to          = $last.to;
+        $replacement = $value;
+    }
+    else {
+        # Inserting: reuse the separator the user already wrote between two
+        # existing items rather than guessing one. That gap carries the
+        # punctuation AND the whitespace -- ";\n" between statements, ", "
+        # between arguments -- so an inserted item lands formatted like its
+        # neighbours without this code knowing anything about either.
+        my $gap = separator-for($text, @elems, $owner);
+        if $index < @elems.elems {
+            # Before item $index: NEW, gap, then the item that was there.
+            my $o := @elems[$index].origin;
+            fail-with('That position has no source span.') unless $o.defined;
+            $from = $to = $o.from;
+            $replacement = $value ~ $gap;
+        }
+        else {
+            # After the last item: gap, then NEW. Anything following the last
+            # item -- a statement's own `;` -- stays put after the new one,
+            # which is what makes appending a statement come out terminated.
+            my $o := @elems[*-1].origin;
+            fail-with('That position has no source span.') unless $o.defined;
+            $from = $to = $o.to;
+            $replacement = $gap ~ $value;
+        }
+    }
+
+    my $spliced = $text.substr(0, $from) ~ $replacement ~ $text.substr($to);
+    fail-with('That would produce invalid Raku, and was not applied.')
+        unless (try { $spliced.AST; True }) // False;
+
+    say to-json({
+        text => $replacement,
+        span => { from => max(0, $from - $offset), to => max(0, $to - $offset) },
     });
 }
 else {
