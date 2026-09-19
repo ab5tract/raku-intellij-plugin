@@ -233,6 +233,11 @@ my constant DISPLAY-LIMIT = 512;
 # Beyond this the excerpt is dropped entirely rather than truncated, since a
 # half-shown fragment of source distracts more than no fragment at all.
 my constant EXCERPT-MAX-CHARS = 24;
+
+# A gist is fetched for one selected node at a time, so this can be generous
+# -- but a whole file's root still gists to hundreds of kilobytes, which is
+# more than a table cell can usefully show.
+my constant GIST-MAX-CHARS = 100_000;
 sub cap-display($s) {
     $s.chars > DISPLAY-LIMIT ?? $s.substr(0, DISPLAY-LIMIT) ~ '…' !! $s;
 }
@@ -525,6 +530,35 @@ if $verb eq 'analyze' {
     my %tree   = node-json(%parsed<ast>, [], %parsed<offset>);
     %tree<context> = %parsed<context>;
     say to-json({ tree => %tree });
+}
+elsif $verb eq 'gist' {
+    # One node's .gist, fetched on demand.
+    #
+    # Not emitted with the tree: a node's gist contains its whole subtree
+    # re-serialised, so every level repeats the levels below it. Measured on a
+    # 40-character snippet, the 28 nodes summed to 6399 characters of gist --
+    # a 160x blow-up of the source. Fetching the selected node alone keeps
+    # that cost proportional to what is actually being looked at.
+    my $source = @*ARGS[1].IO.slurp;
+    my @path   = @*ARGS[2] ?? @*ARGS[2].split(',').map(*.Int) !! ();
+
+    # Same context as analyze, or the path walks to a different node.
+    my %parsed = parse-with-context($source, @*ARGS[3]);
+    my $target = node-at(%parsed<ast>, @path, %parsed<offset>);
+
+    my $gist = (try { $target.gist })
+        // fail-with("This node could not be rendered as a gist.");
+
+    # The root of a large file can gist to hundreds of kilobytes. Bound it,
+    # and say so rather than truncating silently -- a gist cut mid-constructor
+    # looks like malformed output instead of a deliberate limit.
+    if $gist.chars > GIST-MAX-CHARS {
+        $gist = $gist.substr(0, GIST-MAX-CHARS)
+              ~ "\n\n... truncated at {GIST-MAX-CHARS} characters."
+              ~ " Select a deeper node for a complete gist.";
+    }
+
+    say to-json({ gist => $gist });
 }
 elsif $verb eq 'edit' {
     my $source    = @*ARGS[1].IO.slurp;

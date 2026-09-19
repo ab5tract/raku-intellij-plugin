@@ -58,6 +58,36 @@ class RakuAstService(private val project: Project) {
     }
 
     /**
+     * One node's `.gist`.
+     *
+     * @param context MUST be the same list passed to the [analyze] call that
+     *   produced [path], for the same reason as [edit]: a different context
+     *   yields a different tree, and the path would walk elsewhere.
+     */
+    fun gist(source: String, path: List<Int>, context: List<String> = emptyList()): GistResult {
+        val sourceFile = writeTemp("rakuast-source", source)
+            ?: return GistResult(error = "Could not write a temporary file for the snippet.")
+        val contextFile = context
+            .takeIf { it.isNotEmpty() }
+            ?.let { statements ->
+                writeTemp("rakuast-context", statements.joinToString("\n"))
+                    ?: run {
+                        sourceFile.delete()
+                        return GistResult(
+                            error = "Could not write a temporary file for the file context.")
+                    }
+            }
+        return try {
+            val args = mutableListOf("gist", sourceFile.absolutePath, path.joinToString(","))
+            contextFile?.let { args.add(it.absolutePath) }
+            AstJson.decodeGist(run(args))
+        } finally {
+            sourceFile.delete()
+            contextFile?.delete()
+        }
+    }
+
+    /**
      * @param context MUST be the same list passed to the [analyze] call that
      *   produced [path]. The context is compiled in front of the selection, so
      *   a different context yields a different tree and the path would walk to

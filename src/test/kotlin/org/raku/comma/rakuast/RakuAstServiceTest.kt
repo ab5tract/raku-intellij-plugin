@@ -65,6 +65,27 @@ class RakuAstServiceTest : CommaFixtureTestCase() {
         assertEquals("41", source.substring(span.from, span.to))
     }
 
+    // .gist is fetched per node rather than shipped with the tree, so the
+    // path has to resolve the same way it does for analyze and edit.
+    fun testGistResolvesTheSameNodeAsAnalyze() {
+        val source = "my \$x = 41;"
+        val root = service().analyze(source).tree!!
+        val lit = findFirst(root, "RakuAST::IntLiteral")!!
+
+        val result = service().gist(source, lit.path)
+
+        assertNull(result.error)
+        assertTrue("gist should render the node it was asked for, got: ${result.gist}",
+                   result.gist!!.startsWith("RakuAST::IntLiteral"))
+    }
+
+    // A path that no longer resolves must be reported, not guessed at.
+    fun testGistRejectsAnUnknownPath() {
+        val result = service().gist("my \$x = 41;", listOf(99, 99))
+        assertNull(result.gist)
+        assertNotNull(result.error)
+    }
+
     // Rakudo's one-line node summary. Asserts the parts that carry meaning --
     // the class name and the identity marker -- rather than exact spacing or
     // the source excerpt, both of which are Rakudo's to change.

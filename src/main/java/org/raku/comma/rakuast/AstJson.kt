@@ -61,6 +61,15 @@ data class EditResult(
     val error: String? = null,
 )
 
+/**
+ * One node's `.gist` — Rakudo's constructor-syntax rendering, fetched on
+ * demand rather than shipped with the tree. A gist nests its whole subtree,
+ * so emitting one per node re-serialises every level inside every level
+ * above it: measured at 160x the source size on a small snippet.
+ */
+@Serializable
+data class GistResult(val gist: String? = null, val error: String? = null)
+
 object AstJson {
     // Matches RakuExternalNamesParser's configuration.
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
@@ -70,6 +79,9 @@ object AstJson {
 
     fun decodeEdit(text: String): EditResult =
         decode(text) { EditResult(error = it) }
+
+    fun decodeGist(text: String): GistResult =
+        decode(text) { GistResult(error = it) }
 
     private inline fun <reified T> decode(text: String, onError: (String) -> T): T =
         try {
