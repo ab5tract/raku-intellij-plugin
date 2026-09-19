@@ -43,7 +43,10 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     }
 
     fun showAnalysis(editor: Editor, baseOffset: Int, snippet: String, result: AnalyzeResult) {
-        this.currentEditor = editor
+        // The editor belongs to the caller, not this panel. It may already have been
+        // released (e.g. the file tab closed while the ~310ms analyze() call was in
+        // flight) by the time this reaches us. Never hold on to a dead editor.
+        this.currentEditor = editor.takeUnless { it.isDisposed }
         this.baseOffset = baseOffset
         this.snippet = snippet
         this.nodes = 0
@@ -87,6 +90,12 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
 
     private fun highlight(node: AstNode) {
         val editor = currentEditor ?: return
+        if (editor.isDisposed) {
+            // The tab closed between showAnalysis() and this selection. Drop the
+            // stale reference so later clicks short-circuit on the null check above.
+            currentEditor = null
+            return
+        }
         val start = baseOffset + node.span.from
         val end = baseOffset + node.span.to
         if (start < 0 || end > editor.document.textLength || start > end) return
