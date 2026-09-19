@@ -114,23 +114,33 @@ class RakuAstService(private val project: Project) {
         return try {
             val cmd = RakuCommandLine(project)
             cmd.setWorkDirectory(project.basePath)
-            // Both are needed and neither subsumes the other: `-I.` resolves
-            // through META6.json's `provides` (and is what loadModuleSymbols
-            // already uses), while `-Ilib` still finds a module the author has
-            // not declared there yet -- a routine state for a file being
-            // edited. Verified that a module reachable through both paths
-            // resolves once, without conflict.
-            cmd.addParameter("-I.")
-            cmd.addParameter("-Ilib")
+            // Deliberately NOT -I: an -I path is resolved while the SCRIPT
+            // itself is compiling, so a distribution whose META6.json names a
+            // file that does not exist kills the script before its CATCH can
+            // report anything, and the caller sees only empty output. The
+            // script registers these at runtime instead, where the same
+            // failure is catchable. See add-lib-path in rakuast-tool.raku.
             cmd.addParameter(script.path)
             cmd.addParameters(args)
-            // executeAndRead deletes the script file and returns an empty list
-            // on a non-zero exit, so an empty result means "no usable output".
+            // Capture stderr and the exit code rather than using
+            // executeAndRead, which can only report "nothing came back". When
+            // the backend dies before printing its JSON, stderr holds the only
+            // explanation there is, and "The Raku backend produced no output"
+            // is a dead end for the user.
+            val output = cmd.executeAndCapture(script, PROCESS_TIMEOUT_MS)
             // The script's JSON contract owns exactly one stdout line; joining
             // ALL lines would corrupt the payload if the snippet itself prints
             // -- a `BEGIN { say ... }` block, or a `use` of a module that
             // prints at load time. Take the last non-blank line instead.
-            cmd.executeAndRead(script).lastOrNull { it.isNotBlank() } ?: ""
+            val json = output.stdoutLines.lastOrNull { it.isNotBlank() }
+            when {
+                json != null -> json
+                output.isTimeout ->
+                    errorJson("Raku did not finish within ${PROCESS_TIMEOUT_MS / 1000} seconds. " +
+                              "A module that loops or blocks at load time can do this.")
+                output.stderr.isNotBlank() -> errorJson(output.stderr.trim())
+                else -> errorJson("Raku exited with code ${output.exitCode} and produced no output.")
+            }
         } catch (e: ExecutionException) {
             // Thrown as "No SDK for project" when the project SDK is unset.
             LOG.info("RakuAST backend could not start", e)
@@ -165,6 +175,11 @@ class RakuAstService(private val project: Project) {
     companion object {
         private val LOG = Logger.getInstance(RakuAstService::class.java)
         private const val SCRIPT = "rakuast/rakuast-tool.raku"
+
+        // A selection's own analysis is fast, but it now loads the file's
+        // imports, and a module can block or loop at load time. Without a
+        // bound that hangs the background task forever with no way out.
+        private const val PROCESS_TIMEOUT_MS = 30_000
 
         @JvmStatic
         fun getInstance(project: Project): RakuAstService = project.service()
