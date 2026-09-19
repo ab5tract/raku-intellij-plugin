@@ -252,12 +252,14 @@ class RakuAstPane(
 
         // One handler on both widgets: it resolves the drop through whichever
         // DropLocation it is handed, so the tree and the attribute table need
-        // no separate implementations. DropMode.ON because every target here
-        // is an existing slot to overwrite; inserting into a list needs an
-        // index the edit verb cannot yet express.
+        // no separate implementations.
+        //
+        // ON_OR_INSERT on the tree, because the two gestures mean different
+        // things: onto a node replaces it, between two of them inserts into
+        // the list they belong to.
         val transfer = NodeTransferHandler()
         tree.dragEnabled = true
-        tree.dropMode = DropMode.ON
+        tree.dropMode = DropMode.ON_OR_INSERT
         tree.transferHandler = transfer
         attrTable.dropMode = DropMode.ON
         attrTable.transferHandler = transfer
@@ -331,10 +333,40 @@ class RakuAstPane(
      */
     private fun replacementSlotFor(target: AstNode): DropSlot? {
         val attrName = target.viaAttr ?: return null
-        if (target.viaIndex != null) return null
         val parent = nodeAt(target.path.dropLast(1)) ?: return null
         val declaredType = parent.attrs.firstOrNull { it.name == attrName }?.type ?: return null
-        return DropSlot(parent, attrName, declaredType)
+        // A list item is replaced by position; anything else by setting the
+        // slot outright.
+        return DropSlot(parent, attrName, declaredType,
+                        listIndex = target.viaIndex,
+                        replaceCount = if (target.viaIndex != null) 1 else 0)
+    }
+
+    /**
+     * Resolves a drop *between* two of [parent]'s tree children into a list
+     * position.
+     *
+     * A tree child index is not a list index: a node's children can come from
+     * several different attributes, so `Call` has a Name child and an ArgList
+     * child that belong to no list at all. The item being pushed down is what
+     * identifies the list and the position — and when the drop is past the last
+     * child, the item before it, one place later.
+     *
+     * Returns null between children that are not list items, which is exactly
+     * the boundary between two different attributes.
+     */
+    private fun insertionSlotFor(parent: AstNode, childIndex: Int): DropSlot? {
+        val (neighbour, index) = when {
+            childIndex < parent.children.size ->
+                parent.children[childIndex] to parent.children[childIndex].viaIndex
+            parent.children.isNotEmpty() ->
+                parent.children.last() to parent.children.last().viaIndex?.plus(1)
+            else -> return null
+        }
+        val attrName = neighbour.viaAttr ?: return null
+        val position = index ?: return null
+        val declaredType = parent.attrs.firstOrNull { it.name == attrName }?.type ?: return null
+        return DropSlot(parent, attrName, declaredType, listIndex = position, replaceCount = 0)
     }
 
     /**
@@ -369,10 +401,7 @@ class RakuAstPane(
             val payload = payloadOf(support) ?: return false
             val slot = slotUnder(support) ?: return false
             if (!payload.fitsSlot(slot.declaredType)) return false
-            // 'node' rather than 'scalar': the text is Raku source for the
-            // backend to parse into a node, which is what the edit verb
-            // already does for a node-valued attribute.
-            applyEdit(slot.node, slot.attrName, "node", payload.text) {}
+            applyDrop(slot, payload.text)
             return true
         }
 
@@ -395,7 +424,10 @@ class RakuAstPane(
             val path = location.path ?: return null
             val target = (path.lastPathComponent as? DefaultMutableTreeNode)?.userObject as? AstNode
                 ?: return null
-            return replacementSlotFor(target)
+            // childIndex is -1 when the cursor is ON a node and a position
+            // when it is between two of them.
+            return if (location.childIndex < 0) replacementSlotFor(target)
+                   else insertionSlotFor(target, location.childIndex)
         }
 
         /** Dropping onto an attribute row names its slot outright. */
@@ -585,15 +617,23 @@ class RakuAstPane(
      * buys a tree that describes the text now on screen -- which also
      * refreshes the gist, since its cache belongs to the analysis.
      */
-    private fun applyEdit(
+    /**
+     * Runs one backend change off the EDT and writes its result to the
+     * document.
+     *
+     * [compute] is handed the snippet and context captured at the moment the
+     * change was requested, which is what [finishEdit] later verifies the
+     * document against — every caller must use those rather than re-reading
+     * the fields, which may have moved on by the time the subprocess answers.
+     *
+     * [restore] undoes whatever the UI showed optimistically if the change is
+     * refused. A table edit has to put the old cell text back; a drop changed
+     * nothing on screen, so it has nothing to restore.
+     */
+    private fun runEdit(
         node: AstNode,
-        attrName: String,
-        attrKind: String,
-        newValue: String,
-        // What to undo in the UI if the edit is refused. A table edit has to
-        // put the old cell text back; a drop changed nothing on screen, so it
-        // has nothing to restore.
         restore: () -> Unit,
+        compute: (RakuAstService, String, List<String>) -> EditResult,
     ) {
         val editor = currentEditor ?: return
         val forSnippet = snippet
@@ -603,14 +643,43 @@ class RakuAstPane(
         ProgressManager.getInstance().run(
             object : Task.Backgroundable(project, "Applying RakuAST edit", true) {
                 override fun run(indicator: ProgressIndicator) {
-                    val result = RakuAstService.getInstance(project)
-                        .edit(forSnippet, node.path, attrName, newValue, attrKind, forContext)
+                    val result =
+                        compute(RakuAstService.getInstance(project), forSnippet, forContext)
                     ApplicationManager.getApplication().invokeLater {
                         finishEdit(editor, forSnippet, forBase, node, result, restore)
                     }
                 }
             })
     }
+
+    private fun applyEdit(
+        node: AstNode,
+        attrName: String,
+        attrKind: String,
+        newValue: String,
+        restore: () -> Unit,
+    ) = runEdit(node, restore) { service, forSnippet, forContext ->
+        service.edit(forSnippet, node.path, attrName, newValue, attrKind, forContext)
+    }
+
+    /**
+     * Writes a dragged node into [slot].
+     *
+     * A list position and an attribute are different kinds of address and take
+     * different verbs: `edit` sets a whole attribute, which cannot name one
+     * item of a list, so those go through `splice` instead.
+     */
+    private fun applyDrop(slot: DropSlot, text: String) =
+        runEdit(slot.node, {}) { service, forSnippet, forContext ->
+            if (slot.listIndex == null) {
+                // 'node', not 'scalar': the text is Raku source for the backend
+                // to parse, which is what a node-valued attribute already takes.
+                service.edit(forSnippet, slot.node.path, slot.attrName, text, "node", forContext)
+            } else {
+                service.splice(forSnippet, slot.node.path, slot.attrName,
+                               slot.listIndex, slot.replaceCount, text, forContext)
+            }
+        }
 
     private fun finishEdit(
         editor: Editor,

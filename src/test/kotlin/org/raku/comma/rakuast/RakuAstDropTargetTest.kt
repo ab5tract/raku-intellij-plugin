@@ -27,6 +27,13 @@ class RakuAstDropTargetTest : CommaFixtureTestCase() {
         return method.invoke(pane, node) as DropSlot?
     }
 
+    private fun insertSlotFor(pane: RakuAstPane, parent: AstNode, childIndex: Int): DropSlot? {
+        val method = RakuAstPane::class.java.getDeclaredMethod(
+            "insertionSlotFor", AstNode::class.java, Int::class.javaPrimitiveType)
+        method.isAccessible = true
+        return method.invoke(pane, parent, childIndex) as DropSlot?
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> fieldValue(pane: RakuAstPane, name: String): T {
         val field = RakuAstPane::class.java.getDeclaredField(name)
@@ -87,16 +94,57 @@ class RakuAstDropTargetTest : CommaFixtureTestCase() {
         assertNull(slotFor(pane, root))
     }
 
-    // Replacing one element of a list needs an index, which the edit verb
-    // cannot express. Refused rather than silently retargeting the whole list.
-    fun testListElementIsNotYetADropTarget() {
+    // Dropping onto a list item replaces that item by position, not the whole
+    // list -- setting the attribute outright would discard its siblings.
+    fun testDroppingOnAListItemReplacesThatItem() {
         val pane = analyzedPane("my \$x = 1; say \$x;")
         val root = fieldValue<AstNode?>(pane, "rootNode")!!
         val statement = root.children[1]
 
         assertEquals("statements", statement.viaAttr)
         assertEquals(1, statement.viaIndex)
-        assertNull("a list element has no single-slot address", slotFor(pane, statement))
+
+        val slot = slotFor(pane, statement)!!
+        assertEquals("statements", slot.attrName)
+        assertEquals(1, slot.listIndex)
+        assertEquals("one item replaced, not the list", 1, slot.replaceCount)
+    }
+
+    // Dropping between two items inserts rather than replaces: the item that
+    // would be pushed down names both the list and the position.
+    fun testDroppingBetweenItemsInserts() {
+        val pane = analyzedPane("my \$x = 1; say \$x;")
+        val root = fieldValue<AstNode?>(pane, "rootNode")!!
+
+        val slot = insertSlotFor(pane, root, 1)!!
+        assertEquals("statements", slot.attrName)
+        assertEquals(1, slot.listIndex)
+        assertEquals("nothing is replaced by an insert", 0, slot.replaceCount)
+    }
+
+    // Past the last child, the position is one after the final item.
+    fun testDroppingPastTheEndAppends() {
+        val pane = analyzedPane("my \$x = 1; say \$x;")
+        val root = fieldValue<AstNode?>(pane, "rootNode")!!
+
+        val slot = insertSlotFor(pane, root, root.children.size)!!
+        assertEquals(2, slot.listIndex)
+        assertEquals(0, slot.replaceCount)
+    }
+
+    // A tree child index is not a list index. A call's children are its Name
+    // and its ArgList, which belong to no list -- the gap between them is not
+    // an insertion point, and must not be mistaken for one.
+    fun testGapBetweenNonListChildrenIsNotAnInsertionPoint() {
+        // The declaration is not incidental: .AST resolves names, so a bare
+        // `say $x;` does not compile on its own and yields no tree at all.
+        val pane = analyzedPane("my \$x = 1; say \$x;")
+        val root = fieldValue<AstNode?>(pane, "rootNode")!!
+        val call = find(root, "RakuAST::Call::Name::WithoutParentheses")!!
+
+        assertNull("Name and ArgList are separate attributes, not list items",
+                   call.children.firstOrNull()?.viaIndex)
+        assertNull(insertSlotFor(pane, call, 1))
     }
 
     // A dragged node is lifted from the source text, not deparsed, so it keeps

@@ -413,6 +413,42 @@ sub slots-of($node) {
 # on the client, with no round trip, which is what hover feedback needs.
 my %conformance;
 
+# The RakuAST items held in $node's $attr, in order and un-filtered, so an
+# index here means the same thing it means to the caller.
+sub list-elements($node, $attr) {
+    my $a = $node.^attributes.first(*.name eq '$!' ~ $attr)
+        // fail-with("'$attr' is not an attribute of {$node.^name}.");
+    my $raw := try { $a.get_value($node) };
+    fail-with("'$attr' holds nothing that can be spliced.")
+        if nqp::isnull(nqp::decont($raw));
+    fail-with("'$attr' is not a list.") unless (try { $raw ~~ Positional }) // False;
+    my @items = (try { @$raw }) // ();
+    fail-with("'$attr' is empty, so there is no position to insert into.")
+        unless @items.elems;
+    @items
+}
+
+# What separates two items of this list in the source.
+#
+# Read from between two existing items rather than guessed, so an inserted item
+# is punctuated and spaced exactly like the ones already there, whatever kind
+# of list it is -- this code never has to know that statements end in `;` and
+# arguments are comma-separated.
+#
+# With only one item there is nothing to read, so fall back to the one thing
+# the owner's type does tell us. A wrong guess here cannot corrupt anything:
+# the spliced result is re-parsed before it is returned.
+sub separator-for($text, @elems, $owner) {
+    if @elems.elems >= 2 {
+        my $a := @elems[0].origin;
+        my $b := @elems[1].origin;
+        if $a.defined && $b.defined && $a.to <= $b.from {
+            return $text.substr($a.to, $b.from - $a.to);
+        }
+    }
+    $owner ~~ RakuAST::StatementList ?? ";\n" !! ", "
+}
+
 sub record-conformance($node) {
     my $name = $node.^name;
     return if %conformance{$name}:exists;
@@ -873,6 +909,84 @@ elsif $verb eq 'edit' {
         span        => $span,
         tree        => %tree,
         conformance => %conformance,
+    });
+}
+elsif $verb eq 'splice' {
+    # Insert into, or replace part of, a list-valued attribute.
+    #
+    # The edit verb sets a whole attribute, which cannot express "the third
+    # statement" -- so reordering, adding and replacing list items come through
+    # here instead.
+    #
+    # Unlike edit, this does not mutate the AST. A list item's position in the
+    # source is fully described by the origins of its neighbours, so the change
+    # is a pure text splice, and the result is validated by re-parsing. Going
+    # through the AST would mean deparsing the whole list to render it back,
+    # destroying the formatting and comments of every item that was not touched.
+    my $source  = @*ARGS[1].IO.slurp;
+    my @path    = @*ARGS[2] ?? @*ARGS[2].split(',').map(*.Int) !! ();
+    my $attr    = @*ARGS[3];
+    my $index   = (@*ARGS[4] // '0').Int;
+    my $count   = (@*ARGS[5] // '0').Int;
+    my $value   = @*ARGS[6].IO.slurp.trim;
+    my %parsed  = parse-with-context($source, @*ARGS[7]);
+    my $offset  = %parsed<offset>;
+    my $text    = %parsed<parsed>;
+    my $owner   = node-at(%parsed<ast>, @path, $offset);
+
+    fail-with('Nothing to insert.') unless $value.chars;
+    # Reject before touching anything, so a bad snippet never reaches the file.
+    (try { $value.AST }) // fail-with("Could not parse '$value' as Raku.");
+
+    my @elems = list-elements($owner, $attr);
+    fail-with("Index $index is outside '$attr', which has {@elems.elems} items.")
+        unless 0 <= $index <= @elems.elems;
+    fail-with("Cannot replace {$count} items from index {$index}.")
+        unless $index + $count <= @elems.elems;
+
+    my ($from, $to, $replacement);
+    if $count > 0 {
+        # Replacing items: the span is simply the source they occupy.
+        my $first := @elems[$index].origin;
+        my $last  := @elems[$index + $count - 1].origin;
+        fail-with('Those items have no source span to replace.')
+            unless $first.defined && $last.defined;
+        $from        = $first.from;
+        $to          = $last.to;
+        $replacement = $value;
+    }
+    else {
+        # Inserting: reuse the separator the user already wrote between two
+        # existing items rather than guessing one. That gap carries the
+        # punctuation AND the whitespace -- ";\n" between statements, ", "
+        # between arguments -- so an inserted item lands formatted like its
+        # neighbours without this code knowing anything about either.
+        my $gap = separator-for($text, @elems, $owner);
+        if $index < @elems.elems {
+            # Before item $index: NEW, gap, then the item that was there.
+            my $o := @elems[$index].origin;
+            fail-with('That position has no source span.') unless $o.defined;
+            $from = $to = $o.from;
+            $replacement = $value ~ $gap;
+        }
+        else {
+            # After the last item: gap, then NEW. Anything following the last
+            # item -- a statement's own `;` -- stays put after the new one,
+            # which is what makes appending a statement come out terminated.
+            my $o := @elems[*-1].origin;
+            fail-with('That position has no source span.') unless $o.defined;
+            $from = $to = $o.to;
+            $replacement = $gap ~ $value;
+        }
+    }
+
+    my $spliced = $text.substr(0, $from) ~ $replacement ~ $text.substr($to);
+    fail-with('That would produce invalid Raku, and was not applied.')
+        unless (try { $spliced.AST; True }) // False;
+
+    say to-json({
+        text => $replacement,
+        span => { from => max(0, $from - $offset), to => max(0, $to - $offset) },
     });
 }
 else {
