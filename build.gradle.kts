@@ -225,6 +225,18 @@ kotlin {
     }
 }
 
+// The published artifact's filename. Gradle's Zip task always joins its
+// name parts with "-", so the underscore has to come from setting
+// archiveFileName outright rather than from archiveBaseName/archiveVersion.
+//
+// Read into a local val first: referring to `project` or `version` from
+// inside the provider would capture the Project at execution time, which
+// this build forbids (org.gradle.configuration-cache=true).
+val artifactVersion = versionFromPropertyPossibly()
+tasks.named<Zip>("buildPlugin") {
+    archiveFileName.set("${rootProject.name}_$artifactVersion.zip")
+}
+
 intellijPlatform {
     pluginConfiguration {
         id = "org.raku.comma"
