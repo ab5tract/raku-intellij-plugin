@@ -68,6 +68,57 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
         }
     }
 
+    // Shift+toggle expands or collapses a whole subtree rather than one level.
+    // The mouse gesture can't be simulated meaningfully here, so this drives
+    // the recursion directly -- which is where the behaviour actually lives.
+    fun testExpandAndCollapseSubtreeAreRecursive() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+
+        // Three levels deep, so a one-level toggle could not produce the
+        // all-expanded state this asserts.
+        val deep = AstNode(
+            nodeClass = "RakuAST::StatementList",
+            span = AstSpan(0, 10),
+            children = listOf(
+                AstNode(
+                    nodeClass = "RakuAST::Statement::Expression",
+                    path = listOf(0),
+                    span = AstSpan(0, 10),
+                    children = listOf(
+                        AstNode("RakuAST::IntLiteral", listOf(0, 0), AstSpan(8, 9)),
+                    ),
+                ),
+            ),
+        )
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;", AnalyzeResult(tree = deep))
+
+        val tree = fieldValue<javax.swing.JTree>(panel, "tree")
+        val rootPath = javax.swing.tree.TreePath(tree.model.root)
+
+        invokeWithPath(panel, "expandSubtree", rootPath)
+        assertEquals("every row should be visible after a recursive expand",
+                     3, tree.rowCount)
+
+        invokeWithPath(panel, "collapseSubtree", rootPath)
+        assertEquals("only the root should remain after a recursive collapse",
+                     1, tree.rowCount)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> fieldValue(panel: RakuAstViewerPanel, name: String): T {
+        val field = RakuAstViewerPanel::class.java.getDeclaredField(name)
+        field.isAccessible = true
+        return field.get(panel) as T
+    }
+
+    private fun invokeWithPath(panel: RakuAstViewerPanel, name: String, path: javax.swing.tree.TreePath) {
+        val method = RakuAstViewerPanel::class.java
+            .getDeclaredMethod(name, javax.swing.tree.TreePath::class.java)
+        method.isAccessible = true
+        method.invoke(panel, path)
+    }
+
     private fun invokeHighlight(panel: RakuAstViewerPanel, node: AstNode) {
         val highlight = RakuAstViewerPanel::class.java.getDeclaredMethod("highlight", AstNode::class.java)
         highlight.isAccessible = true
