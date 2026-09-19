@@ -24,6 +24,37 @@ class RakuAstService(private val project: Project) {
         }
     }
 
+    fun edit(
+        source: String,
+        path: List<Int>,
+        attr: String,
+        value: String,
+        valueKind: String,
+    ): EditResult {
+        val sourceFile = writeTemp("rakuast-source", source)
+            ?: return EditResult(error = "Could not write a temporary file for the snippet.")
+        val valueFile = writeTemp("rakuast-value", value)
+            ?: run {
+                sourceFile.delete()
+                return EditResult(error = "Could not write a temporary file for the new value.")
+            }
+        return try {
+            AstJson.decodeEdit(
+                run(listOf(
+                    "edit",
+                    sourceFile.absolutePath,
+                    path.joinToString(","),
+                    attr,
+                    valueFile.absolutePath,
+                    valueKind,
+                ))
+            )
+        } finally {
+            sourceFile.delete()
+            valueFile.delete()
+        }
+    }
+
     /** Blocking. Callers must keep this off the EDT. */
     private fun run(args: List<String>): String {
         val script = RakuUtils.getResourceAsFile(SCRIPT)

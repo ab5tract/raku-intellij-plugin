@@ -329,6 +329,17 @@ sub fail-with($message) {
     exit 0;
 }
 
+sub node-at($root, @path) {
+    my $current = $root;
+    for @path -> $index {
+        my @kids;
+        $current.visit-children(-> $c { @kids.push($c) if $c ~~ RakuAST::Node });
+        fail-with("The selected node is no longer present.") unless @kids[$index].defined;
+        $current = @kids[$index];
+    }
+    $current
+}
+
 # Errors must reach the caller as JSON on stdout: RakuCommandLine reads stdout
 # only and discards everything on a non-zero exit.
 CATCH { default { fail-with(.message // .gist); } }
@@ -339,6 +350,56 @@ if $verb eq 'analyze' {
     my $source = @*ARGS[1].IO.slurp;
     my $ast = (try { $source.AST }) // fail-with("Could not parse the selection: " ~ ($! // 'unknown error'));
     say to-json({ tree => node-json($ast, []) });
+}
+elsif $verb eq 'edit' {
+    my $source    = @*ARGS[1].IO.slurp;
+    my @path      = @*ARGS[2] ?? @*ARGS[2].split(',').map(*.Int) !! ();
+    my $attr      = @*ARGS[3];
+    my $value     = @*ARGS[4].IO.slurp;
+    my $kind      = @*ARGS[5];
+
+    my $ast    = (try { $source.AST }) // fail-with('Could not parse the selection.');
+    my $target = node-at($ast, @path);
+
+    # Validate before mutating, so a bad snippet never reaches the file.
+    my $new-value = do if $kind eq 'node' {
+        my $parsed = (try { $value.AST }) // fail-with("Could not parse '$value' as Raku.");
+        # A bare expression arrives wrapped in StatementList/Statement::Expression.
+        my $inner = $parsed;
+        while $inner ~~ RakuAST::StatementList | RakuAST::Statement::Expression {
+            my @kids;
+            $inner.visit-children(-> $c { @kids.push($c) if $c ~~ RakuAST::Node });
+            last unless @kids;
+            $inner = @kids[0];
+        }
+        $inner
+    }
+    else {
+        # Scalars: prefer the node's current type. Int stays Int, Str stays Str.
+        $value ~~ /^ '-'? \d+ $/ ?? $value.Int !! $value
+    };
+
+    my $setter = 'set-' ~ $attr;
+    if $target.^can($setter) {
+        try { $target."$setter"($new-value) } // fail-with("Could not set '$attr'.");
+    }
+    else {
+        try { nqp::bindattr(nqp::decont($target), $target.WHAT, '$!' ~ $attr, nqp::decont($new-value)) } // fail-with("'$attr' cannot be set on {$target.^name}.");
+    }
+
+    my $text = (try { $target.DEPARSE }) // fail-with('The edit produced source that could not be rendered.');
+
+    # Sanity check: never hand back source that cannot be re-parsed.
+    fail-with('The edit produced invalid Raku and was not applied.')
+        unless (try { $text.AST; True }) // False;
+
+    my $origin := $target.origin;
+    say to-json({
+        text => $text,
+        span => ($origin.defined ?? { from => $origin.from, to => $origin.to }
+                                 !! { from => 0, to => 0 }),
+        tree => node-json($ast, []),
+    });
 }
 else {
     fail-with("Unknown verb '$verb'.");
