@@ -240,6 +240,17 @@ sub safe-str(Mu $raw) {
     # parameter dies on those with "Type check failed in binding to
     # parameter '$raw'; expected Any but got ContainerDescriptor" before we
     # ever get a chance to check anything.
+    #
+    # This is empirically, not structurally, complete: it only checks
+    # whether the top-level attribute value is itself a null-backed Str.
+    # A 'node' attribute still gets rendered via $raw.DEPARSE below, which
+    # can walk arbitrarily deep into that node's own subtree and touch a
+    # null-backed Str nested several levels down -- a case this guard does
+    # not see and cannot catch, since that segfault happens inside DEPARSE
+    # itself, at the VM level, where no Raku `try` can intervene. The
+    # 12-shapes x 4-builds sweep in task-2-report.md found no such case, but
+    # that is evidence of absence, not a proof it can't happen on a node
+    # type nobody has exercised yet.
     return True unless nqp::istype($raw, Str);
     !nqp::isnull_s(nqp::unbox_s($raw));
 }

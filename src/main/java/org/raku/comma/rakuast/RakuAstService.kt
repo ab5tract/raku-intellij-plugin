@@ -40,6 +40,15 @@ class RakuAstService(private val project: Project) {
             // Thrown as "No SDK for project" when the project SDK is unset.
             LOG.info("RakuAST backend could not start", e)
             errorJson(e.message ?: "Could not start Raku for this project.")
+        } finally {
+            // executeAndRead already deletes `script` on both its success and
+            // non-zero-exit branches. This only covers the case where
+            // RakuCommandLine's own constructor throws before executeAndRead
+            // ever runs (e.g. the "No SDK for project" branch above) -- an
+            // easily hit path, since getResourceAsFile extracts a fresh temp
+            // file on every analyze() call, so without this an unconfigured
+            // SDK leaks one orphaned rakuast-tool.raku per call.
+            if (script.exists()) script.delete()
         }
     }
 
