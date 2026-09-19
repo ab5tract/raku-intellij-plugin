@@ -175,6 +175,39 @@ class RakuAstEditTest : CommaFixtureTestCase() {
         assertEquals("++\$;", splice(source, result.span!!, result.text!!))
     }
 
+    // Most nodes deparse to something that is not valid Raku on its own: an
+    // Initializer renders as `= "warm"`, which alone is "expects a term, but
+    // found infix =". The check validated exactly that fragment, so almost
+    // every edit to an interior slot was refused as the user's mistake. It has
+    // to splice the text back over the node's span and parse the file.
+    fun testReplacingAnInteriorNodeIsNotRefusedAsInvalid() {
+        val source = "my \$x = \"cool\";"
+        val path = pathOf(service().analyze(source).tree!!, "RakuAST::Initializer::Assign")
+
+        val result = service().edit(source, path, "expression", "\"warm\"", "node")
+
+        assertNull("this produces a valid file and must not be refused", result.error)
+        assertEquals("my \$x = \"warm\";", splice(source, result.span!!, result.text!!))
+    }
+
+    // DEPARSE gives some nodes surrounding space their span does not include,
+    // so the replacement has to match the replaced region's edges. Otherwise
+    // each edit of the same node adds another space.
+    fun testReplacementDoesNotAccumulateWhitespace() {
+        val source = "my \$x = \"cool\";"
+        val path = pathOf(service().analyze(source).tree!!, "RakuAST::Initializer::Assign")
+
+        val once = service().edit(source, path, "expression", "\"warm\"", "node")
+        val after = splice(source, once.span!!, once.text!!)
+        assertEquals("my \$x = \"warm\";", after)
+
+        // And again, on the result: still no drift.
+        val twice = service().edit(after, pathOf(service().analyze(after).tree!!,
+                                                 "RakuAST::Initializer::Assign"),
+                                   "expression", "\"hot\"", "node")
+        assertEquals("my \$x = \"hot\";", splice(after, twice.span!!, twice.text!!))
+    }
+
     private fun splice(source: String, span: AstSpan, text: String) =
         source.substring(0, span.from) + text + source.substring(span.to)
 
