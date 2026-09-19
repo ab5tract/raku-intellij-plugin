@@ -66,23 +66,41 @@ fun determineCurrentGitBranch(): String {
             }.standardOutput.asText.get().trim().lines().last()
 }
 
-fun gitCurrentRakuBetaPluginVersion(): String {
-    return providers.exec {
-                 commandLine("git", "tag", "--merged", "main", "--sort=taggerdate")
-             }.standardOutput.asText.get().trim().lines().last()
-}
+// The newest beta tag reachable from main, or null when there are none --
+// a fresh clone with no tags, or a shallow CI checkout.
+//
+// `.lines().last()` on empty output yields "" rather than nothing, so the
+// blank filter is load-bearing: without it an untagged repo reports a version
+// of "" and everything downstream silently builds something unnamed.
+fun gitCurrentRakuBetaPluginVersion(): String? =
+    providers.exec {
+             commandLine("git", "tag", "--merged", "main", "--sort=taggerdate")
+         }.standardOutput.asText.get()
+          .trim()
+          .lines()
+          .lastOrNull { it.isNotBlank() }
 
 fun safeDetermineCurrentRakuBetaPluginVersion(currentGitBranch: String): String {
+    // On main the tags are the record, not .versions/raku-beta-version. That
+    // file only advances when bumpBetaVersion runs, so it drifts the moment a
+    // tag is cut by hand -- it currently reads 2026.1-beta.2 against a latest
+    // tag of 2026.2-beta.13, which would have bumped the series backwards to
+    // 3. Branches keep using the file, since `--merged main` cannot see a tag
+    // that has not reached main yet.
+    if (currentGitBranch == "main") {
+        gitCurrentRakuBetaPluginVersion()?.let { return it }
+    }
+
     val betaVersionPath = Path("${project.projectDir.path}/.versions/raku-beta-version${ formatBranch(currentGitBranch, ".%s") }")
 
     return when(betaVersionPath.exists()) {
         true  -> betaVersionPath.toFile().readText().trim()
         false -> {
             val idea = File("${project.projectDir.path}/.versions/idea-version").readText(Charsets.UTF_8).trimEnd()
-            // Same double-dash separator as RakuPluginBetaVersion.toString --
-            // these two must agree, or the version a fresh branch reports
-            // would not match the one it bumps to.
-            "$idea-beta${ formatBranch(currentGitBranch, "--%s") }.1"
+            // Same shape as RakuPluginBetaVersion.toString -- these two must
+            // agree, or the version a fresh branch reports would not match
+            // the one it bumps to.
+            "$idea${ formatBranch(currentGitBranch, "--%s") }.1"
         }
     }
 }
@@ -115,17 +133,20 @@ data class RakuPluginBetaVersion(
     fun fileName(): String = "$basePath/.versions/raku-beta-version${ maybeBranch(".%s") }"
     fun maybeBranch(format: String = "%s") = if (branch != "main") format.format(branch) else ""
 
-    // A branch beta reads 2026.2-beta--some-branch.3.
+    // main reads 2026.2.14; a branch reads 2026.2--some-branch.3.
     //
-    // The separator is a double dash because this string becomes a git tag,
-    // a -P property value, a published filename and a download URL. The
+    // The branch separator is a double dash because this string becomes a git
+    // tag, a -P property value, a published filename and a download URL. The
     // parentheses it used to use broke the release workflow outright -- bash
     // reads `(` as a subshell -- and would have needed quoting or
     // percent-encoding everywhere afterwards. A single dash would be
     // ambiguous, since branch names contain dashes themselves; a double dash
     // marks where the branch name starts without introducing a character
     // anything has to escape.
-    override fun toString(): String = "$idea-beta${ maybeBranch("--%s") }.$beta"
+    //
+    // The beta number stays behind a dot in both shapes, so parsing it is one
+    // rule rather than two -- see the substringAfterLast('.') below.
+    override fun toString(): String = "$idea${ maybeBranch("--%s") }.$beta"
 }
 
 // TODO: Make this support branches other that 'main'
