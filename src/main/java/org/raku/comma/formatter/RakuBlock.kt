@@ -391,7 +391,16 @@ internal class RakuBlock : AbstractBlock, BlockWithParent {
     }
 
     companion object {
-        private const val DEBUG_MODE = true
+        // Off by default. getSpacing runs for every adjacent block pair on
+        // every reformat, and each call prints four lines to stdout, so
+        // leaving this on buries the log under the formatter's working notes
+        // -- and prints them straight to the IDE's console rather than
+        // through the logging system, so they cannot be filtered out.
+        //
+        // Flip to true (or pass -Draku.formatter.debug=true) when working on
+        // spacing rules; it names the rule that fired for each pair, which is
+        // what makes an unexpected space diagnosable.
+        private val DEBUG_MODE = System.getProperty("raku.formatter.debug") == "true"
         private val TRAIT_CARRIERS = TokenSet.create(
             RakuElementTypes.PACKAGE_DECLARATION,
             RakuElementTypes.ROUTINE_DECLARATION,
