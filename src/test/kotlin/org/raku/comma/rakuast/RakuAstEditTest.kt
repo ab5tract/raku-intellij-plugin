@@ -38,6 +38,36 @@ class RakuAstEditTest : CommaFixtureTestCase() {
         assertNotNull(result.text)
     }
 
+    // Replacing a whole node-valued attribute: a statement's expression is a
+    // Stub (`!!!`), and gets re-parsed and re-assigned as `++$`.
+    //
+    // This failed before, and not because the setter could not do it. The
+    // script checked `try { ... } // fail-with(...)`, and `//` is defined-or,
+    // so set-expression returning Nil read as failure even though the change
+    // had already been applied.
+    fun testReplacingAStatementsExpressionNode() {
+        val source = "!!!;"
+        val path = pathOf(service().analyze(source).tree!!, "RakuAST::Statement::Expression")
+
+        val result = service().edit(source, path, "expression", "++\$", "node")
+
+        assertNull(result.error)
+        assertEquals("++\$", result.text)
+        // The span covers the statement being replaced, not the whole file.
+        assertEquals("!!!", source.substring(result.span!!.from, result.span!!.to))
+
+        val expression = findFirst(result.tree!!, "RakuAST::Statement::Expression")!!
+            .attrs.single { it.name == "expression" }
+        assertTrue("the expression should now be the parsed ++\$, got: ${expression.display}",
+                   expression.display.contains("ApplyPrefix"))
+    }
+
+    private fun findFirst(node: AstNode, cls: String): AstNode? {
+        if (node.nodeClass == cls) return node
+        for (child in node.children) findFirst(child, cls)?.let { return it }
+        return null
+    }
+
     // Must fail before mutating anything.
     fun testInvalidSnippetIsRejected() {
         val source = "my Int \$x = 41;"
