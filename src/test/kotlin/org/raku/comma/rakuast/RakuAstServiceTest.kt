@@ -60,6 +60,32 @@ class RakuAstServiceTest : CommaFixtureTestCase() {
         assertFalse("error should not be empty", result.error!!.isBlank())
     }
 
+    // Regression guard: the original five tests here all used variable
+    // declarations only, which let a MoarVM segfault on other node shapes
+    // (sub/class/for/regex declarations, each via a different corrupted
+    // attribute) ship green. `sub`/`class` walk many more RakuAST node
+    // types and their internal attributes than a bare `my $x = ...;` does.
+    fun testAnalyzeSubDeclarationSucceeds() {
+        val result = service().analyze("sub f(\$a, \$b) { \$a + \$b }")
+        assertNull(result.error)
+        val root = result.tree!!
+        val classes = mutableListOf<String>()
+        fun walk(n: AstNode) { classes.add(n.nodeClass); n.children.forEach(::walk) }
+        walk(root)
+        assertTrue("expected a RakuAST::Sub, got $classes", classes.contains("RakuAST::Sub"))
+    }
+
+    fun testAnalyzeClassDeclarationSucceeds() {
+        val result = service().analyze("class Foo { has \$.bar; method baz() { 42 } }")
+        assertNull(result.error)
+        val root = result.tree!!
+        val classes = mutableListOf<String>()
+        fun walk(n: AstNode) { classes.add(n.nodeClass); n.children.forEach(::walk) }
+        walk(root)
+        assertTrue("expected a RakuAST::Class, got $classes", classes.contains("RakuAST::Class"))
+        assertTrue("expected a RakuAST::Method, got $classes", classes.contains("RakuAST::Method"))
+    }
+
     private fun findFirst(node: AstNode, cls: String): AstNode? {
         if (node.nodeClass == cls) return node
         for (c in node.children) findFirst(c, cls)?.let { return it }

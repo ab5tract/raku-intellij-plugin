@@ -215,29 +215,35 @@ my sub to-json(
 
 my constant @HIDDEN = <
     sunk thunks okifnil sorries worries origin
-    lowered-array-init lowered-to-local lowered-local-name lowered-away-sentinel
-    storage-name ins-lexical-name
-    initializer-in-method is-parameter
+    lowered-array-init lowered-to-local initializer-in-method is-parameter
     attribute-package generics-package conflicting-type unit-package
     qualified-root original-type
 >;
 
-# `lowered-local-name` (recent Rakudo, e.g. 2026.08-445) / `storage-name`
-# (Rakudo 2025.08 through 2026.03 — same role, renamed across the two
-# `RakuAST::VarDeclaration::Simple` internals reshuffles), and
-# `ins-lexical-name` (`RakuAST::Type::Simple`, 2026.08-445 only — the older
-# builds don't have this attribute at all) can each hold a Str whose backing
-# MVMString is a null pointer while every high-level check on it (.defined,
-# type-match, even printing it) still succeeds — it only crashes inside
-# native Unicode ops such as the JSON encoder's `.NFD`. This is an upstream
-# MoarVM bug (missing null guard in MVM_unicode_string_to_codepoints); a fix
-# is in progress upstream. Denying
-# both names here, alongside their `lowered-*` siblings (compiler-lowering
-# bookkeeping nobody should be editing anyway — `lowered-away-sentinel` is
-# undefined for every snippet checked so far but is hidden preemptively,
-# same family, same reasoning), avoids touching the bad value at all. See
-# task-2-report.md for the full investigation, including per-build attribute
-# lists confirming the rename.
+# Some RakuAST attributes can be a Str whose underlying MVMString is a null
+# pointer, while every high-level Raku check on it (.defined, type-match,
+# even printing it) still succeeds. It only crashes MoarVM inside a *real*
+# string operation — .gist, .DEPARSE, .NFD (the JSON encoder's own string
+# escaper uses .NFD), even .chars. This is an upstream MoarVM bug (missing
+# null guard in MVM_unicode_string_to_codepoints and friends); a fix is in
+# progress upstream. It is not tied to one attribute name: the attribute
+# that carries it is compiler-version-specific (`lowered-local-name` on one
+# Rakudo revision, `storage-name` on another, `ins-lexical-name` on a third
+# node type entirely — see task-2-report.md), so denylisting individual
+# names is whack-a-mole against a moving target. Detect it structurally
+# instead, by unboxing to a native str and asking nqp whether that came back
+# null — unboxing does not touch the buffer, so it is safe even on the bad
+# value.
+sub safe-str(Mu $raw) {
+    # Mu, not Any: attribute values include NQP-level objects (e.g.
+    # ContainerDescriptor) that are not Any-rooted, and an Any-typed
+    # parameter dies on those with "Type check failed in binding to
+    # parameter '$raw'; expected Any but got ContainerDescriptor" before we
+    # ever get a chance to check anything.
+    return True unless nqp::istype($raw, Str);
+    !nqp::isnull_s(nqp::unbox_s($raw));
+}
+
 sub attrs-of($node) {
     my %setters = $node.^methods.map(*.name).grep(*.starts-with('set-'))
                        .map({ .substr(4) => True }).Hash;
@@ -251,6 +257,16 @@ sub attrs-of($node) {
         my $raw := try { $a.get_value($node) };
         next if nqp::isnull(nqp::decont($raw));
         next unless (try { $raw.defined }) // False;
+
+        unless safe-str($raw) {
+            @out.push: {
+                name     => $name,
+                kind     => 'null',
+                display  => '(unset)',
+                editable => (%setters{$name} ?? True !! False),
+            };
+            next;
+        }
 
         my ($kind, $display);
         if $raw ~~ RakuAST::Node {
