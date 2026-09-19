@@ -1,6 +1,10 @@
 package org.raku.comma.rakuast
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.ide.util.PropertiesComponent
@@ -71,6 +75,25 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         border = JBUI.Borders.empty(2, 6)
     }
 
+    // Off by default: each selection costs a round trip to Raku, which is
+    // worth paying only for someone who actually reads gists.
+    private val showGist = JBCheckBox("Show node gist").apply {
+        isSelected = PropertiesComponent.getInstance(project).getBoolean(SHOW_GIST_KEY, false)
+        border = JBUI.Borders.empty(2, 6)
+    }
+
+    // Gists are immutable for a given analysis, so a node visited twice is
+    // free the second time.
+    private val gistCache = mutableMapOf<List<Int>, String>()
+
+    // Identifies the in-flight request. A slow gist for a node you have since
+    // clicked away from must not overwrite the one you are now looking at.
+    private var gistRequest = 0
+
+    // The context those paths were built against -- recovered from the root,
+    // since the gist verb has to be given the same one or it walks elsewhere.
+    private var analysisContext: List<String> = emptyList()
+
     init {
         // Attribute values are frequently whole deparsed expressions. A default
         // JTable cell paints one clipped line, so wrap instead and let the row
@@ -88,7 +111,18 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         splitter.secondComponent = JBScrollPane(attrTable)
         add(status, BorderLayout.NORTH)
         add(splitter, BorderLayout.CENTER)
-        add(expandAll, BorderLayout.SOUTH)
+        add(JPanel(BorderLayout()).apply {
+            add(expandAll, BorderLayout.WEST)
+            add(showGist, BorderLayout.CENTER)
+        }, BorderLayout.SOUTH)
+
+        showGist.addActionListener {
+            PropertiesComponent.getInstance(project)
+                .setValue(SHOW_GIST_KEY, showGist.isSelected, false)
+            // Redraw the current selection so the row appears or disappears
+            // now, rather than on the next node click.
+            selectedNode()?.let { showAttributes(it) }
+        }
 
         expandAll.addActionListener {
             PropertiesComponent.getInstance(project)
@@ -179,6 +213,11 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         this.snippet = snippet
         this.graphemeUtf16Offsets = buildGraphemeUtf16Offsets(snippet)
         this.nodes = 0
+        // Paths and gists both belong to one analysis. A stale gist would be
+        // for a node that no longer exists at that path.
+        this.analysisContext = result.tree?.context ?: emptyList()
+        gistCache.clear()
+        gistRequest++
 
         treeRoot.removeAllChildren()
         attrModel.rowCount = 0
@@ -246,7 +285,56 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         // here -- the identity it carries is what distinguishes sibling nodes,
         // which is a tree problem rather than a detail-pane one.
         for (attr in node.attrs) attrModel.addRow(arrayOf(attr.name, attr.display))
+
+        if (showGist.isSelected) {
+            val cached = gistCache[node.path]
+            attrModel.addRow(arrayOf(GIST_ROW_LABEL, cached ?: GIST_LOADING))
+            if (cached == null) requestGist(node)
+        }
+
         updateRowHeights()
+    }
+
+    private fun selectedNode(): AstNode? =
+        (tree.lastSelectedPathComponent as? DefaultMutableTreeNode)?.userObject as? AstNode
+
+    /**
+     * Fetches one node's gist off the EDT and fills its row in when it lands.
+     *
+     * A gist is not shipped with the tree because it nests its whole subtree,
+     * so every level would re-serialise the levels beneath it. That makes it
+     * a per-selection round trip, hence the request token: clicking through
+     * the tree faster than Raku answers would otherwise let an earlier node's
+     * gist arrive last and overwrite the one now on screen.
+     */
+    private fun requestGist(node: AstNode) {
+        val request = ++gistRequest
+        val forSnippet = snippet
+        val forContext = analysisContext
+
+        ProgressManager.getInstance().run(
+            object : Task.Backgroundable(project, "Rendering RakuAST gist", true) {
+                override fun run(indicator: ProgressIndicator) {
+                    val result = RakuAstService.getInstance(project)
+                        .gist(forSnippet, node.path, forContext)
+                    val text = result.gist ?: result.error ?: "No gist was returned."
+                    ApplicationManager.getApplication().invokeLater {
+                        if (request != gistRequest) return@invokeLater
+                        if (result.gist != null) gistCache[node.path] = text
+                        replaceGistRow(text)
+                    }
+                }
+            })
+    }
+
+    private fun replaceGistRow(text: String) {
+        for (row in 0 until attrModel.rowCount) {
+            if (attrModel.getValueAt(row, 0) == GIST_ROW_LABEL) {
+                attrModel.setValueAt(text, row, 1)
+                updateRowHeights()
+                return
+            }
+        }
     }
 
     /**
@@ -391,5 +479,9 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         private const val CONTEXT_ROW_LABEL = "(context)"
 
         private const val EXPAND_ALL_KEY = "org.raku.comma.rakuast.expandAll"
+        private const val SHOW_GIST_KEY = "org.raku.comma.rakuast.showGist"
+
+        private const val GIST_ROW_LABEL = "(gist)"
+        private const val GIST_LOADING = "Rendering…"
     }
 }
