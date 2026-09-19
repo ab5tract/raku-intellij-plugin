@@ -23,7 +23,41 @@ fun versionFromPropertyPossibly(): String {
     if (project.hasProperty("pluginVersion")) {
         return project.property("pluginVersion").toString()
     }
+    failIfReleasingWithoutAnExplicitVersion()
     return safeDetermineCurrentRakuBetaPluginVersion(determineCurrentGitBranch())
+}
+
+// The fallback below reads .versions/raku-beta-version, which is a record
+// rather than a source of truth -- the git tag is. That file drifts whenever
+// a tag is cut by hand, and it currently reads months behind the latest tag.
+// Falling back to it locally is harmless; doing so while building something
+// we are about to publish would ship an artifact named after the wrong
+// version, silently. So refuse, rather than guess, in that one situation.
+//
+// Scoped deliberately: only when packaging a plugin, and only on CI. A
+// developer running buildPlugin locally still gets the fallback.
+fun failIfReleasingWithoutAnExplicitVersion() {
+    val onGitHubActions = providers.environmentVariable("GITHUB_ACTIONS").orNull == "true"
+    if (!onGitHubActions) return
+
+    val packagingAPlugin = gradle.startParameter.taskNames.any {
+        it.substringAfterLast(':') in setOf("buildPlugin", "publishPlugin", "signPlugin")
+    }
+    if (!packagingAPlugin) return
+
+    error(
+        """
+        Refusing to package a plugin on CI without -PpluginVersion.
+
+        The version would otherwise come from .versions/raku-beta-version,
+        which is only a record of the last bump and drifts whenever a tag is
+        cut by hand -- so the published artifact would carry a stale version
+        in its filename and its plugin.xml, with nothing to flag it.
+
+        Pass the tag being built, as the release workflow does:
+            ./gradlew buildPlugin -PpluginVersion=${'$'}{{ github.ref_name }}
+        """.trimIndent()
+    )
 }
 
 fun determineCurrentGitBranch(): String {
@@ -223,6 +257,18 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.add("-jvm-default=enable")
     }
+}
+
+// The published artifact's filename. Gradle's Zip task always joins its
+// name parts with "-", so the underscore has to come from setting
+// archiveFileName outright rather than from archiveBaseName/archiveVersion.
+//
+// Read into a local val first: referring to `project` or `version` from
+// inside the provider would capture the Project at execution time, which
+// this build forbids (org.gradle.configuration-cache=true).
+val artifactVersion = versionFromPropertyPossibly()
+tasks.named<Zip>("buildPlugin") {
+    archiveFileName.set("${rootProject.name}_$artifactVersion.zip")
 }
 
 intellijPlatform {
