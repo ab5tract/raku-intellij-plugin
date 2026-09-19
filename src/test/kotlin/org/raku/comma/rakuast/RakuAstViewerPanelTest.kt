@@ -68,6 +68,49 @@ class RakuAstViewerPanelTest : CommaFixtureTestCase() {
         }
     }
 
+    // A root node on its own says nothing about the code you just selected,
+    // so the tree opens fully by default.
+    fun testTreeIsFullyExpandedAfterAnalysis() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;", AnalyzeResult(tree = threeLevelTree()))
+
+        val tree = fieldValue<javax.swing.JTree>(panel, "tree")
+        assertEquals("all three nodes should be visible without expanding anything",
+                     3, tree.rowCount)
+    }
+
+    // Unchecking it has to actually be honoured, or the preference is a lie.
+    fun testTreeStaysCollapsedWhenExpandAllIsOff() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+        fieldValue<javax.swing.JCheckBox>(panel, "expandAll").isSelected = false
+
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;", AnalyzeResult(tree = threeLevelTree()))
+
+        // 2, not 1: a JTree shows its root expanded by default, so the root
+        // and its immediate child are visible either way. What distinguishes
+        // "not expanded" is that the third level stays hidden.
+        val tree = fieldValue<javax.swing.JTree>(panel, "tree")
+        assertEquals("the deepest node should not be visible", 2, tree.rowCount)
+    }
+
+    private fun threeLevelTree() = AstNode(
+        nodeClass = "RakuAST::StatementList",
+        span = AstSpan(0, 10),
+        children = listOf(
+            AstNode(
+                nodeClass = "RakuAST::Statement::Expression",
+                path = listOf(0),
+                span = AstSpan(0, 10),
+                children = listOf(
+                    AstNode("RakuAST::IntLiteral", listOf(0, 0), AstSpan(8, 9)),
+                ),
+            ),
+        ),
+    )
+
     // Shift+toggle expands or collapses a whole subtree rather than one level.
     // The mouse gesture can't be simulated meaningfully here, so this drives
     // the recursion directly -- which is where the behaviour actually lives.

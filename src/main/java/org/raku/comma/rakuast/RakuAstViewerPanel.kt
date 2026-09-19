@@ -3,7 +3,9 @@ package org.raku.comma.rakuast
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.JBSplitter
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
@@ -60,6 +62,15 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     private var nodes = 0
     private var bulkToggle = false
 
+    // On by default: an AST tree is deep and narrow, and a root node alone
+    // tells you nothing about the code you just selected. Remembered per
+    // project, so someone who prefers to drill down is not re-deciding it
+    // every session.
+    private val expandAll = JBCheckBox("Expand all after analyzing").apply {
+        isSelected = PropertiesComponent.getInstance(project).getBoolean(EXPAND_ALL_KEY, true)
+        border = JBUI.Borders.empty(2, 6)
+    }
+
     init {
         // Attribute values are frequently whole deparsed expressions. A default
         // JTable cell paints one clipped line, so wrap instead and let the row
@@ -77,6 +88,15 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         splitter.secondComponent = JBScrollPane(attrTable)
         add(status, BorderLayout.NORTH)
         add(splitter, BorderLayout.CENTER)
+        add(expandAll, BorderLayout.SOUTH)
+
+        expandAll.addActionListener {
+            PropertiesComponent.getInstance(project)
+                .setValue(EXPAND_ALL_KEY, expandAll.isSelected, true)
+            // Apply on toggle rather than only on the next analysis, so the
+            // checkbox visibly does something when you click it.
+            if (expandAll.isSelected) withBulkToggle { expandSubtree(TreePath(treeRoot)) }
+        }
 
         tree.addTreeSelectionListener {
             val selected = tree.lastSelectedPathComponent as? DefaultMutableTreeNode
@@ -183,6 +203,8 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
             nodes = countNodes(tree)
         }
         treeModel.reload()
+        // reload() collapses everything, so this has to come after it.
+        if (expandAll.isSelected) withBulkToggle { expandSubtree(TreePath(treeRoot)) }
     }
 
     fun statusText(): String = status.text
@@ -367,5 +389,7 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         // Parenthesised to read as metadata rather than as an attribute of the
         // node, which is what every other row in this table is.
         private const val CONTEXT_ROW_LABEL = "(context)"
+
+        private const val EXPAND_ALL_KEY = "org.raku.comma.rakuast.expandAll"
     }
 }
