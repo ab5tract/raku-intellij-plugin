@@ -26,6 +26,45 @@ class RakuAstServiceTest : CommaFixtureTestCase() {
                    classes.contains("RakuAST::IntLiteral"))
     }
 
+    // Without context a selection is compiled as its own compilation unit, so
+    // a type from a `use`d module cannot resolve. This is the limitation file
+    // context exists to remove.
+    fun testTypeFromUnimportedModuleFailsWithoutContext() {
+        val result = service().analyze("my NoSuchModule::Widget \$w;")
+        assertNull(result.tree)
+        assertNotNull("expected a readable error", result.error)
+    }
+
+    // The context statements are reported on the root, since they produce no
+    // nodes of their own -- otherwise the tree would silently depend on text
+    // the user cannot see anywhere.
+    fun testContextIsReportedOnTheRoot() {
+        // `use v6.d` needs no library path, so this exercises the context
+        // mechanism itself rather than module resolution.
+        val result = service().analyze("my \$x = 1;", listOf("use v6.d;"))
+        assertNull(result.error)
+        assertEquals(listOf("use v6.d;"), result.tree!!.context)
+    }
+
+    // The prefix is compiled with the selection but is not part of it, so its
+    // statements must not appear as nodes, and spans must stay relative to the
+    // selection rather than to the combined text.
+    fun testContextNodesAreNotInTheTreeAndSpansStayRelative() {
+        val source = "my \$x = 41;"
+        val result = service().analyze(source, listOf("use v6.d;"))
+        assertNull(result.error)
+
+        val classes = mutableListOf<String>()
+        fun walk(n: AstNode) { classes.add(n.nodeClass); n.children.forEach(::walk) }
+        walk(result.tree!!)
+        assertFalse("context produced tree nodes: $classes",
+                    classes.any { it.contains("Use") })
+
+        val lit = findFirst(result.tree!!, "RakuAST::IntLiteral")!!
+        val span = lit.span!!
+        assertEquals("41", source.substring(span.from, span.to))
+    }
+
     // Rakudo's one-line node summary. Asserts the parts that carry meaning --
     // the class name and the identity marker -- rather than exact spacing or
     // the source excerpt, both of which are Rakudo's to change.

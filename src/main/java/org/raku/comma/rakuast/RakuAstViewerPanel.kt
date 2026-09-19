@@ -67,7 +67,13 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         }
     }
 
-    fun showAnalysis(editor: Editor, baseOffset: Int, snippet: String, result: AnalyzeResult) {
+    fun showAnalysis(
+        editor: Editor,
+        baseOffset: Int,
+        snippet: String,
+        result: AnalyzeResult,
+        contextAvailable: Boolean = true,
+    ) {
         // The editor belongs to the caller, not this panel. It may already have been
         // released (e.g. the file tab closed while the ~310ms analyze() call was in
         // flight) by the time this reaches us. Never hold on to a dead editor.
@@ -86,7 +92,15 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
             status.text = error ?: "The Raku backend returned no tree."
             treeRoot.userObject = "(no tree)"
         } else {
-            status.text = ""
+            // Say so when the selection was compiled without its file's
+            // imports, since that changes what the tree can show: a type from
+            // an unimported module cannot resolve, and the user should know
+            // the difference between "this is what your code means" and "this
+            // is what your code means in isolation".
+            status.text =
+                if (contextAvailable) ""
+                else "Analyzed without file context: the project root has no META6.json or lib/, " +
+                     "so imports cannot be resolved."
             treeRoot.userObject = tree
             addChildren(treeRoot, tree)
             nodes = countNodes(tree)
@@ -111,6 +125,11 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
 
     private fun showAttributes(node: AstNode) {
         attrModel.rowCount = 0
+        // The imports compiled in front of the selection. They have no nodes in
+        // the tree -- they are not part of what the user selected -- so this is
+        // the only place they are visible, and without it the tree silently
+        // depends on text nobody can see.
+        for (statement in node.context) attrModel.addRow(arrayOf(CONTEXT_ROW_LABEL, statement))
         // Rakudo's summary is the tree label (see AstNode.toString), not a row
         // here -- the identity it carries is what distinguishes sibling nodes,
         // which is a tree problem rather than a detail-pane one.
@@ -254,5 +273,9 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         // Attribute names are short; the value column gets the remaining width
         // so wrapped expressions have room.
         private const val ATTRIBUTE_COLUMN_WIDTH = 160
+
+        // Parenthesised to read as metadata rather than as an attribute of the
+        // node, which is what every other row in this table is.
+        private const val CONTEXT_ROW_LABEL = "(context)"
     }
 }

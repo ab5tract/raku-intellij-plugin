@@ -14,22 +14,62 @@ import java.nio.file.Files
 @Service(Service.Level.PROJECT)
 class RakuAstService(private val project: Project) {
 
-    fun analyze(source: String): AnalyzeResult {
+    /**
+     * True when the project root is usable as a Raku distribution root, which
+     * is what `-I.` and `-Ilib` need in order to resolve the selection's
+     * imports. Both are relative to the working directory, which [run] sets to
+     * the project base path -- so if that is not a distribution root, context
+     * cannot work and the caller should fall back to a bare selection.
+     */
+    fun supportsFileContext(): Boolean {
+        val base = project.basePath?.let(::File) ?: return false
+        if (!base.isDirectory) return false
+        // META6.json lets `-I.` resolve through the distribution's `provides`;
+        // a lib/ directory lets `-Ilib` resolve by convention. Either will do.
+        return File(base, "META6.json").isFile || File(base, "lib").isDirectory
+    }
+
+    /**
+     * @param context the file's `use`/`need` statements, compiled in front of
+     *   the selection so its imports resolve. Pass an empty list for a bare,
+     *   context-free analysis.
+     */
+    fun analyze(source: String, context: List<String> = emptyList()): AnalyzeResult {
         val sourceFile = writeTemp("rakuast-source", source)
             ?: return AnalyzeResult(error = "Could not write a temporary file for the snippet.")
+        val contextFile = context
+            .takeIf { it.isNotEmpty() }
+            ?.let { statements ->
+                writeTemp("rakuast-context", statements.joinToString("\n"))
+                    ?: run {
+                        sourceFile.delete()
+                        return AnalyzeResult(
+                            error = "Could not write a temporary file for the file context.")
+                    }
+            }
         return try {
-            AstJson.decodeAnalyze(run(listOf("analyze", sourceFile.absolutePath)))
+            val args = mutableListOf("analyze", sourceFile.absolutePath)
+            contextFile?.let { args.add(it.absolutePath) }
+            AstJson.decodeAnalyze(run(args))
         } finally {
             sourceFile.delete()
+            contextFile?.delete()
         }
     }
 
+    /**
+     * @param context MUST be the same list passed to the [analyze] call that
+     *   produced [path]. The context is compiled in front of the selection, so
+     *   a different context yields a different tree and the path would walk to
+     *   a different node than the user selected.
+     */
     fun edit(
         source: String,
         path: List<Int>,
         attr: String,
         value: String,
         valueKind: String,
+        context: List<String> = emptyList(),
     ): EditResult {
         val sourceFile = writeTemp("rakuast-source", source)
             ?: return EditResult(error = "Could not write a temporary file for the snippet.")
@@ -38,20 +78,32 @@ class RakuAstService(private val project: Project) {
                 sourceFile.delete()
                 return EditResult(error = "Could not write a temporary file for the new value.")
             }
+        val contextFile = context
+            .takeIf { it.isNotEmpty() }
+            ?.let { statements ->
+                writeTemp("rakuast-context", statements.joinToString("\n"))
+                    ?: run {
+                        sourceFile.delete()
+                        valueFile.delete()
+                        return EditResult(
+                            error = "Could not write a temporary file for the file context.")
+                    }
+            }
         return try {
-            AstJson.decodeEdit(
-                run(listOf(
-                    "edit",
-                    sourceFile.absolutePath,
-                    path.joinToString(","),
-                    attr,
-                    valueFile.absolutePath,
-                    valueKind,
-                ))
+            val args = mutableListOf(
+                "edit",
+                sourceFile.absolutePath,
+                path.joinToString(","),
+                attr,
+                valueFile.absolutePath,
+                valueKind,
             )
+            contextFile?.let { args.add(it.absolutePath) }
+            AstJson.decodeEdit(run(args))
         } finally {
             sourceFile.delete()
             valueFile.delete()
+            contextFile?.delete()
         }
     }
 
@@ -62,6 +114,14 @@ class RakuAstService(private val project: Project) {
         return try {
             val cmd = RakuCommandLine(project)
             cmd.setWorkDirectory(project.basePath)
+            // Both are needed and neither subsumes the other: `-I.` resolves
+            // through META6.json's `provides` (and is what loadModuleSymbols
+            // already uses), while `-Ilib` still finds a module the author has
+            // not declared there yet -- a routine state for a file being
+            // edited. Verified that a module reachable through both paths
+            // resolves once, without conflict.
+            cmd.addParameter("-I.")
+            cmd.addParameter("-Ilib")
             cmd.addParameter(script.path)
             cmd.addParameters(args)
             // executeAndRead deletes the script file and returns an empty list

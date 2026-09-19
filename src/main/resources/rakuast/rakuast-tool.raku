@@ -337,22 +337,49 @@ sub attrs-of($node) {
     @out
 }
 
-sub node-json($node, @path) {
-    my @children;
-    my $i = 0;
+# The children of $node that belong in the emitted tree, in emission order.
+#
+# analyze and edit MUST agree on this exactly: analyze hands the IDE a path
+# built from these indices, and edit walks that path back to a node. Any
+# divergence in filtering or ordering silently retargets an edit, so both go
+# through this one function rather than each doing its own visit-children.
+#
+# When context statements were prepended, the root's leading children belong
+# to that prefix rather than to the user's selection, and are dropped.
+sub node-children($node, $offset, $is-root) {
+    my @kids;
     $node.visit-children(-> $child {
         if $child ~~ RakuAST::Node {
-            @children.push: node-json($child, [|@path, $i]);
-            $i++;
+            my $from-prefix = False;
+            if $is-root && $offset > 0 {
+                my $o := $child.origin;
+                $from-prefix = True if $o.defined && $o.from < $offset;
+            }
+            @kids.push($child) unless $from-prefix;
         }
     });
+    @kids
+}
+
+sub node-json($node, @path, $offset = 0) {
+    my @children;
+    my $i = 0;
+    for node-children($node, $offset, @path.elems == 0) -> $child {
+        @children.push: node-json($child, [|@path, $i], $offset);
+        $i++;
+    }
     my $origin := $node.origin;
     # {from:0,to:0} would be indistinguishable from a real zero-length span
     # at offset 0 -- observed on `sub f($a) { $a * 2 }`, where a
     # RakuAST::Type::Setting node has undefined .origin but IS editable, so
     # a caller could silently apply an edit against a fake (0,0) span.
-    my $span = $origin.defined ?? { from => $origin.from, to => $origin.to }
-                               !! Any;
+    #
+    # Origins are rebased past any prepended context so the IDE keeps
+    # receiving selection-relative spans. The root spans the prefix too, hence
+    # the clamp: without it its `from` would go negative.
+    my $span = $origin.defined
+        ?? { from => max(0, $origin.from - $offset), to => $origin.to - $offset }
+        !! Any;
     %(
         class    => $node.^name,
         path     => @path,
@@ -404,13 +431,16 @@ sub fail-with($message) {
     exit 0;
 }
 
-sub node-at($root, @path) {
+# Walks a path produced by analyze. Uses node-children so the filtering and
+# ordering match analyze's exactly -- see the note there.
+sub node-at($root, @path, $offset = 0) {
     my $current = $root;
+    my $depth = 0;
     for @path -> $index {
-        my @kids;
-        $current.visit-children(-> $c { @kids.push($c) if $c ~~ RakuAST::Node });
+        my @kids = node-children($current, $offset, $depth == 0);
         fail-with("The selected node is no longer present.") unless @kids[$index].defined;
         $current = @kids[$index];
+        $depth++;
     }
     $current
 }
@@ -435,10 +465,40 @@ CATCH { default { fail-with(.message // .gist); } }
 
 my $verb = @*ARGS[0] // fail-with('No verb given.');
 
+# .AST compiles its string as a whole compilation unit, so a selection cannot
+# inherit the surrounding file's imports any other way: they have to be part
+# of the same text. The prefix's own nodes are then dropped from the tree (see
+# node-children) and every origin rebased past it, so the IDE still receives
+# spans relative to the user's selection.
+#
+# Returns the parsed root, the grapheme offset to rebase by, and the context
+# lines to report back.
+sub parse-with-context($snippet, $context-path) {
+    my $context = $context-path && $context-path.IO.e ?? $context-path.IO.slurp.trim !! '';
+    unless $context {
+        my $ast = (try { $snippet.AST })
+            // fail-with("Could not parse the selection: " ~ ($! // 'unknown error'));
+        return %( ast => $ast, offset => 0, context => [] );
+    }
+
+    my $prefix = $context ~ "\n";
+    # Report a compile failure rather than quietly retrying without context:
+    # the selection genuinely does not compile against its own imports, and
+    # saying so is more useful than a tree built from a different premise.
+    my $ast = (try { ($prefix ~ $snippet).AST })
+        // fail-with("The selection could not be turned into RakuAST -- it does not compile "
+                     ~ "together with this file's imports: " ~ ($! // 'unknown error'));
+    %( ast     => $ast,
+       offset  => $prefix.chars,
+       context => $context.lines.grep({ .trim }).list )
+}
+
 if $verb eq 'analyze' {
     my $source = @*ARGS[1].IO.slurp;
-    my $ast = (try { $source.AST }) // fail-with("Could not parse the selection: " ~ ($! // 'unknown error'));
-    say to-json({ tree => node-json($ast, []) });
+    my %parsed = parse-with-context($source, @*ARGS[2]);
+    my %tree   = node-json(%parsed<ast>, [], %parsed<offset>);
+    %tree<context> = %parsed<context>;
+    say to-json({ tree => %tree });
 }
 elsif $verb eq 'edit' {
     my $source    = @*ARGS[1].IO.slurp;
@@ -447,8 +507,12 @@ elsif $verb eq 'edit' {
     my $value     = @*ARGS[4].IO.slurp;
     my $kind      = @*ARGS[5];
 
-    my $ast    = (try { $source.AST }) // fail-with('Could not parse the selection.');
-    my $target = node-at($ast, @path);
+    # Same context as analyze, or the path walked below would target a
+    # different node than the one the user selected.
+    my %parsed = parse-with-context($source, @*ARGS[6]);
+    my $ast    = %parsed<ast>;
+    my $offset = %parsed<offset>;
+    my $target = node-at($ast, @path, $offset);
 
     # Validate before mutating, so a bad snippet never reaches the file.
     my $new-value = do if $kind eq 'node' {
@@ -490,7 +554,11 @@ elsif $verb eq 'edit' {
     # incidentally resets .origin, the span returned still reflects the
     # node's pre-edit location rather than silently going stale or null.
     my $origin := $target.origin;
-    my $span = $origin.defined ?? { from => $origin.from, to => $origin.to } !! Any;
+    # Rebased past any prepended context, so the caller receives a span in the
+    # user's selection rather than in the combined text we actually compiled.
+    my $span = $origin.defined
+        ?? { from => max(0, $origin.from - $offset), to => $origin.to - $offset }
+        !! Any;
 
     my $setter = 'set-' ~ $attr;
     if $target.^can($setter) {
@@ -506,10 +574,12 @@ elsif $verb eq 'edit' {
     fail-with('The edit produced invalid Raku and was not applied.')
         unless (try { $text.AST; True }) // False;
 
+    my %tree = node-json($ast, [], $offset);
+    %tree<context> = %parsed<context>;
     say to-json({
         text => $text,
         span => $span,
-        tree => node-json($ast, []),
+        tree => %tree,
     });
 }
 else {
