@@ -1,5 +1,6 @@
 package org.raku.comma.rakuast
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -48,6 +49,10 @@ class AnalyzeSelectionAction : AnAction() {
         event.presentation.isEnabledAndVisible = available
     }
 
-    override fun getActionUpdateThread() =
-        com.intellij.openapi.actionSystem.ActionUpdateThread.EDT
+    // BGT, not EDT: update() asks for PSI_FILE, which the action system
+    // provides by rules and refuses to compute on the EDT ("'psi.File' is
+    // requested on EDT ... See ActionUpdateThread javadoc"). Reading the
+    // editor's selection is fine here too -- the data context is pre-cached
+    // before update() runs, and BGT updates hold a read action.
+    override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }

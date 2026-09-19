@@ -1,5 +1,6 @@
 package org.raku.comma.rakuast
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.fileTypes.PlainTextFileType
@@ -23,6 +24,13 @@ class AnalyzeSelectionActionTest : CommaFixtureTestCase() {
             }
         }
         return TestActionEvent.createTestEvent(action, dataContext)
+    }
+
+    // update() asks for PSI_FILE, which the action system provides by rules and
+    // refuses to compute on the EDT -- declaring EDT logged "'psi.File' is
+    // requested on EDT ... See ActionUpdateThread javadoc" on every right-click.
+    fun testUpdateRunsOnBackgroundThread() {
+        assertEquals(ActionUpdateThread.BGT, AnalyzeSelectionAction().actionUpdateThread)
     }
 
     fun testEnabledAndVisibleOnRakuFileWithSelection() {
