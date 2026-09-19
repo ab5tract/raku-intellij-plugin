@@ -6,7 +6,12 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.ui.MessageType
+import com.intellij.openapi.ui.popup.Balloon
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.util.TextRange
+import com.intellij.ui.awt.RelativePoint
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBCheckBox
@@ -17,9 +22,12 @@ import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.EventQueue
+import java.awt.datatransfer.StringSelection
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.InputEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.text.BreakIterator
 import javax.swing.event.TreeExpansionEvent
 import javax.swing.event.TreeExpansionListener
@@ -52,7 +60,18 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     private val treeModel = DefaultTreeModel(treeRoot)
     private val tree = Tree(treeModel)
     private val attrModel = DefaultTableModel(arrayOf("Attribute", "Value"), 0)
-    private val attrTable = JTable(attrModel)
+    private val attrTable = object : JTable(attrModel) {
+        // Only the gist label advertises itself as clickable; the other rows
+        // hold values short enough to read in place.
+        override fun getToolTipText(event: MouseEvent): String? {
+            val row = rowAtPoint(event.point)
+            val column = columnAtPoint(event.point)
+            return if (column == 0 && row >= 0 && getValueAt(row, 0) == GIST_ROW_LABEL)
+                "Click to copy this gist to the clipboard"
+            else
+                null
+        }
+    }
 
     private var currentEditor: Editor? = null
     private var baseOffset: Int = 0
@@ -104,6 +123,18 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         // Wrapping depends on column width, so re-measure whenever that changes.
         attrTable.addComponentListener(object : ComponentAdapter() {
             override fun componentResized(event: ComponentEvent) = updateRowHeights()
+        })
+
+        // A gist is the one value here that is routinely too long to read in
+        // a cell and worth taking elsewhere, so clicking its label copies it.
+        attrTable.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(event: MouseEvent) {
+                val row = attrTable.rowAtPoint(event.point)
+                val column = attrTable.columnAtPoint(event.point)
+                if (column != 0 || row < 0) return
+                if (attrTable.getValueAt(row, 0) != GIST_ROW_LABEL) return
+                if (copyGist(row)) confirmCopy(RelativePoint(event))
+            }
         })
 
         val splitter = JBSplitter(true, 0.6f)
@@ -327,6 +358,30 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
             })
     }
 
+    /**
+     * Copies the gist at [row] to the clipboard.
+     *
+     * @return false when there is nothing worth copying — the placeholder
+     *   shown while Raku is still rendering, or an error message in the
+     *   gist's place. Putting either on the clipboard would be worse than
+     *   doing nothing, since the user would not discover it until pasting.
+     */
+    private fun copyGist(row: Int): Boolean {
+        val text = attrModel.getValueAt(row, 1) as? String ?: return false
+        if (text.isBlank() || text == GIST_LOADING) return false
+        if (gistCache.values.none { it == text }) return false
+        CopyPasteManager.getInstance().setContents(StringSelection(text))
+        return true
+    }
+
+    private fun confirmCopy(at: RelativePoint) {
+        JBPopupFactory.getInstance()
+            .createHtmlTextBalloonBuilder("Gist copied to clipboard", MessageType.INFO, null)
+            .setFadeoutTime(COPY_CONFIRMATION_MS)
+            .createBalloon()
+            .show(at, Balloon.Position.above)
+    }
+
     private fun replaceGistRow(text: String) {
         for (row in 0 until attrModel.rowCount) {
             if (attrModel.getValueAt(row, 0) == GIST_ROW_LABEL) {
@@ -483,5 +538,7 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
 
         private const val GIST_ROW_LABEL = "(gist)"
         private const val GIST_LOADING = "Rendering…"
+
+        private const val COPY_CONFIRMATION_MS = 2000L
     }
 }
