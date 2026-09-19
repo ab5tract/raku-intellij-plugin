@@ -463,6 +463,32 @@ sub current-value($node, $name) {
 # only and discards everything on a non-zero exit.
 CATCH { default { fail-with(.message // .gist); } }
 
+# Put the project's own modules on the search path.
+#
+# Deliberately done here rather than with -I on the command line: an -I path
+# is resolved while THIS script is compiling, so a distribution whose
+# META6.json names a file that does not exist takes the script down before
+# any CATCH exists to report it -- the caller then sees empty stdout and a
+# non-zero exit, with the real reason only on stderr. Registered at runtime,
+# the identical failure surfaces as a catchable exception inside .AST, and
+# the JSON contract survives.
+#
+# Both paths are added and neither subsumes the other: the distribution root
+# resolves through META6.json's `provides`, while lib/ still finds a module
+# the author has not declared there yet -- routine for a file being edited.
+sub add-lib-path($path) {
+    return False unless $path.IO.e;
+    my $repo = try {
+        CompUnit::RepositoryRegistry.repository-for-spec($path.IO.absolute, :next-repo($*REPO));
+    };
+    return False unless $repo;
+    PROCESS::<$REPO> := $repo;
+    True;
+}
+
+add-lib-path($*CWD.Str);
+add-lib-path($*CWD.add('lib').Str);
+
 my $verb = @*ARGS[0] // fail-with('No verb given.');
 
 # .AST compiles its string as a whole compilation unit, so a selection cannot
