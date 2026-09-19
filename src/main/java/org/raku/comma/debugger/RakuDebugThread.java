@@ -148,7 +148,10 @@ public class RakuDebugThread extends Thread {
                 });
             }
             else {
-                System.out.println("Event + " + event.getClass().getName());
+                // An event kind this handler does not act on. Worth a trace
+                // when following a debugger session, not worth printing to
+                // the IDE's stdout on every event it ignores.
+                LOG.debug("Unhandled debugger event: " + event.getClass().getName());
             }
         }, (error) -> {
             throw new RuntimeException(error);
