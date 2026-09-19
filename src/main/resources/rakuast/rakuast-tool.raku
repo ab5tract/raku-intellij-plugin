@@ -374,6 +374,16 @@ sub summary-of($node) {
     # normalised -- the source excerpt inside ⎡⎤ keeps its own spacing.
     my $markers = ((try { $node.dump-markers() }) // '').trim;
     my $origin  = ((try { $node.dump-origin()  }) // '').trim;
+
+    # Drop the source excerpt when it merely repeats the identity marker.
+    # `Name 【Int】 ⎡Int⎤` and `Infix 【+】 ⎡+⎤` say the same thing twice; the
+    # excerpt earns its place only when it shows something the marker doesn't.
+    my $identity = $markers ~~ / '【' (.+?) '】' / ?? ~$/[0] !! Str;
+    my $excerpt  = $origin  ~~ / '⎡' (.*?) '⎤' / ?? ~$/[0] !! Str;
+    if $identity.defined && $excerpt.defined && $identity eq $excerpt {
+        $origin = $origin.subst(/ \s* '⎡' .*? '⎤' /, '').trim;
+    }
+
     my $summary = $class
         ~ ($markers ?? ' ' ~ $markers !! '')
         ~ ($origin  ?? ' ' ~ $origin  !! '');

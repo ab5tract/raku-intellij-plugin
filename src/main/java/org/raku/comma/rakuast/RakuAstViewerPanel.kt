@@ -111,10 +111,9 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
 
     private fun showAttributes(node: AstNode) {
         attrModel.rowCount = 0
-        // Rakudo's own one-line summary first: it names the node's identity
-        // (【$x】, 【+】, 【f】) and its sink/block-statement state, none of
-        // which the attribute rows or the tree label show.
-        node.summary?.let { attrModel.addRow(arrayOf(SUMMARY_ROW_LABEL, it)) }
+        // Rakudo's summary is the tree label (see AstNode.toString), not a row
+        // here -- the identity it carries is what distinguishes sibling nodes,
+        // which is a tree problem rather than a detail-pane one.
         for (attr in node.attrs) attrModel.addRow(arrayOf(attr.name, attr.display))
         updateRowHeights()
     }
@@ -255,9 +254,5 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         // Attribute names are short; the value column gets the remaining width
         // so wrapped expressions have room.
         private const val ATTRIBUTE_COLUMN_WIDTH = 160
-
-        // Parenthesised so it sorts visually apart from real attribute names --
-        // this row is Rakudo's summary, not an attribute of the node.
-        private const val SUMMARY_ROW_LABEL = "(summary)"
     }
 }

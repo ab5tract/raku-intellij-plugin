@@ -34,7 +34,15 @@ data class AstNode(
     // compose one. Declared last so positional construction keeps working.
     val summary: String? = null,
 ) {
-    override fun toString(): String = nodeClass.removePrefix("RakuAST::")
+    /**
+     * The tree label. Prefers Rakudo's own summary, which already leads with
+     * the bare class name and adds the node's identity (【$x】, 【+】, 【f】)
+     * plus its sink and block-statement state — exactly what a tree of bare
+     * class names cannot convey, since sibling `Name` or `Infix` nodes are
+     * otherwise indistinguishable. Falls back to the class name when the
+     * backend could not compose a summary.
+     */
+    override fun toString(): String = summary ?: nodeClass.removePrefix("RakuAST::")
 }
 
 @Serializable
