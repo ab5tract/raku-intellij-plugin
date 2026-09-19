@@ -491,7 +491,33 @@ sub add-lib-path($path) {
     True;
 }
 
-add-lib-path($*CWD.Str);
+# A distribution whose META6.json names a file that is not there poisons every
+# module lookup in the process, including lookups that have nothing to do with
+# it: `use lib "/tmp/x"; use SomethingElse;` fails with "Failed to open file
+# .../lib/Whatever.rakumod". That is not hypothetical -- both a scaffolded
+# project and a real one in development were in exactly that state.
+#
+# The distribution root is only registered when its metadata is consistent.
+# lib/ is registered regardless, because a plain path repository never reads
+# META6.json and so cannot be broken by one.
+sub distribution-is-loadable($root) {
+    my $meta = $root.IO.add('META6.json');
+    return False unless $meta.e;
+    my $text = (try { $meta.slurp }) // return False;
+
+    # Deliberately not a JSON parse: this script vendors an encoder, not a
+    # decoder, and every path worth checking is a quoted string ending in a
+    # Raku source extension. Missing one is safe -- the worst case is that we
+    # register a distribution that then fails as it does today.
+    for $text.match(/ '"' (<-["]>+ [ '.rakumod' | '.pm6' | '.rakutest' | '.t' ]) '"' /, :g) -> $m {
+        my $path = ~$m[0];
+        next if $path.starts-with('http');
+        return False unless $root.IO.add($path).e;
+    }
+    True;
+}
+
+add-lib-path($*CWD.Str) if distribution-is-loadable($*CWD.Str);
 add-lib-path($*CWD.add('lib').Str);
 
 my $verb = @*ARGS[0] // fail-with('No verb given.');
@@ -621,11 +647,24 @@ elsif $verb eq 'edit' {
         !! Any;
 
     my $setter = 'set-' ~ $attr;
+    # Report failure on the TRY failing, not on the setter's return value.
+    #
+    # `try { ... } // fail-with(...)` reads naturally but is wrong here: `//`
+    # is defined-or, so a setter that simply returns Nil -- set-expression
+    # does -- was treated as having failed, and editing a node-valued
+    # attribute always reported "Could not set". The setter had in fact
+    # already applied the change. Appending True makes the check ask "did
+    # this throw?" rather than "did this return something?".
     if $target.^can($setter) {
-        try { $target."$setter"($new-value) } // fail-with("Could not set '$attr'.");
+        my $applied = try { $target."$setter"($new-value); True };
+        fail-with("Could not set '$attr'.") unless $applied;
     }
     else {
-        try { nqp::bindattr(nqp::decont($target), $target.WHAT, '$!' ~ $attr, nqp::decont($new-value)) } // fail-with("'$attr' cannot be set on {$target.^name}.");
+        my $applied = try {
+            nqp::bindattr(nqp::decont($target), $target.WHAT, '$!' ~ $attr, nqp::decont($new-value));
+            True;
+        };
+        fail-with("'$attr' cannot be set on {$target.^name}.") unless $applied;
     }
 
     my $text = (try { $target.DEPARSE }) // fail-with('The edit produced source that could not be rendered.');
