@@ -227,7 +227,7 @@ my constant @HIDDEN = <
 # is not Positional) and 421 KB of `display` text overall out of 958 KB
 # total. This caps every display string regardless of which bookkeeping
 # attribute shows up next on a future Rakudo.
-my constant DISPLAY-LIMIT = 200;
+my constant DISPLAY-LIMIT = 512;
 sub cap-display($s) {
     $s.chars > DISPLAY-LIMIT ?? $s.substr(0, DISPLAY-LIMIT) ~ '…' !! $s;
 }
