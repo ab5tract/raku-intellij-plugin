@@ -10,6 +10,16 @@ object RakuAstEditApplier {
      * Replaces exactly the edited node's span. Anything wider would delete
      * ordinary `#` comments, which have no RakuAST node and cannot be restored
      * by deparsing.
+     *
+     * Callers MUST verify the document is still fresh with respect to the
+     * analysis before calling this -- e.g. the mismatch guard
+     * [RakuAstViewerPanel] uses in its `highlight()` (compare the live
+     * document text at `baseOffset + span` against the snippet text the
+     * backend analyzed). This applier has no snippet to compare against, so
+     * it cannot detect staleness or the NFG-grapheme-vs-UTF-16 coordinate
+     * skew on its own; it trusts `result.span` as given. The (currently
+     * unwired) edit UI follow-up owns doing that check before calling
+     * [apply].
      */
     fun apply(project: Project, editor: Editor, baseOffset: Int, result: EditResult): Boolean {
         val text = result.text ?: return false

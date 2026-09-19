@@ -218,7 +218,19 @@ my constant @HIDDEN = <
     lowered-array-init lowered-to-local initializer-in-method is-parameter
     attribute-package generics-package conflicting-type unit-package
     qualified-root original-type
+    lexical-lookup-hash owner outer origin-comp-unit resolution
 >;
+
+# Bound how much text a single attribute can contribute to the payload.
+# A real-world 378-line file produced a single `display` value of 105,117
+# characters (a compiler lookup hash falling through to .gist because Hash
+# is not Positional) and 421 KB of `display` text overall out of 958 KB
+# total. This caps every display string regardless of which bookkeeping
+# attribute shows up next on a future Rakudo.
+my constant DISPLAY-LIMIT = 200;
+sub cap-display($s) {
+    $s.chars > DISPLAY-LIMIT ?? $s.substr(0, DISPLAY-LIMIT) ~ '…' !! $s;
+}
 
 # Some RakuAST attributes can be a Str whose underlying MVMString is a null
 # pointer, while every high-level Raku check on it (.defined, type-match,
@@ -288,10 +300,19 @@ sub attrs-of($node) {
             $kind    = 'list';
             $display = (try { "[" ~ $raw.elems ~ " items]" }) // '(unrenderable)';
         }
+        elsif $raw ~~ Associative {
+            # Hash is not Positional, so without this it falls through to the
+            # scalar branch below and .gist's the whole hash -- a compiler
+            # lookup hash rendered that way produced a single 105,117-char
+            # display value on a real file. Render it like a list instead.
+            $kind    = 'scalar';
+            $display = (try { "{$raw.elems} entries" }) // '(unrenderable)';
+        }
         else {
             $kind    = 'scalar';
             $display = (try { $raw.gist }) // '(unrenderable)';
         }
+        $display = cap-display($display);
 
         @out.push: {
             name     => $name,
@@ -313,12 +334,16 @@ sub node-json($node, @path) {
         }
     });
     my $origin := $node.origin;
-    my %span = $origin.defined ?? { from => $origin.from, to => $origin.to }
-                               !! { from => 0, to => 0 };
+    # {from:0,to:0} would be indistinguishable from a real zero-length span
+    # at offset 0 -- observed on `sub f($a) { $a * 2 }`, where a
+    # RakuAST::Type::Setting node has undefined .origin but IS editable, so
+    # a caller could silently apply an edit against a fake (0,0) span.
+    my $span = $origin.defined ?? { from => $origin.from, to => $origin.to }
+                               !! Any;
     %(
         class    => $node.^name,
         path     => @path,
-        span     => %span,
+        span     => $span,
         attrs    => attrs-of($node),
         children => @children,
     )
@@ -411,6 +436,12 @@ elsif $verb eq 'edit' {
         }
     };
 
+    # Read .origin BEFORE mutating: hoisted so that if some setter ever
+    # incidentally resets .origin, the span returned still reflects the
+    # node's pre-edit location rather than silently going stale or null.
+    my $origin := $target.origin;
+    my $span = $origin.defined ?? { from => $origin.from, to => $origin.to } !! Any;
+
     my $setter = 'set-' ~ $attr;
     if $target.^can($setter) {
         try { $target."$setter"($new-value) } // fail-with("Could not set '$attr'.");
@@ -425,11 +456,9 @@ elsif $verb eq 'edit' {
     fail-with('The edit produced invalid Raku and was not applied.')
         unless (try { $text.AST; True }) // False;
 
-    my $origin := $target.origin;
     say to-json({
         text => $text,
-        span => ($origin.defined ?? { from => $origin.from, to => $origin.to }
-                                 !! { from => 0, to => 0 }),
+        span => $span,
         tree => node-json($ast, []),
     });
 }

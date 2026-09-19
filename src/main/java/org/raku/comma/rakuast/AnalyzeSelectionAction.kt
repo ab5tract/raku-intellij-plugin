@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.wm.ToolWindowManager
+import org.raku.comma.psi.RakuFile
 
 class AnalyzeSelectionAction : AnAction() {
 
@@ -35,9 +36,16 @@ class AnalyzeSelectionAction : AnAction() {
     }
 
     override fun update(event: AnActionEvent) {
+        // Mirrors RakuReplUsingThisModuleAction: gate on RakuFile so this
+        // doesn't show up (enabled or not) in the right-click menu of every
+        // editor in the IDE -- Java, JSON, Markdown, plain text -- shelling
+        // out to Raku on non-Raku source whenever text happens to be selected.
         val editor = event.getData(CommonDataKeys.EDITOR)
-        event.presentation.isEnabled =
-            event.project != null && editor?.selectionModel?.hasSelection() == true
+        val file = event.getData(CommonDataKeys.PSI_FILE)
+        val available = event.project != null &&
+            file is RakuFile &&
+            editor?.selectionModel?.hasSelection() == true
+        event.presentation.isEnabledAndVisible = available
     }
 
     override fun getActionUpdateThread() =

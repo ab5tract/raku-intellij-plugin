@@ -66,7 +66,11 @@ class RakuAstService(private val project: Project) {
             cmd.addParameters(args)
             // executeAndRead deletes the script file and returns an empty list
             // on a non-zero exit, so an empty result means "no usable output".
-            cmd.executeAndRead(script).joinToString("\n")
+            // The script's JSON contract owns exactly one stdout line; joining
+            // ALL lines would corrupt the payload if the snippet itself prints
+            // -- a `BEGIN { say ... }` block, or a `use` of a module that
+            // prints at load time. Take the last non-blank line instead.
+            cmd.executeAndRead(script).lastOrNull { it.isNotBlank() } ?: ""
         } catch (e: ExecutionException) {
             // Thrown as "No SDK for project" when the project SDK is unset.
             LOG.info("RakuAST backend could not start", e)

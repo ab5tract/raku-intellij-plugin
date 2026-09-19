@@ -39,7 +39,8 @@ class RakuAstServiceTest : CommaFixtureTestCase() {
         val source = "my \$x = 41;"
         val root = service().analyze(source).tree!!
         val lit = findFirst(root, "RakuAST::IntLiteral")!!
-        assertEquals("41", source.substring(lit.span.from, lit.span.to))
+        val litSpan = lit.span!!
+        assertEquals("41", source.substring(litSpan.from, litSpan.to))
     }
 
     fun testBookkeepingAttributesAreHidden() {
@@ -84,6 +85,20 @@ class RakuAstServiceTest : CommaFixtureTestCase() {
         walk(root)
         assertTrue("expected a RakuAST::Class, got $classes", classes.contains("RakuAST::Class"))
         assertTrue("expected a RakuAST::Method, got $classes", classes.contains("RakuAST::Method"))
+    }
+
+    // Regression guard: a node with an undefined .origin (here, the implicit
+    // RakuAST::Type::Setting on an untyped parameter) must decode to a null
+    // span, never to a real-looking (0, 0). Before the fix, clicking this
+    // node in the tree would silently clear the selection and jump the
+    // caret to baseOffset; once the (currently unwired) edit UI ships, an
+    // indistinguishable (0,0) would let apply() insert text at baseOffset
+    // instead of refusing.
+    fun testUndefinedOriginProducesNullSpan() {
+        val root = service().analyze("sub f(\$a) { \$a * 2 }").tree!!
+        val setting = findFirst(root, "RakuAST::Type::Setting")
+        assertNotNull("expected a RakuAST::Type::Setting node in the tree", setting)
+        assertNull("a node with no .origin must report a null span, not (0,0)", setting!!.span)
     }
 
     private fun findFirst(node: AstNode, cls: String): AstNode? {

@@ -20,7 +20,11 @@ data class AstNode(
     // `class` is a Kotlin keyword, so the wire name is mapped explicitly.
     @SerialName("class") val nodeClass: String,
     val path: List<Int> = emptyList(),
-    val span: AstSpan,
+    // Null when the backend's .origin was undefined (e.g. a synthetic
+    // RakuAST::Type::Setting node) -- NOT the same as a real zero-length
+    // span at offset 0. Callers must treat null as "no location", never
+    // default it to (0,0).
+    val span: AstSpan? = null,
     val attrs: List<AstAttr> = emptyList(),
     val children: List<AstNode> = emptyList(),
 ) {

@@ -2,6 +2,7 @@ package org.raku.comma.rakuast
 
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
@@ -96,9 +97,36 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
             currentEditor = null
             return
         }
-        val start = baseOffset + node.span.from
-        val end = baseOffset + node.span.to
-        if (start < 0 || end > editor.document.textLength || start > end) return
+        // Undefined .origin on the backend (e.g. a synthetic
+        // RakuAST::Type::Setting node) comes through as a null span, distinct
+        // from a real zero-length span at offset 0. Nothing to highlight.
+        val span = node.span ?: return
+
+        val document = editor.document
+        val start = baseOffset + span.from
+        val end = baseOffset + span.to
+        if (start < 0 || end > document.textLength || start > end) return
+
+        // Raku's origin offsets are NFG grapheme indices into the analyzed
+        // snippet; IntelliJ document offsets are UTF-16 code units. The two
+        // can diverge even immediately after analyze() (combining marks,
+        // astral characters), and further still if the document changed
+        // since analyze (e.g. a line typed above the selection shifts
+        // baseOffset out from under the computed range). Rather than track
+        // those two causes separately, verify the text actually at the
+        // computed range still matches the snippet text the backend
+        // analyzed before acting on it -- one guard for both.
+        if (span.from < 0 || span.to > snippet.length || span.from > span.to) {
+            status.text = "Selection has changed since analysis — re-run Analyze"
+            return
+        }
+        val expected = snippet.substring(span.from, span.to)
+        if (document.getText(TextRange(start, end)) != expected) {
+            status.text = "Selection has changed since analysis — re-run Analyze"
+            return
+        }
+
+        status.text = ""
         editor.selectionModel.setSelection(start, end)
         editor.caretModel.moveToOffset(start)
     }

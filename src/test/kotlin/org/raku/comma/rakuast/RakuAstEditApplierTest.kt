@@ -63,6 +63,33 @@ class RakuAstEditApplierTest : CommaFixtureTestCase() {
         assertEquals(before, myFixture.editor.document.text)
     }
 
+    // A null span means the backend's .origin was undefined -- distinct from
+    // a real zero-length span at offset 0 (see testAppliesZeroLengthSpanAsInsert
+    // below). apply() must refuse rather than guess a location.
+    fun testRefusesNullSpan() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 41;")
+        val before = myFixture.editor.document.text
+
+        val changed = RakuAstEditApplier.apply(
+            project, myFixture.editor, 0, EditResult(text = "99", span = null))
+
+        assertFalse(changed)
+        assertEquals(before, myFixture.editor.document.text)
+    }
+
+    // A real zero-length span [B, B) is a valid, deliberate location -- it
+    // means insert the deparsed text and remove nothing. Nothing previously
+    // covered this case; only bounds and reversed/negative spans were tested.
+    fun testAppliesZeroLengthSpanAsInsert() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 41;")
+        val result = EditResult(text = "X", span = AstSpan(from = 3, to = 3))
+
+        val changed = RakuAstEditApplier.apply(project, myFixture.editor, 0, result)
+
+        assertTrue(changed)
+        assertEquals("my X\$x = 41;", myFixture.editor.document.text)
+    }
+
     fun testRefusesNegativeStart() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 41;")
         val before = myFixture.editor.document.text
