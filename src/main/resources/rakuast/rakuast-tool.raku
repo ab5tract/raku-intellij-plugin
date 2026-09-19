@@ -228,6 +228,11 @@ my constant @HIDDEN = <
 # total. This caps every display string regardless of which bookkeeping
 # attribute shows up next on a future Rakudo.
 my constant DISPLAY-LIMIT = 512;
+
+# Longest source excerpt still worth the width it costs in a tree label.
+# Beyond this the excerpt is dropped entirely rather than truncated, since a
+# half-shown fragment of source distracts more than no fragment at all.
+my constant EXCERPT-MAX-CHARS = 24;
 sub cap-display($s) {
     $s.chars > DISPLAY-LIMIT ?? $s.substr(0, DISPLAY-LIMIT) ~ '…' !! $s;
 }
@@ -375,12 +380,16 @@ sub summary-of($node) {
     my $markers = ((try { $node.dump-markers() }) // '').trim;
     my $origin  = ((try { $node.dump-origin()  }) // '').trim;
 
-    # Drop the source excerpt when it merely repeats the identity marker.
-    # `Name 【Int】 ⎡Int⎤` and `Infix 【+】 ⎡+⎤` say the same thing twice; the
-    # excerpt earns its place only when it shows something the marker doesn't.
+    # The source excerpt is only worth the width it costs in a tree label when
+    # it is short and says something the identity marker does not. Drop it when
+    # it merely repeats the marker -- `Name 【Int】 ⎡Int⎤` says the same thing
+    # twice -- or when it exceeds EXCERPT-MAX-CHARS, where in a tree it pushes
+    # every sibling's label off to the right for little gain.
     my $identity = $markers ~~ / '【' (.+?) '】' / ?? ~$/[0] !! Str;
     my $excerpt  = $origin  ~~ / '⎡' (.*?) '⎤' / ?? ~$/[0] !! Str;
-    if $identity.defined && $excerpt.defined && $identity eq $excerpt {
+    if $excerpt.defined
+       && ($excerpt.chars > EXCERPT-MAX-CHARS
+           || ($identity.defined && $identity eq $excerpt)) {
         $origin = $origin.subst(/ \s* '⎡' .*? '⎤' /, '').trim;
     }
 
