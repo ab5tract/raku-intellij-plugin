@@ -438,16 +438,48 @@ sub fail-with($message) {
 
 # Walks a path produced by analyze. Uses node-children so the filtering and
 # ordering match analyze's exactly -- see the note there.
-sub node-at($root, @path, $offset = 0) {
-    my $current = $root;
+# Walks @path from $root and returns every node passed through: the root
+# first, the selected node last.
+#
+# RakuAST nodes carry no parent pointer, so this walk is the only place an
+# ancestor chain can be recovered. Callers wanting just the target take the
+# last element; the edit verb needs the whole chain, because the span it
+# replaces sometimes has to widen to an ancestor (see footprint-is-faithful).
+sub node-chain($root, @path, $offset = 0) {
+    my @chain = $root;
     my $depth = 0;
     for @path -> $index {
-        my @kids = node-children($current, $offset, $depth == 0);
+        my @kids = node-children(@chain[*-1], $offset, $depth == 0);
         fail-with("The selected node is no longer present.") unless @kids[$index].defined;
-        $current = @kids[$index];
+        @chain.push(@kids[$index]);
         $depth++;
     }
-    $current
+    @chain
+}
+
+sub node-at($root, @path, $offset = 0) {
+    node-chain($root, @path, $offset)[*-1]
+}
+
+# Is $node's origin span a faithful footprint for $node's own rendering --
+# that is, does the source it covers say the same thing its DEPARSE says?
+#
+# For most nodes it does, and replacing that span with that rendering is
+# exactly the narrow edit we want. But some nodes sit *inside* delimiters
+# that their own DEPARSE re-emits. In `my $x = "cool";` the StrLiteral's
+# origin covers the bare `cool` between the quotes while .DEPARSE renders
+# `"cool"`, so splicing the one over the other doubles them:
+# `my $x = ""cool"";`.
+#
+# Whitespace is ignored on both sides. DEPARSE normalises formatting, and a
+# node written `my  $x=1` rendering as `my $x = 1` is still covering its own
+# source -- treating that as unfaithful would widen edits for no reason.
+sub footprint-is-faithful($node, $source) {
+    my $o = $node.origin;
+    return False unless $o.defined;
+    my $covered  = (try { $source.substr($o.from, $o.to - $o.from) }) // return False;
+    my $rendered = (try { $node.DEPARSE }) // return False;
+    $covered.subst(/\s+/, '', :g) eq $rendered.subst(/\s+/, '', :g)
 }
 
 # Reads $node's current value for attribute $name, using the same
@@ -535,7 +567,10 @@ sub parse-with-context($snippet, $context-path) {
     unless $context {
         my $ast = (try { $snippet.AST })
             // fail-with("Could not parse the selection: " ~ ($! // 'unknown error'));
-        return %( ast => $ast, offset => 0, context => [] );
+        # `parsed` is the exact text the AST's origins index into, which is
+        # not the snippet once a context prefix is involved. Anything reading
+        # the source at an origin offset needs this rather than the snippet.
+        return %( ast => $ast, offset => 0, context => [], parsed => $snippet );
     }
 
     my $prefix = $context ~ "\n";
@@ -547,7 +582,8 @@ sub parse-with-context($snippet, $context-path) {
                      ~ "together with this file's imports: " ~ ($! // 'unknown error'));
     %( ast     => $ast,
        offset  => $prefix.chars,
-       context => $context.lines.grep({ .trim }).list )
+       context => $context.lines.grep({ .trim }).list,
+       parsed  => $prefix ~ $snippet )
 }
 
 if $verb eq 'analyze' {
@@ -598,7 +634,27 @@ elsif $verb eq 'edit' {
     my %parsed = parse-with-context($source, @*ARGS[6]);
     my $ast    = %parsed<ast>;
     my $offset = %parsed<offset>;
-    my $target = node-at($ast, @path, $offset);
+    # The text origins index into, which is the snippet plus any context
+    # prefix -- not the snippet alone.
+    my $parse-source = %parsed<parsed>;
+    my @chain  = node-chain($ast, @path, $offset);
+    my $target = @chain[*-1];
+
+    # The node whose span gets replaced is not always the node being edited.
+    # Pick the innermost node from the target outwards whose span faithfully
+    # covers its own rendering; editing a StrLiteral's value has to replace
+    # the enclosing quoted construct, or the delimiters get written twice.
+    #
+    # Measured before any mutation, so both sides of the comparison describe
+    # the code as it currently stands in the file.
+    #
+    # The root is not a candidate unless it is itself the target: replacing
+    # the whole selection with a re-deparse of the entire tree would discard
+    # the user's formatting and comments wholesale, which is a worse answer
+    # than the narrow replacement we started with. For the same reason, an
+    # unfaithful target with no faithful ancestor falls back to itself.
+    my @candidates = @path ?? @chain[1 .. *-1].reverse !! @chain;
+    my $replaced   = @candidates.first({ footprint-is-faithful($_, $parse-source) }) // $target;
 
     # Validate before mutating, so a bad snippet never reaches the file.
     my $new-value = do if $kind eq 'node' {
@@ -639,7 +695,7 @@ elsif $verb eq 'edit' {
     # Read .origin BEFORE mutating: hoisted so that if some setter ever
     # incidentally resets .origin, the span returned still reflects the
     # node's pre-edit location rather than silently going stale or null.
-    my $origin := $target.origin;
+    my $origin := $replaced.origin;
     # Rebased past any prepended context, so the caller receives a span in the
     # user's selection rather than in the combined text we actually compiled.
     my $span = $origin.defined
@@ -667,7 +723,31 @@ elsif $verb eq 'edit' {
         fail-with("'$attr' cannot be set on {$target.^name}.") unless $applied;
     }
 
-    my $text = (try { $target.DEPARSE }) // fail-with('The edit produced source that could not be rendered.');
+    # Deparse the node being replaced, which contains the mutated target.
+    my $text = (try { $replaced.DEPARSE }) // fail-with('The edit produced source that could not be rendered.');
+
+    # Put back the statement terminator, when one is needed and not already
+    # there.
+    #
+    # A `;` is a separator emitted by the enclosing StatementList, not part of
+    # any statement node, so a statement deparsed on its own never carries
+    # one. Nor does a statement's origin span cover it: `my $x = 1;` spans
+    # `my $x = 1` with the `;` sitting just outside. That combination usually
+    # works out -- replace the span and the document's own `;` survives -- but
+    # it breaks for a statement that never had one, such as a block-bodied
+    # `sub f() { ... }`. Editing that into an expression statement produced
+    # `my $x = $cool` with nothing to terminate it.
+    #
+    # So: only for statements, only when the source has no `;` directly after
+    # the span, and only when the deparse does not already end in something
+    # that terminates it -- a trailing `}` needs no `;` in Raku.
+    if $replaced ~~ RakuAST::Statement {
+        my $end = $origin.defined ?? $origin.to !! -1;
+        my $next = $end >= 0 && $end < $parse-source.chars ?? $parse-source.substr($end, 1) !! '';
+        if $next ne ';' && $text.trim.chars && $text.trim.substr(*-1) !~~ /<[ ; } ]>/ {
+            $text ~= ';';
+        }
+    }
 
     # Sanity check: never hand back source that cannot be re-parsed.
     fail-with('The edit produced invalid Raku and was not applied.')

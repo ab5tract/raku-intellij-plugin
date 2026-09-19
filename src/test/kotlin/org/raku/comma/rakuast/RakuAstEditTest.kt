@@ -113,6 +113,71 @@ class RakuAstEditTest : CommaFixtureTestCase() {
         )
     }
 
+    // A node's span is only a valid thing to overwrite when it covers the same
+    // code the node deparses to. A StrLiteral's does not: in `my $x = "cool";`
+    // its origin covers the bare `cool` *between* the quotes, while DEPARSE
+    // renders `"cool"` *with* them. Replacing the one with the other wrote the
+    // delimiters twice -- `my $x = ""cooler"";`. The edit has to widen to the
+    // enclosing quoted construct, whose span does cover its own rendering.
+    fun testEditingAStringLiteralDoesNotDoubleItsQuotes() {
+        val source = "my \$x = \"cool\";"
+        val path = pathOf(service().analyze(source).tree!!, "RakuAST::StrLiteral")
+
+        val result = service().edit(source, path, "value", "cooler", "scalar")
+
+        assertNull(result.error)
+        val span = result.span!!
+        assertEquals("my \$x = \"cooler\";", splice(source, span, result.text!!))
+        // The span must have widened past the literal to take in the quotes.
+        assertEquals("\"cool\"", source.substring(span.from, span.to))
+    }
+
+    // Widening is conditional, not automatic: a node whose span already covers
+    // its own rendering must still be replaced exactly, with no reach into the
+    // surrounding statement.
+    fun testEditingAnIntLiteralStaysNarrow() {
+        val source = "my \$x = 41;"
+        val path = pathOf(service().analyze(source).tree!!, "RakuAST::IntLiteral")
+
+        val result = service().edit(source, path, "value", "99", "scalar")
+
+        assertNull(result.error)
+        val span = result.span!!
+        assertEquals("41", source.substring(span.from, span.to))
+        assertEquals("my \$x = 99;", splice(source, span, result.text!!))
+    }
+
+    // `;` is a separator the enclosing StatementList emits, so it belongs to
+    // neither the statement's deparse nor its origin span. Usually that works
+    // out -- the document's own `;` sits outside the replaced span and
+    // survives. But a block-bodied `sub f() { 1 }` has no `;` anywhere, so
+    // editing it into an expression statement left `my $y = 1` unterminated.
+    fun testReplacingABlockBodiedSubGainsATerminator() {
+        val source = "sub f() { 1 }"
+        val path = pathOf(service().analyze(source).tree!!, "RakuAST::Statement::Expression")
+
+        val result = service().edit(source, path, "expression", "my \$y = 1", "node")
+
+        assertNull(result.error)
+        assertEquals("my \$y = 1;", result.text)
+    }
+
+    // The other half of that rule: when the source already terminates the
+    // statement, the edit must not add a second `;`.
+    fun testReplacingATerminatedStatementDoesNotDoubleTheSemicolon() {
+        val source = "!!!;"
+        val path = pathOf(service().analyze(source).tree!!, "RakuAST::Statement::Expression")
+
+        val result = service().edit(source, path, "expression", "++\$", "node")
+
+        assertNull(result.error)
+        assertEquals("++\$", result.text)
+        assertEquals("++\$;", splice(source, result.span!!, result.text!!))
+    }
+
+    private fun splice(source: String, span: AstSpan, text: String) =
+        source.substring(0, span.from) + text + source.substring(span.to)
+
     private fun collectClasses(node: AstNode): List<String> {
         val out = mutableListOf(node.nodeClass)
         node.children.forEach { out += collectClasses(it) }
