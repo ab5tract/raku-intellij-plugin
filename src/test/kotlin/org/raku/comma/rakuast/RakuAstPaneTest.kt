@@ -13,7 +13,7 @@ class RakuAstPaneTest : CommaFixtureTestCase() {
     // preferences, so one test toggling a setting cannot change what another
     // sees. RakuAstViewerPanel owns the persistence; the pane only reads.
     private fun newPane(options: RakuAstViewerOptions = RakuAstViewerOptions()) =
-        RakuAstPane(project, options)
+        RakuAstPane(project, options, PaneId.LEFT)
 
     fun testShowsErrorTextWhenAnalysisFailed() {
         myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")

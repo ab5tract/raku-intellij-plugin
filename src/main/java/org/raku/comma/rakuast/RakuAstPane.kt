@@ -55,6 +55,7 @@ import javax.swing.tree.DefaultTreeModel
 class RakuAstPane(
     private val project: Project,
     private val options: RakuAstViewerOptions,
+    val paneId: PaneId,
 ) : JPanel(BorderLayout()) {
 
     // A JLabel would clip these to one line, and the messages that matter most
@@ -177,11 +178,26 @@ class RakuAstPane(
             }
         })
 
-        val splitter = JBSplitter(true, 0.6f)
+        // Keyed per pane, not shared: an unkeyed splitter resets to 0.6 every
+        // session, and one key across both panes would make whichever divider
+        // moved last silently reposition the other on the next open.
+        val splitter = JBSplitter(true, "$TREE_SPLIT_KEY.$paneId", 0.6f)
         splitter.firstComponent = JBScrollPane(tree)
         splitter.secondComponent = JBScrollPane(attrTable)
         add(status, BorderLayout.NORTH)
         add(splitter, BorderLayout.CENTER)
+
+        // The status area wraps, so its height depends on the width it is
+        // wrapping within, and it only recomputes that on revalidate. Before
+        // the panes were split there was nothing that changed a pane's width,
+        // so the table's own resize hook was enough; now dragging the divider
+        // between panes re-wraps a long compile error to a different number of
+        // lines and would leave it clipped at the old height.
+        addComponentListener(object : ComponentAdapter() {
+            override fun componentResized(event: ComponentEvent) {
+                status.revalidate()
+            }
+        })
 
         tree.addTreeSelectionListener {
             val selected = tree.lastSelectedPathComponent as? DefaultMutableTreeNode
@@ -705,6 +721,10 @@ class RakuAstPane(
         private const val GIST_LOADING = "Rendering…"
 
         private const val COPY_CONFIRMATION_MS = 2000L
+
+        // Application-scoped, unlike the project-scoped display preferences --
+        // a divider position is about this screen, not about this project.
+        private const val TREE_SPLIT_KEY = "org.raku.comma.rakuast.treeAttrSplit"
 
         private const val UNMAPPABLE =
             "That node's span could not be mapped into the document — re-run Analyze"

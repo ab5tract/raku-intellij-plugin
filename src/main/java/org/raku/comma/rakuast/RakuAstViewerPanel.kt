@@ -3,6 +3,7 @@ package org.raku.comma.rakuast
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
@@ -25,7 +26,8 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         showGist = PropertiesComponent.getInstance(project).getBoolean(SHOW_GIST_KEY, false),
     )
 
-    private val pane = RakuAstPane(project, options)
+    private val leftPane = RakuAstPane(project, options, PaneId.LEFT)
+    private val rightPane = RakuAstPane(project, options, PaneId.RIGHT)
 
     // On by default: an AST tree is deep and narrow, and a root node alone
     // tells you nothing about the code you just selected. Remembered per
@@ -44,7 +46,14 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     }
 
     init {
-        add(pane, BorderLayout.CENTER)
+        // Side by side rather than stacked, and keyed so the divider survives
+        // a restart. Note the tool window is anchored right (plugin.xml), where
+        // it opens narrow -- JBSplitter.orientation is a var, so a "stack
+        // vertically" toggle is a cheap addition if two trees prove cramped.
+        add(JBSplitter(false, PANE_SPLIT_KEY, 0.5f).apply {
+            firstComponent = leftPane
+            secondComponent = rightPane
+        }, BorderLayout.CENTER)
         add(JPanel(BorderLayout()).apply {
             add(expandAll, BorderLayout.WEST)
             add(showGist, BorderLayout.CENTER)
@@ -57,15 +66,19 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         showGist.addActionListener {
             options.showGist = showGist.isSelected
             PropertiesComponent.getInstance(project).setValue(SHOW_GIST_KEY, options.showGist, false)
-            pane.onShowGistChanged()
+            panes().forEach { it.onShowGistChanged() }
         }
 
         expandAll.addActionListener {
             options.expandAll = expandAll.isSelected
             PropertiesComponent.getInstance(project).setValue(EXPAND_ALL_KEY, options.expandAll, true)
-            pane.onExpandAllChanged()
+            panes().forEach { it.onExpandAllChanged() }
         }
     }
+
+    fun panes(): List<RakuAstPane> = listOf(leftPane, rightPane)
+
+    fun pane(id: PaneId): RakuAstPane = if (id == PaneId.LEFT) leftPane else rightPane
 
     fun showAnalysis(
         editor: Editor,
@@ -73,14 +86,12 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
         snippet: String,
         result: AnalyzeResult,
         contextAvailable: Boolean = true,
-    ) = pane.showAnalysis(editor, baseOffset, snippet, result, contextAvailable)
-
-    fun statusText(): String = pane.statusText()
-
-    fun nodeCount(): Int = pane.nodeCount()
+    ) = leftPane.showAnalysis(editor, baseOffset, snippet, result, contextAvailable)
 
     companion object {
         private const val EXPAND_ALL_KEY = "org.raku.comma.rakuast.expandAll"
         private const val SHOW_GIST_KEY = "org.raku.comma.rakuast.showGist"
+
+        private const val PANE_SPLIT_KEY = "org.raku.comma.rakuast.paneSplit"
     }
 }

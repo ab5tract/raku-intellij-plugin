@@ -1,0 +1,73 @@
+package org.raku.comma.rakuast
+
+import org.raku.comma.CommaFixtureTestCase
+import org.raku.comma.filetypes.RakuScriptFileType
+
+/**
+ * The container's own concerns: that there really are two independent panes,
+ * and that the preferences it owns reach both of them. Everything about what a
+ * single analysis does lives in [RakuAstPaneTest].
+ */
+class RakuAstViewerPanelTest : CommaFixtureTestCase() {
+
+    fun testHoldsTwoPanes() {
+        val panel = RakuAstViewerPanel(project)
+
+        assertEquals(2, panel.panes().size)
+        assertEquals(PaneId.LEFT, panel.pane(PaneId.LEFT).paneId)
+        assertEquals(PaneId.RIGHT, panel.pane(PaneId.RIGHT).paneId)
+    }
+
+    // The point of two panes is that one can hold a reference analysis while
+    // you work in the other, so an analysis must not leak across.
+    fun testAnalyzingDoesNotDisturbTheOtherPane() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+        val tree = AstNode(
+            nodeClass = "RakuAST::StatementList",
+            span = AstSpan(0, 10),
+            children = listOf(AstNode("RakuAST::IntLiteral", listOf(0), AstSpan(8, 9))),
+        )
+
+        panel.showAnalysis(myFixture.editor, 0, "my \$x = 1;", AnalyzeResult(tree = tree))
+
+        assertEquals(2, panel.pane(PaneId.LEFT).nodeCount())
+        assertEquals("the right pane should still be empty",
+                     0, panel.pane(PaneId.RIGHT).nodeCount())
+    }
+
+    // One options object behind one persisted key, so a toggle has to reach
+    // both panes. If it reached only the focused one the panes would disagree
+    // about a setting the user set once.
+    fun testGistToggleReachesBothPanes() {
+        myFixture.configureByText(RakuScriptFileType.INSTANCE, "my \$x = 1;")
+        val panel = RakuAstViewerPanel(project)
+        val options = fieldValue<RakuAstViewerOptions>(panel, "options")
+
+        val before = options.showGist
+        toggle(panel, "showGist")
+
+        assertEquals("the toggle should have flipped the shared option",
+                     !before, options.showGist)
+        // Both panes read that same instance, which is the property that makes
+        // a single checkbox correct for two panes.
+        panel.panes().forEach {
+            assertSame(options, fieldValue<RakuAstViewerOptions>(it, "options"))
+        }
+    }
+
+    private fun toggle(panel: RakuAstViewerPanel, name: String) {
+        val box = fieldValue<javax.swing.JCheckBox>(panel, name)
+        box.isSelected = !box.isSelected
+        box.actionListeners.forEach {
+            it.actionPerformed(java.awt.event.ActionEvent(box, 0, ""))
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> fieldValue(target: Any, name: String): T {
+        val field = target.javaClass.getDeclaredField(name)
+        field.isAccessible = true
+        return field.get(target) as T
+    }
+}
