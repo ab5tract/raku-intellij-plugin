@@ -352,9 +352,32 @@ sub node-json($node, @path) {
         class    => $node.^name,
         path     => @path,
         span     => $span,
+        summary  => summary-of($node),
         attrs    => attrs-of($node),
         children => @children,
     )
+}
+
+# Rakudo's own one-line node summary -- the primary line of RakuAST::Node.dump,
+# composed here from its public parts rather than by calling .dump and taking
+# .lines[0], because .dump recurses through every child to build a whole
+# subtree we would immediately throw away.
+#
+# It carries what the tree label cannot: the node's identity (the 【$x】/【+】
+# /【f】 markers that per-class dump-markers overrides supply), its sink and
+# block-statement state (⚓ ▪), whether its origin is a key (𝄞), and a source
+# excerpt Rakudo truncates at 50 characters.
+sub summary-of($node) {
+    my $class   = $node.^name.substr('RakuAST::'.chars);
+    # .trim each part before joining: some dump-markers overrides already end
+    # in a space, which would otherwise double up. Only the joints are
+    # normalised -- the source excerpt inside ⎡⎤ keeps its own spacing.
+    my $markers = ((try { $node.dump-markers() }) // '').trim;
+    my $origin  = ((try { $node.dump-origin()  }) // '').trim;
+    my $summary = $class
+        ~ ($markers ?? ' ' ~ $markers !! '')
+        ~ ($origin  ?? ' ' ~ $origin  !! '');
+    cap-display($summary.trim);
 }
 
 sub fail-with($message) {

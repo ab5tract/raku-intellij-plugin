@@ -26,6 +26,28 @@ class RakuAstServiceTest : CommaFixtureTestCase() {
                    classes.contains("RakuAST::IntLiteral"))
     }
 
+    // Rakudo's one-line node summary. Asserts the parts that carry meaning --
+    // the class name and the identity marker -- rather than exact spacing or
+    // the source excerpt, both of which are Rakudo's to change.
+    fun testNodesCarryRakudoSummary() {
+        val root = service().analyze("my \$x = 41 + 1;").tree!!
+
+        val infix = findFirst(root, "RakuAST::Infix")!!
+        val summary = infix.summary
+        assertNotNull("Infix should carry a summary", summary)
+        assertTrue("summary should name the class, got: $summary",
+                   summary!!.startsWith("Infix"))
+        assertTrue("summary should carry the operator identity, got: $summary",
+                   summary.contains("+"))
+
+        // The root is a different shape -- no identity marker -- so this also
+        // proves the summary is not just the class name echoed back.
+        val rootSummary = root.summary
+        assertNotNull("root should carry a summary", rootSummary)
+        assertTrue("root summary should name StatementList, got: $rootSummary",
+                   rootSummary!!.startsWith("StatementList"))
+    }
+
     fun testIntLiteralExposesEditableValue() {
         val root = service().analyze("my \$x = 41;").tree!!
         val lit = findFirst(root, "RakuAST::IntLiteral")!!
