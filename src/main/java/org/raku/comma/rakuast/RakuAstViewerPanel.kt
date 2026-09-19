@@ -10,9 +10,14 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.EventQueue
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
+import java.awt.event.InputEvent
 import java.text.BreakIterator
+import javax.swing.event.TreeExpansionEvent
+import javax.swing.event.TreeExpansionListener
+import javax.swing.tree.TreePath
 import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.JTextArea
@@ -53,6 +58,7 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
     // see graphemeUtf16Offset().
     private var graphemeUtf16Offsets: IntArray = IntArray(0)
     private var nodes = 0
+    private var bulkToggle = false
 
     init {
         // Attribute values are frequently whole deparsed expressions. A default
@@ -78,6 +84,64 @@ class RakuAstViewerPanel(private val project: Project) : JPanel(BorderLayout()) 
             showAttributes(node)
             highlight(node)
         }
+
+        // Shift+toggle applies to the whole subtree. An AST tree is deep and
+        // narrow -- opening one statement a level at a time is tedious when
+        // what you want is "show me all of this".
+        //
+        // Driven from the expansion event rather than by intercepting the
+        // mouse: the tree UI installs its own mouse listener, so consuming the
+        // click from ours is order-dependent and fragile. Reading the
+        // modifiers off the event currently being dispatched is not, and it
+        // picks up keyboard toggles for free.
+        tree.addTreeExpansionListener(object : TreeExpansionListener {
+            override fun treeExpanded(event: TreeExpansionEvent) {
+                if (shiftHeld()) withBulkToggle { expandSubtree(event.path) }
+            }
+
+            override fun treeCollapsed(event: TreeExpansionEvent) {
+                if (shiftHeld()) withBulkToggle { collapseSubtree(event.path) }
+            }
+        })
+    }
+
+    private fun shiftHeld(): Boolean =
+        (EventQueue.getCurrentEvent() as? InputEvent)?.isShiftDown == true
+
+    /**
+     * Runs a bulk expand/collapse without re-entering the expansion listener.
+     * Each expandPath/collapsePath fires its own event, and without this guard
+     * the listener would recurse into work it is already doing.
+     */
+    private fun withBulkToggle(action: () -> Unit) {
+        if (bulkToggle) return
+        bulkToggle = true
+        try {
+            action()
+        } finally {
+            bulkToggle = false
+        }
+    }
+
+    private fun expandSubtree(path: TreePath) {
+        tree.expandPath(path)
+        val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
+        for (i in 0 until node.childCount) {
+            expandSubtree(path.pathByAddingChild(node.getChildAt(i)))
+        }
+    }
+
+    /**
+     * Collapses depth-first: a JTree only remembers the expanded state of a
+     * visible path, so collapsing the parent first would leave the children
+     * expanded again the next time it is opened.
+     */
+    private fun collapseSubtree(path: TreePath) {
+        val node = path.lastPathComponent as? DefaultMutableTreeNode ?: return
+        for (i in 0 until node.childCount) {
+            collapseSubtree(path.pathByAddingChild(node.getChildAt(i)))
+        }
+        tree.collapsePath(path)
     }
 
     fun showAnalysis(
