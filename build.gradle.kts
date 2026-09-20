@@ -461,6 +461,14 @@ dependencies {
 }
 
 tasks.test {
+    // ReleaseWorkflowTest reads this, and Gradle cannot know that. Without it
+    // declared, editing the workflow leaves the suite UP-TO-DATE and the guard
+    // reports a stale pass -- which is precisely the kind of silence it exists
+    // to prevent.
+    inputs.file(".github/workflows/tagged-beta-release.yml")
+        .withPropertyName("releaseWorkflow")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
     // Gradle's 512m default is far too tight for an in-process IntelliJ test
     // application; it GC-thrashes long before it OOMs, which is invisible except
     // as a slow suite.
