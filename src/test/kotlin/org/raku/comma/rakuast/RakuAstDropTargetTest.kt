@@ -147,6 +147,43 @@ class RakuAstDropTargetTest : CommaFixtureTestCase() {
         assertNull(insertSlotFor(pane, call, 1))
     }
 
+    // Dropping a string onto a string. The StrLiteral is the bare content
+    // inside the quotes, held in the quoted string's segments list, while a
+    // dragged string arrives quoted -- splicing one into the other produced
+    // `""warm""`. The drop has to climb to the quoted construct so both sides
+    // are talking about the same thing.
+    fun testDroppingOnAStringTargetsTheQuotedConstruct() {
+        val pane = analyzedPane("my \$x = \"cool\";")
+        val root = fieldValue<AstNode?>(pane, "rootNode")!!
+        val literal = find(root, "RakuAST::StrLiteral")!!
+
+        // Left alone, this would resolve to the bare-content segments list.
+        assertEquals("segments", literal.viaAttr)
+
+        val slot = slotFor(pane, literal)!!
+        assertEquals("the quoted string's own slot, not its segments",
+                     "expression", slot.attrName)
+        assertNull("and not a list position", slot.listIndex)
+        assertEquals("RakuAST::Initializer::Assign", slot.node.nodeClass)
+    }
+
+    // The whole round trip the report was about: drag a string, drop it on a
+    // string, in a pane that has its own analysis.
+    fun testStringOntoStringProducesValidSource() {
+        val target = "my \$x = \"cool\";"
+        val pane = analyzedPane(target)
+        val root = fieldValue<AstNode?>(pane, "rootNode")!!
+        val slot = slotFor(pane, find(root, "RakuAST::StrLiteral")!!)!!
+
+        val result = RakuAstService.getInstance(project)
+            .edit(target, slot.node.path, slot.attrName, "\"warm\"", "node")
+
+        assertNull("dropping a string on a string must not be refused", result.error)
+        val span = result.span!!
+        assertEquals("my \$x = \"warm\";",
+                     target.substring(0, span.from) + result.text + target.substring(span.to))
+    }
+
     // A dragged node is lifted from the source text, not deparsed, so it keeps
     // whatever the user actually wrote.
     fun testDraggedTextComesFromTheSource() {

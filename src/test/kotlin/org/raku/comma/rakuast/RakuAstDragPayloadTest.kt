@@ -51,6 +51,18 @@ class RakuAstDragPayloadTest : TestCase() {
         assertTrue(unknown.fitsSlot("RakuAST::Name"))
     }
 
+    // The panes live in one JVM and pass the object itself. DataFlavor(Class,
+    // String) looks like the way to say that but builds a serialized-object
+    // flavor, which this class cannot honour -- it is not Serializable.
+    fun testFlavorIsALocalObjectReference() {
+        assertTrue(
+            "expected a JVM-local object flavor, got ${RakuAstDragPayload.FLAVOR.mimeType}",
+            RakuAstDragPayload.FLAVOR.mimeType.startsWith(DataFlavor.javaJVMLocalObjectMimeType))
+        assertEquals(RakuAstDragPayload::class.java, RakuAstDragPayload.FLAVOR.representationClass)
+        assertFalse("and not a serialized-object flavor",
+                    RakuAstDragPayload.FLAVOR.isMimeTypeSerializedObject)
+    }
+
     // The payload also offers plain text, so a node can be dragged into an
     // editor or any other text target.
     fun testTransferableOffersBothFlavors() {

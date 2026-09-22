@@ -871,6 +871,22 @@ elsif $verb eq 'edit' {
     # Deparse the node being replaced, which contains the mutated target.
     my $text = (try { $replaced.DEPARSE }) // fail-with('The edit produced source that could not be rendered.');
 
+    # Match the replaced region's edges, not the renderer's.
+    #
+    # DEPARSE gives some nodes surrounding space that their origin span does
+    # not include: an Initializer renders as ` = "warm"` but spans `= "warm"`.
+    # Splicing that in adds a space, and editing the same node twice adds two.
+    # The footprint check ignores whitespace deliberately -- reformatting alone
+    # should not widen an edit -- so it is here that the edges have to be put
+    # back.
+    my $covered = $origin.defined
+        ?? $parse-source.substr($origin.from, $origin.to - $origin.from)
+        !! '';
+    if $covered.chars {
+        $text = $text.subst(/^\s+/, '') unless $covered ~~ /^\s/;
+        $text = $text.subst(/\s+$/, '') unless $covered ~~ /\s$/;
+    }
+
     # Put back the statement terminator, when one is needed and not already
     # there.
     #
@@ -894,9 +910,20 @@ elsif $verb eq 'edit' {
         }
     }
 
-    # Sanity check: never hand back source that cannot be re-parsed.
+    # Validate the file as it would stand, not the replacement on its own.
+    #
+    # Most nodes deparse to something that is not valid Raku in isolation: an
+    # Initializer renders as `= "cool"`, which alone is "Preceding context
+    # expects a term, but found infix =". Parsing the fragment therefore
+    # rejected almost every edit to an interior slot -- replacing a quoted
+    # string among them -- and blamed the user's input for a mistake in the
+    # check. Splicing it back over the node's own span and parsing that asks
+    # the question actually worth asking.
+    my $candidate = $origin.defined
+        ?? $parse-source.substr(0, $origin.from) ~ $text ~ $parse-source.substr($origin.to)
+        !! $text;
     fail-with('The edit produced invalid Raku and was not applied.')
-        unless (try { $text.AST; True }) // False;
+        unless (try { $candidate.AST; True }) // False;
 
     # The tree is rebuilt from the mutated AST, but against the PRE-edit source
     # text -- the document has not been written yet, and the caller re-analyzes

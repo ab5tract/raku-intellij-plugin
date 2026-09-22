@@ -335,7 +335,32 @@ class RakuAstPane(
      * and an element held in a list needs an index that the edit verb cannot
      * express.
      */
-    private fun replacementSlotFor(target: AstNode): DropSlot? {
+    /**
+     * The node a drop onto [node] should actually replace.
+     *
+     * A node whose own span does not yield standalone source cannot be
+     * replaced where it sits. A StrLiteral is the bare `cool` between the
+     * quotes, held in the quoted string's segments list, and that list's items
+     * are bare content — while a dragged string arrives quoted, because that
+     * is the only form that parses. Splicing one into the other produced
+     * `""warm""`.
+     *
+     * Climbing to the node the drag span belongs to — the quoted construct —
+     * makes both sides agree, and is the same climb the backend already makes
+     * when deciding what an edit replaces.
+     */
+    private fun faithfulTargetFor(node: AstNode): AstNode {
+        val drag = node.dragSpan ?: return node
+        // Nearest ancestor first.
+        for (depth in node.path.indices.reversed()) {
+            val ancestor = nodeAt(node.path.take(depth)) ?: continue
+            if (ancestor.span == drag) return ancestor
+        }
+        return node
+    }
+
+    private fun replacementSlotFor(dropped: AstNode): DropSlot? {
+        val target = faithfulTargetFor(dropped)
         val attrName = target.viaAttr ?: return null
         val parent = nodeAt(target.path.dropLast(1)) ?: return null
         val declaredType = parent.attrs.firstOrNull { it.name == attrName }?.type ?: return null
@@ -395,19 +420,40 @@ class RakuAstPane(
                 RakuAstDragPayload(paneId, node.nodeClass, conformance[node.nodeClass], text))
         }
 
+        // Refusals say why, live, while the cursor is still over the target.
+        // A drop that simply does not happen is indistinguishable from one
+        // that is broken, which is exactly how this first behaved.
         override fun canImport(support: TransferSupport): Boolean {
             val payload = payloadOf(support) ?: return false
-            val slot = slotUnder(support) ?: return false
-            return payload.fitsSlot(slot.declaredType)
+            val slot = slotUnder(support)
+            if (slot == null) {
+                explain("Drop onto a node, between two list items, or onto an attribute row")
+                return false
+            }
+            if (!payload.fitsSlot(slot.declaredType)) {
+                explain("${short(payload.nodeClass)} does not fit ${slot.attrName}" +
+                        " (${short(slot.declaredType)})")
+                return false
+            }
+            return true
         }
 
         override fun importData(support: TransferSupport): Boolean {
             val payload = payloadOf(support) ?: return false
             val slot = slotUnder(support) ?: return false
             if (!payload.fitsSlot(slot.declaredType)) return false
+            setStatus("")
             applyDrop(slot, payload.text)
             return true
         }
+
+        // canImport fires on every mouse move during a drag, so only actually
+        // repaint when the reason changes.
+        private fun explain(message: String) {
+            if (status.text != message) setStatus(message)
+        }
+
+        private fun short(className: String) = className.removePrefix("RakuAST::")
 
         private fun payloadOf(support: TransferSupport): RakuAstDragPayload? {
             if (!support.isDataFlavorSupported(RakuAstDragPayload.FLAVOR)) return null
@@ -658,7 +704,14 @@ class RakuAstPane(
         restore: () -> Unit,
         compute: (RakuAstService, String, List<String>) -> EditResult,
     ) {
-        val editor = currentEditor ?: return
+        // Say so rather than returning silently: a pane with no live editor
+        // otherwise accepts a drop and then does nothing at all, which reads
+        // as the feature being broken.
+        val editor = currentEditor
+        if (editor == null) {
+            setStatus("This pane has no analyzed file to write to — re-run Analyze")
+            return
+        }
         val forSnippet = snippet
         val forContext = analysisContext
         val forBase = baseOffset

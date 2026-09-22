@@ -27,7 +27,20 @@ data class RakuAstDragPayload(
     fun fitsSlot(declaredType: String): Boolean = RakuAstTypes.accepts(conforms, declaredType)
 
     companion object {
-        val FLAVOR = DataFlavor(RakuAstDragPayload::class.java, "RakuAST node")
+        /**
+         * A live object reference, valid only inside this JVM.
+         *
+         * Explicitly `javaJVMLocalObjectMimeType` rather than
+         * `DataFlavor(Class, String)`, which despite its convenience builds an
+         * `application/x-java-serialized-object` flavor — a promise this class
+         * cannot keep, since it is not Serializable. Both panes live in one
+         * JVM and want the object itself, not a copy of it.
+         */
+        val FLAVOR: DataFlavor = DataFlavor(
+            "${DataFlavor.javaJVMLocalObjectMimeType};class=${RakuAstDragPayload::class.java.name}",
+            "RakuAST node",
+            RakuAstDragPayload::class.java.classLoader,
+        )
     }
 }
 
