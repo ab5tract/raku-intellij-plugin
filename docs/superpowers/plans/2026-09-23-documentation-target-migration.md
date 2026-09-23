@@ -773,7 +773,7 @@ machinery for no win."
 
 ## Done when
 
-- `./gradlew test --rerun` reports **1309 tests, 0 failures** with `$RAKU_PREFIX` on `PATH`.
+- `./gradlew test --rerun` reports **1311 tests, 0 failures** with `$RAKU_PREFIX` on `PATH` — or **1310** in a fresh clone. `DocDumpProbe.kt` is an untracked local probe contributing one test, so the tracked total is 1310; do not treat its absence as a regression.
 - No string inside a `testQuickDoc`/`testGeneratedDoc`/`testURL`/`assertEquals` call in `DocumentationTest.kt` differs from `HEAD` at the start of this plan. Check with:
   `git diff <base> -- src/test/kotlin/org/raku/comma/docs/DocumentationTest.kt` — only helper bodies and imports should appear.
 - `/tmp/docdump.txt` matches its pre-migration content.
