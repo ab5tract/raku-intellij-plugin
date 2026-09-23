@@ -73,6 +73,18 @@ The legacy registration is **removed, not left alongside**. The platform bridges
 legacy providers into the same pipeline, so registering both would yield two
 targets for every Raku symbol and duplicate the documentation in the popup.
 
+The new extension point is **not language-filtered**, unlike
+`lang.documentationProvider`. Its declaration takes a bare `implementation`
+attribute and no `language`:
+
+```xml
+<platform.backend.documentation.psiTargetProvider
+    implementation="org.raku.comma.docs.RakuPsiDocumentationTargetProvider"/>
+```
+
+So the provider is called for elements of *every* language and must return null
+for anything that is not ours. That check is the first thing it does.
+
 `RakuDocRendering` exists because the signature string now has two consumers —
 `computeDocumentationHint()` and `presentableText` — and because the existing
 `when` over element kinds (constant, enum, package, parameter, regex, routine,
