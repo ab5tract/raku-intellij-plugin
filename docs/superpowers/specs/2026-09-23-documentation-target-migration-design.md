@@ -223,12 +223,20 @@ rendered output is how the result gets eyeballed.
 
 ## Risks
 
-**Hover source is unverified.** The design assumes Ctrl-hover reads
-`computeDocumentationHint()`. That is consistent with the API's shape but has
-not been proven against 262's internals. **First implementation step is to
-confirm it.** If hover instead renders `computePresentation()`, the parity claim
-for hover does not hold as written and the presentation decision needs revisiting
-— it would mean the kind keyword disappearing from hover, which was not agreed.
+**Hover source — verified, no longer a risk.** The design assumed Ctrl-hover
+reads `computeDocumentationHint()`. Confirmed against the 262 bytecode:
+`com.intellij.codeInsight.navigation.CtrlMouseDataKt.targetCtrlMouseData()` (in
+`lib/intellij.platform.lang.impl.jar`) issues
+`invokeinterface DocumentationTarget.computeDocumentationHint()`, storing the
+result as `CtrlMouseData.hintText`, which `CtrlMouseHandler2` passes to the
+on-screen tooltip. A scan of every class in `codeInsight.navigation` and
+`lang.documentation.ide` found no call to `DocumentationTarget.computePresentation()`
+on that path — the only `computePresentation` hits belong to the unrelated
+`NavigationTarget` interface used for navigation popups.
+
+This matters because the two deliberately differ: the hint keeps the leading
+keyword (`method Capture(--&gt; Mu)`) while `presentableText` drops it. Had hover
+rendered the presentation, the keyword would have silently vanished from hover.
 
 **The `@Synchronized` removal**, as above: isolated to its own commit.
 
