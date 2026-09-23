@@ -731,7 +731,31 @@ export PATH="$RAKU_PREFIX/bin:$PATH"
 ./gradlew test --rerun
 ```
 
-Expected: `1309 tests, 0 failures`. `testMethodExternalFromCOREClass` resolves `.end` through `multiResolve`, so it exercises exactly the branch being made async — and `computeDocumentationBlocking` resolves async results, so the helper needs no change.
+Expected: `1309 tests, 0 failures`, **plus one new test** — see below.
+
+This plan originally claimed `testMethodExternalFromCOREClass` already covered
+the async branch. **That was wrong.** It constructs its target from
+`decls[0].element`, the *resolved declaration*, so `computeDocumentation()`
+takes the `else` arm. Every other target in the suite comes from
+`myFixture.elementAtCaret`, which resolves the reference before returning. No
+test anywhere builds a target whose `element` is a `RakuMethodCall` or
+`RakuSubCall`, so nothing reaches the async path.
+
+Add one, in `DocumentationTargetTest`:
+
+```kotlin
+    // The async branch is selected by the element's TYPE, and every other test
+    // hands the target an already-resolved declaration -- so without this, the
+    // readAction path ships unexecuted.
+    fun testCallSiteDocumentationResolvesThroughTheAsyncPath() {
+        myFixture.configureByFile("methodExternalFromCOREClass.p6")
+        val call = myFixture.findElementByText(".end", RakuMethodCall::class.java)
+        val target = RakuDocumentationTarget(call, call)
+        val html = computeDocumentationBlocking(target.createPointer())?.html
+        assertNotNull("the async branch must produce documentation", html)
+        assertTrue(html!!.contains("returns the last index of that list"))
+    }
+```
 
 - [ ] **Step 3: Commit**
 
