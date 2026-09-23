@@ -1,12 +1,15 @@
 package org.raku.comma.docs
 
 import com.intellij.model.Pointer
+import com.intellij.openapi.application.readAction
 import com.intellij.platform.backend.documentation.DocumentationResult
 import com.intellij.platform.backend.documentation.DocumentationTarget
 import com.intellij.platform.backend.presentation.TargetPresentation
 import com.intellij.psi.PsiElement
 import com.intellij.psi.SmartPointerManager
 import org.raku.comma.RakuIcons
+import org.raku.comma.psi.RakuMethodCall
+import org.raku.comma.psi.RakuSubCall
 import org.raku.comma.psi.external.RakuExternalPsiElement
 
 class RakuDocumentationTarget(
@@ -50,9 +53,17 @@ class RakuDocumentationTarget(
         return builder.presentation()
     }
 
-    override fun computeDocumentation(): DocumentationResult? {
+    override fun computeDocumentation(): DocumentationResult? = when (element) {
+        is RakuMethodCall, is RakuSubCall -> DocumentationResult.asyncDocumentation {
+            readAction { documentation() }
+        }
+        else -> documentation()
+    }
+
+    private fun documentation(): DocumentationResult.Documentation? {
         val html = RakuDocRendering.docHtml(element) ?: return null
         var result = DocumentationResult.documentation(html)
+        // Immutable builder: assign the return value or the URL is dropped.
         RakuDocRendering.externalUrl(element)?.let { result = result.externalUrl(it) }
         return result
     }
