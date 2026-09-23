@@ -13,6 +13,6 @@ import org.raku.comma.RakuLanguage
 class RakuPsiDocumentationTargetProvider : PsiDocumentationTargetProvider {
     override fun documentationTarget(element: PsiElement, originalElement: PsiElement?): DocumentationTarget? {
         if (element.language != RakuLanguage.INSTANCE) return null
-        return RakuDocumentationTarget(element, originalElement)
+        return RakuDocumentationTarget(element)
     }
 }

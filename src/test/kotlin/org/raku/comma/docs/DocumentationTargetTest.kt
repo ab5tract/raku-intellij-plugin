@@ -50,7 +50,7 @@ class DocumentationTargetTest : CommaFixtureTestCase() {
     // are synthesised from the symbol cache and have no file for a smart
     // pointer to track, which is why they use a hard pointer.
     fun testTargetSurvivesItsOwnPointer() {
-        val target = RakuDocumentationTarget(elementAt("methodExternalFromCORE"), null)
+        val target = RakuDocumentationTarget(elementAt("methodExternalFromCORE"))
         val data = com.intellij.platform.backend.documentation.impl.computeDocumentationBlocking(
             target.createPointer())
         assertNotNull("the pointer must still dereference to a live target", data)
@@ -60,11 +60,11 @@ class DocumentationTargetTest : CommaFixtureTestCase() {
     fun testTargetHintMatchesTheRenderedLine() {
         val element = elementAt("methodExternalFromCORE")
         assertEquals(RakuDocRendering.hintLine(element),
-                     RakuDocumentationTarget(element, null).computeDocumentationHint())
+                     RakuDocumentationTarget(element).computeDocumentationHint())
     }
 
     fun testTargetPresentationCarriesAllFourSlots() {
-        val presentation = RakuDocumentationTarget(elementAt("methodExternalFromCORE"), null)
+        val presentation = RakuDocumentationTarget(elementAt("methodExternalFromCORE"))
             .computePresentation()
         assertEquals("Capture(--&gt; Mu)", presentation.presentableText)
         assertEquals("Int", presentation.containerText)
@@ -80,7 +80,7 @@ class DocumentationTargetTest : CommaFixtureTestCase() {
     // target. DocumentationData's link data is only reachable via its
     // Kotlin-internal accessor, hence the reflection.
     fun testTargetWiresTheExternalUrl() {
-        val target = RakuDocumentationTarget(elementAt("methodExternalFromCORE"), null)
+        val target = RakuDocumentationTarget(elementAt("methodExternalFromCORE"))
         val data = com.intellij.platform.backend.documentation.impl.computeDocumentationBlocking(
             target.createPointer())
         assertNotNull("the pointer must still dereference to a live target", data)
@@ -112,9 +112,23 @@ class DocumentationTargetTest : CommaFixtureTestCase() {
     fun testCallSiteDocumentationResolvesThroughTheAsyncPath() {
         myFixture.configureByFile("methodExternalFromCOREClass.p6")
         val call = myFixture.findElementByText(".end", RakuMethodCall::class.java)
-        val target = RakuDocumentationTarget(call, call)
+        val target = RakuDocumentationTarget(call)
         val html = computeDocumentationBlocking(target.createPointer())?.html
         assertNotNull("the async branch must produce documentation", html)
         assertTrue(html!!.contains("returns the last index of that list"))
+    }
+
+    // RakuDocRendering.hintLine has no branch for RakuMethodCall/RakuSubCall,
+    // so presentableText(element) is null for every call site -- exactly the
+    // element type routed to the async arm above. computePresentation() must
+    // not fall back to the call's own raw source text when that happens.
+    fun testCallSitePresentableTextIsNotRawSourceText() {
+        myFixture.configureByFile("methodExternalFromCOREClass.p6")
+        val call = myFixture.findElementByText(".end", RakuMethodCall::class.java)
+        val presentableText = RakuDocumentationTarget(call).computePresentation().presentableText
+        assertTrue(
+            "presentableText must not be the call's own raw source text (was \"$presentableText\")",
+            presentableText != call.text
+        )
     }
 }
