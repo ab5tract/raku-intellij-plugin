@@ -4,28 +4,35 @@ Loaded automatically at the start of every session in this repo. Kept short on
 purpose — it holds the few things that are wrong to get wrong, and points at
 `org/llm/raku/traces/` for everything else.
 
-## Every gradle invocation needs the rakubrew preamble
+## Every gradle invocation needs the newest Rakudo on PATH
 
-Tests spawn a real `raku` to load CORE symbols, and `suggestSdkHome()` takes the
-first `PATH` entry that looks like a Raku SDK home. Without the preamble the
-system Rakudo in `/usr/bin` wins, and symbol-dependent assertions fail in ways
+Tests spawn a real `raku` — to load CORE symbols, and for the RakuAST viewer to
+build the AST whose spans and slots the tests assert against. `suggestSdkHome()`
+takes the *first* `PATH` entry that looks like a Raku SDK home, so without this
+the system Rakudo in `/usr/bin` wins and symbol-dependent assertions fail in ways
 that impersonate plugin bugs. Shell state does not persist between tool calls,
 so all of it goes in one command:
 
 ```bash
-eval "$(~/.rakubrew/bin/rakubrew init Zsh)"
-rakubrew switch "${RAKUBREW_RAKU_VERSION:-moar-2026.03}"
+export PATH="$RAKU_PREFIX/bin:$PATH"
 ./gradlew test --rerun --tests "..."
 ```
 
-`RAKUBREW_RAKU_VERSION` is yours to set — export it to work against whatever
-Rakudo you are targeting, and the line above follows. `moar-2026.03` is only the
-default because it is what the currently pinned expectations were written
-against; it is not a blessed version, and a version worth keeping should be
-argued for in `org/llm/raku/traces/test-harness-and-environment.md` rather than
-hardcoded here. Note the `moar-` prefix: a bare `2026.03` prints "Sorry, not
-found" and still returns success through the shell function `rakubrew init`
+**Run against the newest Rakudo you have, and do not pin one.** `$RAKU_PREFIX` is
+the source build this work is developed against: it carries the latest deparse
+rules and the accurate RakuAST node origins the viewer is built on. Without a
+source build, take the newest release rakubrew offers — `rakubrew list-available`
+prints them oldest-first, so the last entry is the one you want — and switch in
+the same shell. Note the `moar-` prefix there: a bare `2026.08` prints "Sorry,
+not found" and still returns success through the shell function `rakubrew init`
 installs, so `&&` chains march on with the switch unapplied.
+
+This file used to default to `moar-2026.03`. Pinning does not stop expectations
+from encoding a Rakudo release; it only chooses which one they silently encode,
+and then rots as the code moves. Held at 2026.03, all eight RakuAST viewer tests
+failed — that release reports no span for `StrLiteral` at all — and nothing was
+wrong with the plugin. See
+`org/llm/raku/traces/test-harness-and-environment.md`.
 
 **A green build is not evidence on its own.** `PATH` and the SDK are not
 declared inputs of the `test` task, so an environment change leaves it
@@ -38,28 +45,35 @@ raku -e 'my $n = 0; for "build/test-results/test".IO.dir(test => *.ends-with(".x
 ```
 
 When a symbol-dependent assertion fails, check `raku -v` before you touch the
-expectation. An expectation that merely encodes a different Rakudo is not a
-regression, and "fixing" it can make things worse — that has already happened
-once with the `.perl` deprecation test.
+expectation, and confirm the difference by asking Rakudo directly rather than
+inferring it from the test. An expectation that merely encodes a different
+Rakudo is not a regression, and "fixing" it blindly can make things worse — that
+has already happened once with the `.perl` deprecation test. When they genuinely
+differ, move the *expectation* forward; do not pin the environment back.
 
-## Text processing in Raku, not Python
+## Text processing: Raku preferred, Python allowed for now
 
-This is a Raku project. Ad-hoc parsing, tallying and munging — of test output,
-XML, logs, anything — goes in `raku -e '...'` (or a script under `scripts/`).
-Do not reach for `python3`, and do not treat "it was just a quick one-liner" as
-an exception.
+This is a Raku project, and ad-hoc parsing, tallying and munging — of test
+output, XML, logs — reads better as `raku -e '...'`, or a script under
+`scripts/`. Prefer it.
 
-**One carve-out, and it is not precedent.** `org/llm/raku/research/raku-tokens/`
-contains Python under `paired/*/impl.py` as *measured artifact* — the experiment
-is about the token cost of Raku versus Python, so it has to contain both. Every
-harness, tokenizer and analysis script in that directory is Raku. Python may not
-be introduced anywhere else, and nothing in there licenses it for delivered work.
+**The prohibition that used to stand here is lifted, deliberately and
+temporarily.** It said not to reach for `python3` at all, and not to treat "just
+a quick one-liner" as an exception. It is worth having again — but *after*
+`raku-master` exists. The point of that work is to make the Raku option the easy
+one, and a rule that leans on discipline instead of ergonomics is the wrong way
+round. Revisit this then, not before.
 
-If you are wondering whether the rule costs anything: barely.
-`org/llm/raku/report/raku-tokens/` — Raku costs ~7% more tokens per byte (±2) and needs
-~15% fewer bytes, so the finished program is token-neutral. Reaching a *working*
-program costs 5–12% more, and the rule itself rests on project coherence, not on
-either number.
+`org/llm/raku/research/raku-tokens/` contains Python under `paired/*/impl.py` as
+*measured artifact*: the experiment compares the token cost of Raku against
+Python, so it has to contain both. Every harness, tokenizer and analysis script
+in that directory is Raku and should stay that way — the data is only comparable
+if the instrument does not change.
+
+What the choice actually costs, from `org/llm/raku/report/raku-tokens/`: Raku
+runs ~7% more tokens per byte (±2) and needs ~15% fewer bytes, so the finished
+program is token-neutral. Reaching a *working* one costs 5–12% more, and nearly
+all of that is a single failure mode — the one the next section is about.
 
 ## Check named arguments before you trust the output
 
