@@ -130,13 +130,13 @@ class DocumentationTest : CommaFixtureTestCase() {
     }
 
     fun testMethodExternalFromCORE() {
-        testQuickDoc("method Capture(Associative *%_ --&gt; Mu)")
+        testQuickDoc("method Capture(--&gt; Mu)")
         testGeneratedDoc("<p>Defined as:</p><p><pre><code>method Capture()</code></pre></p><p>Throws X::Cannot::Capture.</p>")
         testURL("https://docs.raku.org/routine/Capture")
     }
 
     fun testMethodExternalFromCORERole() {
-        testQuickDoc("method roots(Cool \$n, Associative *%_ --&gt; Mu)")
+        testQuickDoc("method roots(Cool \$n --&gt; Mu)")
         testGeneratedDoc("<p><pre><code>multi method roots(Numeric:D: Int:D \$n --&gt; Positional)</code></pre></p><p>Returns a list of the \$n complex roots, which evaluate to the original number when raised to the \$nth power.</p>")
         testURL("https://docs.raku.org/routine/roots")
     }
@@ -148,7 +148,7 @@ class DocumentationTest : CommaFixtureTestCase() {
         val resolved = element.reference as PsiPolyVariantReference
         val decls = resolved.multiResolve(false)
         assertTrue(decls.isNotEmpty())
-        assertEquals("method end(Associative *%_ --&gt; Int)", provider.getQuickNavigateInfo(decls[0].element, null))
+        assertEquals("method end(--&gt; Int)", provider.getQuickNavigateInfo(decls[0].element, null))
         assertEquals("<p><pre><code>multi method end(Any:U: --&gt; 0)<br>multi method end(Any:D:)</code></pre></p><p>Interprets the invocant as a list, and returns the last index of that list.</p><p><pre><code>say 6.end;                      # OUTPUT: «0␤»<br>say &lt;a b c&gt;.end;                # OUTPUT: «2␤»</code></pre></p>",  provider.generateDoc(decls[0].element, element))
         assertContainsElements(provider.getUrlFor(decls[0].element, element)!!, "https://docs.raku.org/routine/end")
     }
