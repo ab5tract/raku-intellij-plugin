@@ -65,8 +65,28 @@ class DocumentationTargetTest : CommaFixtureTestCase() {
         val presentation = RakuDocumentationTarget(elementAt("methodExternalFromCORE"), null)
             .computePresentation()
         assertEquals("Capture(--&gt; Mu)", presentation.presentableText)
+        assertEquals("Int", presentation.containerText)
         assertEquals("CORE.setting", presentation.locationText)
         assertNotNull("a Raku symbol should carry the Camelia icon", presentation.icon)
+    }
+
+    // computeDocumentation()'s externalUrl(...) call sits on an immutable
+    // builder just like TargetPresentationBuilder does -- discarding its
+    // return value silently drops the URL, and nothing else exercises that
+    // wiring: DocumentationTest.testURL asserts against
+    // RakuDocRendering.externalUrl(...) directly and never touches the
+    // target. DocumentationData's link data is only reachable via its
+    // Kotlin-internal accessor, hence the reflection.
+    fun testTargetWiresTheExternalUrl() {
+        val target = RakuDocumentationTarget(elementAt("methodExternalFromCORE"), null)
+        val data = com.intellij.platform.backend.documentation.impl.computeDocumentationBlocking(
+            target.createPointer())
+        assertNotNull("the pointer must still dereference to a live target", data)
+        val linksMethod = data!!.javaClass.getMethod("getLinks\$intellij_platform_lang_impl")
+        val links = linksMethod.invoke(data)
+        assertNotNull("computeDocumentation must produce link data", links)
+        val externalUrlMethod = links!!.javaClass.getMethod("getExternalUrl")
+        assertEquals("https://docs.raku.org/routine/Capture", externalUrlMethod.invoke(links))
     }
 
     // containerText's owner-resolution branch is otherwise untested: Task 2

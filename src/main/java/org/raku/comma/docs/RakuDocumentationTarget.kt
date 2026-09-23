@@ -18,13 +18,19 @@ class RakuDocumentationTarget(
      * A target must survive being carried across read actions.
      *
      * A RakuExternalPsiElement is synthesised in memory from the SDK symbol
-     * cache: it has no file and no offsets for a smart pointer to track, and
-     * it is immutable, so there is no later state for a pointer to go stale
-     * against. Swapping the SDK rebuilds the whole cache and discards this
-     * target with it. A hard pointer is therefore correct, not a shortcut.
+     * cache: it has no file and no offsets for a smart pointer to track, so a
+     * hard pointer is used for `element` instead. `originalElement`, though,
+     * is typically a live, file-backed PSI element with no such guarantee --
+     * it is not immutable and never goes through SmartPointerManager here, so
+     * pinning it directly inside a hard pointer would be wrong. It is dropped
+     * (rebuilt as null) because no RakuDocRendering function ever reads it;
+     * only `element` needs to survive. Swapping the SDK rebuilds the whole
+     * cache and discards this target with it either way.
      */
     override fun createPointer(): Pointer<out DocumentationTarget> {
-        if (element is RakuExternalPsiElement) return Pointer.hardPointer(this)
+        if (element is RakuExternalPsiElement) {
+            return Pointer.hardPointer(RakuDocumentationTarget(element, null))
+        }
         val elementPointer = SmartPointerManager.createPointer(element)
         val originalPointer = originalElement?.let { SmartPointerManager.createPointer(it) }
         return Pointer {
@@ -46,8 +52,8 @@ class RakuDocumentationTarget(
 
     override fun computeDocumentation(): DocumentationResult? {
         val html = RakuDocRendering.docHtml(element) ?: return null
-        val result = DocumentationResult.documentation(html)
-        RakuDocRendering.externalUrl(element)?.let { result.externalUrl(it) }
+        var result = DocumentationResult.documentation(html)
+        RakuDocRendering.externalUrl(element)?.let { result = result.externalUrl(it) }
         return result
     }
 }
