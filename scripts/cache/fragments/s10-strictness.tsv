@@ -1,0 +1,8 @@
+Str	!match-nth	throw	X::AdHoc		src/core.c/Str.rakumod:1318
+Str	!match-nth-iterator	throw	X::AdHoc		src/core.c/Str.rakumod:1445
+Str	!match-x	failure	X::Str::Match::x		src/core.c/Str.rakumod:1477
+Str	!SUBST	throw	X::Str::Subst::Adverb		src/core.c/Str.rakumod:1717
+Str	!ensure-split-sanity	throw	X::Adverb	v k kv p	src/core.c/Str.rakumod:2007
+Str	trans	warn	CX::Warn	c complement d delete s squash	src/core.c/Str.rakumod:3373
+GLOBAL	SLICE_ONE_HASH	failure	X::Adverb	delete exists kv p k v	src/core.c/SLICE.rakumod:198
+GLOBAL	SLICE_MORE_HASH	failure	X::Adverb	delete exists kv p k v	src/core.c/SLICE.rakumod:448

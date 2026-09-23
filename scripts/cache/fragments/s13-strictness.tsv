@@ -1,0 +1,5 @@
+sub	trait_mod:<is>	throw	X::Inheritance::UnknownParent	DEPRECATED rw nativesize ctype unsigned hidden array_type implementation-detail export SYMBOL leading_docs trailing_docs	src/core.c/traits.rakumod:93
+sub	trait_mod:<is>	throw	X::Comp::Trait::Unknown	rw readonly required default box_target DEPRECATED leading_docs trailing_docs built	src/core.c/traits.rakumod:107
+sub	trait_mod:<is>	throw	X::Comp::Trait::Unknown	rw raw default DEPRECATED inlinable onlystar export SYMBOL leading_docs trailing_docs revision-gated implementation-detail hidden-from-backtrace hidden-from-USAGE pure nodal equiv tighter looser assoc prec	src/core.c/traits.rakumod:168
+sub	trait_mod:<is>	throw	X::Comp::Trait::Unknown	readonly rw copy required raw onearg item leading_docs trailing_docs	src/core.c/traits.rakumod:221
+sub	trait_mod:<will>	throw	X::Comp::Trait::Unknown		src/core.c/traits.rakumod:593

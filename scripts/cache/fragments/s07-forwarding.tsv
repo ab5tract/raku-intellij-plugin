@@ -1,0 +1,17 @@
+Mu	new	|%options	SELF	bless	src/core.c/Mu.rakumod:140
+Mu	new	positional-%_	SELF	POPULATE	src/core.c/Mu.rakumod:139
+Mu	bless	positional-%_	SELF	POPULATE	src/core.c/Mu.rakumod:154
+Mu	clone	positional-%_	SELF	!clone-with-twiddles	src/core.c/Mu.rakumod:1150
+Mu	WALK	|%options	SELF	WALK	src/core.c/Mu.rakumod:1362
+Mu	gistseen	|%options	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:903
+Mu	rakuseen	|%options	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:933
+Mu	dispatch:<var>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1175
+Mu	dispatch:<::>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1208
+Mu	dispatch:<!>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1214
+Mu	dispatch:<.=>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1227
+Mu	dispatch:<.?>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1232
+Mu	dispatch:<.+>	|c	SELF	!batch-call	src/core.c/Mu.rakumod:1260
+Mu	dispatch:<.*>	|c	SELF	!batch-call	src/core.c/Mu.rakumod:1264
+Mu	dispatch:<hyper>	|c	UNKNOWN	UNKNOWN	src/core.c/Mu.rakumod:1280
+Map	new	positional-%_	SELF	new	src/core.c/Map.rakumod:11
+Operator	prec	|c	OperatorProperties	prec	src/core.c/Operator.rakumod:9

@@ -1,0 +1,3 @@
+IO::Handle	TWEAK	throw	X::IO::BinaryAndEncoding		src/core.c/IO/Handle.rakumod:15
+IO::Handle	open	throw	X::IO::BinaryAndEncoding		src/core.c/IO/Handle.rakumod:86
+IO::CatHandle	TWEAK	throw	X::IO::BinaryAndEncoding		src/core.c/IO/CatHandle.rakumod:27

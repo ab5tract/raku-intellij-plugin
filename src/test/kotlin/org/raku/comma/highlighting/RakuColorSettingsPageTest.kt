@@ -1,6 +1,11 @@
 package org.raku.comma.highlighting
 
+import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.editor.colors.EditorColorsScheme
+import com.intellij.openapi.editor.markup.EffectType
+import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import java.awt.Color
 import org.raku.comma.highlighter.RakuColorSettingsPage
 import org.raku.comma.highlighter.RakuHighlighter
 
@@ -210,20 +215,63 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
      */
     fun testSchemesOverrideOnlyWhatFallbacksCannotExpress() {
         assertEquals(
-            setOf(
-                "RAKU_TEXT_BOLD", "RAKU_TEXT_ITALIC", "RAKU_TEXT_UNDERLINE",
-                "RAKU_REGEX_SIG_SPACE", "RAKU_ALT_WARNING",
-            ),
+            setOf("RAKU_TEXT_BOLD", "RAKU_TEXT_ITALIC", "RAKU_ALT_WARNING"),
             schemeKeys("RakuDefault"),
         )
     }
 
-    private fun schemeKeys(name: String): Set<String> {
-        val stream = RakuHighlighter::class.java.getResourceAsStream("/colorSchemes/$name.xml")
-        assertNotNull("Missing scheme resource $name.xml", stream)
-        val xml = stream!!.bufferedReader().use { it.readText() }
-        return Regex("<option name=\"(RAKU_\\w+)\"").findAll(xml)
+    /**
+     * ALT_WARNING is the only key left whose EFFECT_COLOR has to be a literal,
+     * because it exists to *differ* from what its fallback resolves to. Any
+     * other effect belongs in [RakuHighlighter.effectAttributes], which derives
+     * its color from the fallback and so follows the user's theme.
+     */
+    fun testAltWarningIsTheOnlyHardcodedEffectColor() {
+        val entry = Regex("<option name=\"(RAKU_\\w+)\">(.*?)</option>", RegexOption.DOT_MATCHES_ALL)
+        for (scheme in listOf("RakuDefault", "RakuDarcula")) {
+            val withEffects = entry.findAll(schemeXml(scheme))
+                .filter { it.groupValues[2].contains("EFFECT_COLOR") }
+                .map { it.groupValues[1] }
+                .toSet()
+            assertEquals("$scheme.xml hardcodes an effect color", setOf("RAKU_ALT_WARNING"), withEffects)
+        }
+    }
+
+    /** The derived effect follows the theme rather than a shipped literal. */
+    fun testEffectAttributesDeriveTheirColorFromTheKeyForeground() {
+        val scheme = EditorColorsManager.getInstance().globalScheme
+        for (key in listOf(RakuHighlighter.POD_TEXT_UNDERLINE, RakuHighlighter.REGEX_SIG_SPACE)) {
+            val attributes = RakuHighlighter.effectAttributes(scheme, key, EffectType.BOLD_DOTTED_LINE)
+            assertEquals(EffectType.BOLD_DOTTED_LINE, attributes.effectType)
+            assertEquals(scheme.getAttributes(key).foregroundColor, attributes.effectColor)
+            // Only the effect: the run keeps the color of whatever is under it.
+            assertNull(attributes.foregroundColor)
+        }
+    }
+
+    /** A user (or theme) who configures an effect keeps it. */
+    fun testEffectAttributesHonorAConfiguredEffect() {
+        val scheme = EditorColorsManager.getInstance().globalScheme.clone() as EditorColorsScheme
+        val configured = TextAttributes().apply {
+            effectType = EffectType.WAVE_UNDERSCORE
+            effectColor = Color.RED
+        }
+        scheme.setAttributes(RakuHighlighter.POD_TEXT_UNDERLINE, configured)
+
+        val attributes =
+            RakuHighlighter.effectAttributes(scheme, RakuHighlighter.POD_TEXT_UNDERLINE, EffectType.LINE_UNDERSCORE)
+        assertEquals(EffectType.WAVE_UNDERSCORE, attributes.effectType)
+        assertEquals(Color.RED, attributes.effectColor)
+    }
+
+    private fun schemeKeys(name: String): Set<String> =
+        Regex("<option name=\"(RAKU_\\w+)\"").findAll(schemeXml(name))
             .map { it.groupValues[1] }
             .toSet()
+
+    private fun schemeXml(name: String): String {
+        val stream = RakuHighlighter::class.java.getResourceAsStream("/colorSchemes/$name.xml")
+        assertNotNull("Missing scheme resource $name.xml", stream)
+        return stream!!.bufferedReader().use { it.readText() }
     }
 }

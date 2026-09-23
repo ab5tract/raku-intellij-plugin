@@ -1,0 +1,6 @@
+Any	grep	throw	X::Adverb	k v kv p	src/core.c/Any-iterable-methods.rakumod:574
+Any	first	failure	X::Adverb	k p v kv end	src/core.c/Any-iterable-methods.rakumod:495
+Any	!first-result	failure	X::Adverb	k p v kv	src/core.c/Any-iterable-methods.rakumod:495
+Any	ZEN-KEY	failure	X::Adverb		src/core.c/Any.rakumod:339
+Array::Element	access	failure	X::Adverb	exists delete kv p k v	src/core.c/Array/Element.rakumod:2
+Array::Element	access-any	failure	X::Adverb	exists delete kv p k v	src/core.c/Array/Element.rakumod:18

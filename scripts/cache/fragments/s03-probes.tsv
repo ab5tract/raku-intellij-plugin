@@ -1,0 +1,24 @@
+Cool	subst	g	1212.subst("1","x",:g) ne 1212.subst("1","x")
+Cool	subst	x	11111.subst("1","x",:x(2)) eq "xx111"
+Cool	subst	nth	1212.subst("1","x",:nth(2)) eq "12x2"
+Cool	subst	th	1212.subst("1","x",:th(2)) eq "12x2"
+Cool	subst-mutate	g	do { my $x = 1212; $x.subst-mutate("1","x",:g); $x eq "x2x2" }
+Cool	split	skip-empty	1010.split("0",:skip-empty).elems != 1010.split("0").elems
+Cool	split	v	1010.split("0",:v).elems != 1010.split("0").elems
+Cool	split	k	1010.split("0",:k).elems != 1010.split("0").elems
+Cool	trans	squash	1223.trans("23" => "xy", :squash) ne 1223.trans("23" => "xy")
+Cool	trans	complement	1223.trans("2" => "x", :complement) ne 1223.trans("2" => "x")
+Cool	substr-eq	ignorecase	(1+2i).substr-eq("I", 3, :ignorecase) && !(1+2i).substr-eq("I", 3)
+Cool	index	ignorecase	(1+2i).index("I", :ignorecase) == 3 && !(1+2i).index("I").defined
+Cool	indices	ignorecase	(1+2i).indices("I", :ignorecase).elems == 1 && (1+2i).indices("I").elems == 0
+Cool	indices	overlap	11110.indices("11", :overlap).elems == 3 && 11110.indices("11").elems == 2
+Cool	contains	ignorecase	(1+2i).contains("I", :ignorecase) && !(1+2i).contains("I")
+Cool	starts-with	ignorecase	(1+2i).starts-with("1+2I", :ignorecase) && !(1+2i).starts-with("1+2I")
+Cool	ends-with	ignorecase	(1+2i).ends-with("I", :ignorecase) && !(1+2i).ends-with("I")
+Date	new	formatter	Date.new(2020,1,1, formatter => { "X" }).Str eq "X"
+Date	new-from-daycount	formatter	Date.new-from-daycount(58000, formatter => { "X" }).Str eq "X"
+Date	today	formatter	Date.today(formatter => { "X" }).Str eq "X"
+Date	clone	year	Date.new(2020,1,1).clone(:year(2021)).year == 2021
+Date	clone	month	Date.new(2020,1,1).clone(:month(3)).month == 3
+Date	clone	day	Date.new(2020,1,1).clone(:day(15)).day == 15
+Date	clone	formatter	Date.new(2020,1,31).clone(:formatter({"Z"})).Str eq "Z"

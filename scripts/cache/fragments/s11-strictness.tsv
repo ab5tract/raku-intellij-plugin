@@ -1,0 +1,6 @@
+ThreadPoolScheduler	cue	throw	die	every times stop at in catch	src/core.c/ThreadPoolScheduler.rakumod:951
+ThreadPoolScheduler	cue	throw	die	every times stop at in catch	src/core.c/ThreadPoolScheduler.rakumod:955
+ThreadPoolScheduler	cue	throw	die	times at in catch	src/core.c/ThreadPoolScheduler.rakumod:1023
+ThreadPoolScheduler	cue	throw	die	at catch	src/core.c/ThreadPoolScheduler.rakumod:1051
+Variable	trait_mod:<is>	throw	X::Comp::Trait::Unknown	TypeObject default dynamic export	src/core.c/Variable.rakumod:49
+Variable	trait_mod:<will>	throw	X::Comp::Trait::Unknown	begin check final init end enter leave keep undo first next last pre post compose	src/core.c/Variable.rakumod:141

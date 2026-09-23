@@ -1,0 +1,10 @@
+IO::Spec::Cygwin	splitpath	nofile	IO::Spec::Cygwin.splitpath("/a/b/c.txt", :nofile).raku ne IO::Spec::Cygwin.splitpath("/a/b/c.txt").raku
+IO::Spec::Cygwin	canonpath	parent	IO::Spec::Cygwin.canonpath("//n/a/b/../c", :parent) ne IO::Spec::Cygwin.canonpath("//n/a/b/../c")
+IO::Spec::Win32	splitpath	nofile	IO::Spec::Win32.splitpath("C:/a/b/c.txt", :nofile).raku ne IO::Spec::Win32.splitpath("C:/a/b/c.txt").raku
+IO::Spec::Win32	canonpath	parent	IO::Spec::Win32.canonpath("C:/a/b/../c", :parent) ne IO::Spec::Win32.canonpath("C:/a/b/../c")
+IO::Spec::Win32	rel2abs	omit-volume	IO::Spec::Win32.rel2abs("/x", "C:/base", :omit-volume) ne IO::Spec::Win32.rel2abs("/x", "C:/base")
+IO::Spec::Unix	canonpath	parent	IO::Spec::Unix.canonpath("/a/b/../c", :parent) ne IO::Spec::Unix.canonpath("/a/b/../c")
+IO::Spec::QNX	canonpath	parent	IO::Spec::QNX.canonpath("//n/a/b/../c", :parent) ne IO::Spec::QNX.canonpath("//n/a/b/../c")
+Int	Str	superscript	123.Str(:superscript) ne 123.Str
+Int	Str	subscript	123.Str(:subscript) ne 123.Str
+Iterable	flat	hammer	(1, $(2, 3)).flat(:hammer).elems != (1, $(2, 3)).flat.elems

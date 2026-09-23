@@ -1,0 +1,3 @@
+IO::Pipe	TWEAK	throw	X::IO::BinaryAndEncoding		src/core.c/IO/Pipe.rakumod:13
+JavaScriptScheduler	cue	throw	die	times catch	src/core.c/JavaScriptScheduler.rakumod:13
+IO::Socket::INET	new	failure	fail		src/core.c/IO/Socket/INET.rakumod:91

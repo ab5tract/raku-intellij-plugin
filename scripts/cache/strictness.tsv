@@ -1,0 +1,76 @@
+type	method	behaviour	exception	valid_set	evidence	slice
+Any	grep	throw	X::Adverb	k v kv p	src/core.c/Any-iterable-methods.rakumod:574	s01
+Any	first	failure	X::Adverb	k p v kv end	src/core.c/Any-iterable-methods.rakumod:495	s01
+Any	!first-result	failure	X::Adverb	k p v kv	src/core.c/Any-iterable-methods.rakumod:495	s01
+Any	ZEN-KEY	failure	X::Adverb		src/core.c/Any.rakumod:339	s01
+Array::Element	access	failure	X::Adverb	exists delete kv p k v	src/core.c/Array/Element.rakumod:2	s01
+Array::Element	access-any	failure	X::Adverb	exists delete kv p k v	src/core.c/Array/Element.rakumod:18	s01
+CurrentThreadScheduler	cue	throw	die	at in times catch	src/core.c/CurrentThreadScheduler.rakumod:10	s03
+DateTime	new	throw	die	timezone formatter	src/core.c/DateTime.rakumod:301	s04
+DateTime	new	throw	X::DateTime::TimezoneClash	timezone formatter	src/core.c/DateTime.rakumod:389	s04
+Dateish	new	failure	X::AdHoc		src/core.c/Dateish.rakumod:60	s04
+Dateish	earlier	throw	die		src/core.c/Dateish.rakumod:201	s04
+Dateish	later	throw	die		src/core.c/Dateish.rakumod:232	s04
+IO::Handle	TWEAK	throw	X::IO::BinaryAndEncoding		src/core.c/IO/Handle.rakumod:15	s05
+IO::Handle	open	throw	X::IO::BinaryAndEncoding		src/core.c/IO/Handle.rakumod:86	s05
+IO::CatHandle	TWEAK	throw	X::IO::BinaryAndEncoding		src/core.c/IO/CatHandle.rakumod:27	s05
+IO::Pipe	TWEAK	throw	X::IO::BinaryAndEncoding		src/core.c/IO/Pipe.rakumod:13	s06
+JavaScriptScheduler	cue	throw	die	times catch	src/core.c/JavaScriptScheduler.rakumod:13	s06
+IO::Socket::INET	new	failure	fail		src/core.c/IO/Socket/INET.rakumod:91	s06
+Mu	clone	throw	die		src/core.c/Mu.rakumod:1145	s07
+Rakudo::Internals	SLICE_HUH	failure	X::Adverb	delete exists kv p k v	src/core.c/Rakudo/Internals.rakumod:85	s09
+Rakudo::Internals	ADVERBS_AND_NAMED_TO_DISPATCH_INDEX	failure	X::Adverb	exists delete kv p k v	src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:307	s09
+Rakudo::Internals	ADVERBS_TO_DISPATCH_INDEX	failure	X::Adverb	exists delete kv p k v	src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:415	s09
+Rakudo::Internals	SLICE_POSITIONS_WITH_ADVERBS	failure	X::Adverb	exists delete kv p k v	src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:441	s09
+Rakudo::Internals	SLICE_WITH_ADVERBS	failure	X::Adverb	exists delete kv p k v	src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:451	s09
+Rakudo::Internals	FAIL_X_ADVERB	failure	X::Adverb		src/core.c/Rakudo/Internals/PostcircumfixAdverbs.rakumod:460	s09
+Str	!match-nth	throw	X::AdHoc		src/core.c/Str.rakumod:1318	s10
+Str	!match-nth-iterator	throw	X::AdHoc		src/core.c/Str.rakumod:1445	s10
+Str	!match-x	failure	X::Str::Match::x		src/core.c/Str.rakumod:1477	s10
+Str	!SUBST	throw	X::Str::Subst::Adverb		src/core.c/Str.rakumod:1717	s10
+Str	!ensure-split-sanity	throw	X::Adverb	v k kv p	src/core.c/Str.rakumod:2007	s10
+Str	trans	warn	CX::Warn	c complement d delete s squash	src/core.c/Str.rakumod:3373	s10
+GLOBAL	SLICE_ONE_HASH	failure	X::Adverb	delete exists kv p k v	src/core.c/SLICE.rakumod:198	s10
+GLOBAL	SLICE_MORE_HASH	failure	X::Adverb	delete exists kv p k v	src/core.c/SLICE.rakumod:448	s10
+ThreadPoolScheduler	cue	throw	die	every times stop at in catch	src/core.c/ThreadPoolScheduler.rakumod:951	s11
+ThreadPoolScheduler	cue	throw	die	every times stop at in catch	src/core.c/ThreadPoolScheduler.rakumod:955	s11
+ThreadPoolScheduler	cue	throw	die	times at in catch	src/core.c/ThreadPoolScheduler.rakumod:1023	s11
+ThreadPoolScheduler	cue	throw	die	at catch	src/core.c/ThreadPoolScheduler.rakumod:1051	s11
+Variable	trait_mod:<is>	throw	X::Comp::Trait::Unknown	TypeObject default dynamic export	src/core.c/Variable.rakumod:49	s11
+Variable	trait_mod:<will>	throw	X::Comp::Trait::Unknown	begin check final init end enter leave keep undo first next last pre post compose	src/core.c/Variable.rakumod:141	s11
+sub	postcircumfix:<{ }>	failure	X::Adverb	delete exists kv p k v	src/core.c/hash_slice.rakumod:116	s12
+sub	postcircumfix:<{ }>	throw	X::Bind::Slice	UNKNOWN	src/core.c/hash_slice.rakumod:214	s12
+sub	postcircumfix:<{ }>	throw	X::Bind::ZenSlice	UNKNOWN	src/core.c/hash_slice.rakumod:242	s12
+sub	postcircumfix:<[ ]>	throw	X::Bind::Slice	UNKNOWN	src/core.c/array_slice.rakumod:158	s12
+sub	postcircumfix:<[ ]>	throw	X::Bind::Slice	UNKNOWN	src/core.c/array_slice.rakumod:267	s12
+sub	postcircumfix:<[ ]>	throw	X::Bind::ZenSlice	UNKNOWN	src/core.c/array_slice.rakumod:286	s12
+sub	postcircumfix:<[; ]>	throw	X::Bind::Slice	UNKNOWN	src/core.c/array_multislice.rakumod:150	s12
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:186	s12
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:223	s12
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:260	s12
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:316	s12
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:372	s12
+sub	postcircumfix:<[; ]>	failure	X::NYI	UNKNOWN	src/core.c/array_multislice.rakumod:421	s12
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:5033	s12
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:5288	s12
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:5543	s12
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:5798	s12
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:6033	s12
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:6173	s12
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:6313	s12
+sub	postcircumfix:<[ ]>	failure	X::Adverb	exists kv p	src/core.c/native_array.rakumod:6453	s12
+sub	postcircumfix:<[ ]>	throw	X::Bind	UNKNOWN	src/core.c/native_array.rakumod:5017	s12
+sub	postcircumfix:<[ ]>	throw	X::Bind	UNKNOWN	src/core.c/native_array.rakumod:5272	s12
+sub	postcircumfix:<[ ]>	throw	X::Bind	UNKNOWN	src/core.c/native_array.rakumod:5527	s12
+sub	postcircumfix:<[ ]>	throw	X::Bind	UNKNOWN	src/core.c/native_array.rakumod:5782	s12
+sub	postcircumfix:<[ ]>	throw	X::Delete	UNKNOWN	src/core.c/native_array.rakumod:5048	s12
+sub	postcircumfix:<[ ]>	throw	X::Delete	UNKNOWN	src/core.c/native_array.rakumod:5303	s12
+sub	postcircumfix:<[ ]>	throw	X::Delete	UNKNOWN	src/core.c/native_array.rakumod:5558	s12
+sub	postcircumfix:<[ ]>	throw	X::Delete	UNKNOWN	src/core.c/native_array.rakumod:5813	s12
+sub	trait_mod:<is>	throw	X::Inheritance::UnknownParent	DEPRECATED rw nativesize ctype unsigned hidden array_type implementation-detail export SYMBOL leading_docs trailing_docs	src/core.c/traits.rakumod:93	s13
+sub	trait_mod:<is>	throw	X::Comp::Trait::Unknown	rw readonly required default box_target DEPRECATED leading_docs trailing_docs built	src/core.c/traits.rakumod:107	s13
+sub	trait_mod:<is>	throw	X::Comp::Trait::Unknown	rw raw default DEPRECATED inlinable onlystar export SYMBOL leading_docs trailing_docs revision-gated implementation-detail hidden-from-backtrace hidden-from-USAGE pure nodal equiv tighter looser assoc prec	src/core.c/traits.rakumod:168	s13
+sub	trait_mod:<is>	throw	X::Comp::Trait::Unknown	readonly rw copy required raw onearg item leading_docs trailing_docs	src/core.c/traits.rakumod:221	s13
+sub	trait_mod:<will>	throw	X::Comp::Trait::Unknown		src/core.c/traits.rakumod:593	s13
+sub	postcircumfix:<{; }>	failure	X::Adverb	exists delete k kv p v	src/core.e/hash_multislice.rakumod:263	s14
+sub	postcircumfix:<[; ]>	failure	X::Adverb	exists delete k kv p v	src/core.e/array_multislice.rakumod:481	s14

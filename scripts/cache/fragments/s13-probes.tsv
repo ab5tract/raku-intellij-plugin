@@ -1,0 +1,12 @@
+sub	trait_mod:<is>	rw	do { my $o = (anon class { has $.x is rw }).new(:x(1)); $o.x = 5; $o.x == 5 } && !(so try { my $p = (anon class { has $.y }).new(:y(1)); $p.y = 5; True })
+sub	trait_mod:<is>	readonly	!(so try { my $q = (anon class { has $.x is readonly }).new(:x(1)); $q.x = 5; True }) && (so try { my $r = (anon class { has $.x is rw }).new(:x(1)); $r.x = 5; True })
+sub	trait_mod:<is>	required	!(so try (anon class { has $.x is required }).new) && (so (anon class { has $.y }).new)
+sub	trait_mod:<is>	default	(anon class { has $.x is default(42) }).new.x === 42 && (anon class { has $.y }).new.y === Any
+sub	trait_mod:<is>	built	(anon class { has $.x is built(False) }).new(:x(9)).x === Any && (anon class { has $.y }).new(:y(9)).y === 9
+sub	trait_mod:<is>	DEPRECATED	(anon class { has $.x is DEPRECATED("use y") }).^attributes[0].DEPRECATED eq "use y" && !(anon class { has $.y }).^attributes[0].^can("DEPRECATED")
+sub	trait_mod:<is>	implementation-detail	(anon sub i1() is implementation-detail { }).is-implementation-detail && !(anon sub i2() { }).is-implementation-detail
+sub	trait_mod:<is>	nodal	(anon sub f1() is nodal { }).?nodal === True && (anon sub f2() { }).?nodal === Nil
+sub	trait_mod:<is>	hidden-from-backtrace	(anon sub j1() is hidden-from-backtrace { }).?is-hidden-from-backtrace === True && (anon sub j2() { }).?is-hidden-from-backtrace === Nil
+sub	trait_mod:<is>	copy	do { my $a = 1; (sub ($p is copy) { $p = 7 })($a); $a } == 1 && do { my $b = 1; (sub ($p is rw) { $p = 7 })($b); $b } == 7
+sub	trait_mod:<is>	pure	(anon sub p1() is pure { 1 }).?is-pure === True && (anon sub p2() { 1 }).?is-pure === Nil
+sub	trait_mod:<is>	raw	(sub ($p is raw) { $p.VAR.^name })(1) eq 'Int' && (sub ($q) { $q.VAR.^name })(1) eq 'Scalar'

@@ -1,0 +1,23 @@
+Any	min	k	(3,1,2,1).min(:by(&infix:<cmp>), :k) eqv (1,3)
+Any	min	v	(3,1,2,1).min(:by(&infix:<cmp>), :v) eqv (1,1)
+Any	min	kv	(3,1,2,1).min(:by(&infix:<cmp>), :kv) eqv (1,1,3,1)
+Any	min	p	(3,1,2,1).min(:by(&infix:<cmp>), :p) eqv (1 => 1, 3 => 1)
+Any	max	k	(3,1,2,3).max(:by(&infix:<cmp>), :k) eqv (0,3)
+Any	max	v	(3,1,2,3).max(:by(&infix:<cmp>), :v) eqv (3,3)
+Any	max	kv	(3,1,2,3).max(:by(&infix:<cmp>), :kv) eqv (0,3,3,3)
+Any	max	p	(3,1,2,3).max(:by(&infix:<cmp>), :p) eqv (0 => 3, 3 => 3)
+ParallelSequence	grep	k	(1..10).race.grep(* > 8, :k).sum == 17
+ParallelSequence	grep	kv	(1..10).race.grep(* > 8, :kv).sum == 36
+ParallelSequence	grep	p	(1..10).race.grep(* > 8, :p).head ~~ Pair
+Parameter	new	type	Parameter.new(:name(Q|$x|), :type(Int)).type === Int && Parameter.new(:name(Q|$x|)).type === Any
+Parameter	new	default	Parameter.new(:name(Q|$x|), :default(42)).default.defined && !Parameter.new(:name(Q|$x|)).default.defined
+Parameter	new	where	Parameter.new(:name(Q|$x|), :where(* > 2)).constraint_list.elems == 1 && Parameter.new(:name(Q|$x|)).constraint_list.elems == 0
+Parameter	new	sub-signature	Parameter.new(:name(Q|@x|), :sub-signature(:())).sub_signature.defined && !Parameter.new(:name(Q|@x|)).sub_signature.defined
+Proc::Async	new	w	Proc::Async.new("echo", :w).w.so && !Proc::Async.new("echo").w.so
+Proc::Async	new	enc	Proc::Async.new("echo", :enc<latin-1>).enc eq "latin-1" && Proc::Async.new("echo").enc eq "utf8"
+Proc::Async	new	arg0	Proc::Async.new("echo", :arg0<zzz>).args.head eq "zzz" && Proc::Async.new("echo").args.head eq "echo"
+RakuAST::Node	grep	k	"1 + 2".AST.grep(CORE::<RakuAST>.WHO<Literal>, :k).List eqv (0,1)
+RakuAST::Node	grep	kv	"1 + 2".AST.grep(CORE::<RakuAST>.WHO<Literal>, :kv).elems == 4 && "1 + 2".AST.grep(CORE::<RakuAST>.WHO<Literal>).elems == 2
+RakuAST::Node	grep	p	"1 + 2".AST.grep(CORE::<RakuAST>.WHO<Literal>, :p).head ~~ Pair
+RakuAST::Deparse	deparse	skip	CORE::<RakuAST>.WHO<Deparse>.new.deparse(Q|my Int $x;|.AST.grep(CORE::<RakuAST>.WHO<Type>.WHO<Simple>).head, :skip<Int>) eq ""
+RakuAST::Deparse	deparse	no-sink	CORE::<RakuAST>.WHO<Deparse>.new.deparse(Q|say 1; say 2;|.AST, :no-sink).ends-with("say 2;\n")

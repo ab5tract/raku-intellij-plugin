@@ -1,0 +1,9 @@
+Any	grep	k	(1,2,3,4).grep(* > 2, :k).join(",") eq "2,3"
+Any	grep	kv	(1,2,3,4).grep(* > 2, :kv).elems == 4
+Any	grep	p	(1,2,3,4).grep(* > 2, :p).head ~~ Pair
+Any	first	k	(10,20,30).first(* > 10, :k) == 1
+Any	first	kv	(10,20,30).first(* > 10, :kv).elems == 2
+Any	first	p	(10,20,30).first(* > 10, :p) ~~ Pair
+Any	first	end	(10,20,30).first(* > 10, :end) == 30
+Any	match	g	12321.match(/2/, :g).elems == 2
+Any	match	x	12321.match(/\d/, :x(2)).elems == 2

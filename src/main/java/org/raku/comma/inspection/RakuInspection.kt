@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
+import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
@@ -49,6 +50,20 @@ abstract class RakuInspection : LocalInspectionTool() {
                                                range.startOffset,
                                                range.endOffset,
                                                layer,
+                                               HighlighterTargetArea.EXACT_RANGE)
+    }
+
+    /**
+     * For attributes resolved at apply time rather than named by a key -- see
+     * [org.raku.comma.highlighter.RakuHighlighter.effectAttributes]. Unlike the
+     * key overload these do not re-resolve when the user switches scheme, which
+     * costs nothing here because the inspection reruns and rebuilds them.
+     */
+    protected fun customHighlight(editor: Editor, range: TextRange, attributes: TextAttributes, layer: Int) {
+        editor.markupModel.addRangeHighlighter(range.startOffset,
+                                               range.endOffset,
+                                               layer,
+                                               attributes,
                                                HighlighterTargetArea.EXACT_RANGE)
     }
 

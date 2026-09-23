@@ -1,0 +1,5 @@
+DateTime	new	throw	die	timezone formatter	src/core.c/DateTime.rakumod:301
+DateTime	new	throw	X::DateTime::TimezoneClash	timezone formatter	src/core.c/DateTime.rakumod:389
+Dateish	new	failure	X::AdHoc		src/core.c/Dateish.rakumod:60
+Dateish	earlier	throw	die		src/core.c/Dateish.rakumod:201
+Dateish	later	throw	die		src/core.c/Dateish.rakumod:232

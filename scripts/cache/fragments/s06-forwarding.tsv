@@ -1,0 +1,12 @@
+IO::Spec::Cygwin	abs2rel	|c	IO::Spec::Win32	abs2rel	src/core.c/IO/Spec/Cygwin.rakumod:52
+IO::Spec::Cygwin	rel2abs	|c	IO::Spec::Win32	rel2abs	src/core.c/IO/Spec/Cygwin.rakumod:55
+IO::Spec::Cygwin	splitpath	|c	IO::Spec::Win32	splitpath	src/core.c/IO/Spec/Cygwin.rakumod:58
+IO::Spec::Cygwin	catpath	|c	IO::Spec::Win32	catpath	src/core.c/IO/Spec/Cygwin.rakumod:61
+IO::Spec::Cygwin	join	|c	IO::Spec::Win32	join	src/core.c/IO/Spec/Cygwin.rakumod:71
+IO::Spec::Unix	catfile	|c	SELF	catdir	src/core.c/IO/Spec/Unix.rakumod:212
+IO::Socket::INET	new	|%options	Mu	bless	src/core.c/IO/Socket/INET.rakumod:63
+IO::Socket::INET	new	|%options	Mu	bless	src/core.c/IO/Socket/INET.rakumod:85
+IO::Socket::Async::Datagram	decode	|c	Blob	decode	src/core.c/IO/Socket/Async.rakumod:55
+IO::Socket::Async::Datagram	encode	|c	Str	encode	src/core.c/IO/Socket/Async.rakumod:60
+Junction	CALL-ME	|c	UNKNOWN	UNKNOWN	src/core.c/Junction.rakumod:317
+Junction	AUTOTHREAD	|c	UNKNOWN	UNKNOWN	src/core.c/Junction.rakumod:419

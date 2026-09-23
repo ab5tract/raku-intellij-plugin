@@ -1,0 +1,7 @@
+Hash	classify-list	as	(my %a).classify-list({ $_ %% 2 }, 1, 2, :as(* * 10)){True}[0] != (my %b).classify-list({ $_ %% 2 }, 1, 2){True}[0]
+Hash	categorize-list	as	(my %a).categorize-list({ ($_ %% 2,) }, 1, 2, :as(* * 10)){True}[0] != (my %b).categorize-list({ ($_ %% 2,) }, 1, 2){True}[0]
+X::Symbol::NotDynamic	new	symbol	X::Symbol::NotDynamic.new(:symbol<foo>, :package<Bar>).message ne X::Symbol::NotDynamic.new(:symbol<baz>, :package<Bar>).message
+X::Symbol::NotDynamic	new	package	X::Symbol::NotDynamic.new(:symbol<foo>, :package<Bar>).message ne X::Symbol::NotDynamic.new(:symbol<foo>, :package<Baz>).message
+X::Symbol::NotLexical	new	symbol	X::Symbol::NotLexical.new(:symbol<foo>, :package<Bar>).message ne X::Symbol::NotLexical.new(:symbol<baz>, :package<Bar>).message
+X::Symbol::NotLexical	new	package	X::Symbol::NotLexical.new(:symbol<foo>, :package<Bar>).message ne X::Symbol::NotLexical.new(:symbol<foo>, :package<Baz>).message
+X::Caller::NotDynamic	new	symbol	X::Caller::NotDynamic.new(:symbol<foo>).message ne X::Caller::NotDynamic.new(:symbol<baz>).message

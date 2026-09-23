@@ -1,0 +1,235 @@
+type	method	adverb	verdict	detail	probe
+Any	grep	k	verified		(1,2,3,4).grep(* > 2, :k).join(",") eq "2,3"
+Any	grep	kv	verified		(1,2,3,4).grep(* > 2, :kv).elems == 4
+Any	grep	p	verified		(1,2,3,4).grep(* > 2, :p).head ~~ Pair
+Any	first	k	verified		(10,20,30).first(* > 10, :k) == 1
+Any	first	kv	verified		(10,20,30).first(* > 10, :kv).elems == 2
+Any	first	p	verified		(10,20,30).first(* > 10, :p) ~~ Pair
+Any	first	end	verified		(10,20,30).first(* > 10, :end) == 30
+Any	match	g	verified		12321.match(/2/, :g).elems == 2
+Any	match	x	verified		12321.match(/\d/, :x(2)).elems == 2
+Blob	decode	strict	verified		Blob.new(0x81,0x8D).decode("windows-1252").chars == 2 && !(try Blob.new(0x81,0x8D).decode("windows-1252", :strict)).defined
+Blob	decode	replacement	verified		Blob.new(0x81,0x8D).decode("windows-1252", :strict, :replacement("?")) eq "??"
+Collation	set	primary	verified		$*COLLATION.set(:!primary).collation-level != $*COLLATION.set().collation-level
+Collation	set	secondary	verified		$*COLLATION.set(:!secondary).collation-level != $*COLLATION.set().collation-level
+Collation	set	tertiary	verified		$*COLLATION.set(:!tertiary).collation-level != $*COLLATION.set().collation-level
+Collation	set	quaternary	verified		$*COLLATION.set(:!quaternary).collation-level != $*COLLATION.set().collation-level
+Cool	subst	g	verified		1212.subst("1","x",:g) ne 1212.subst("1","x")
+Cool	subst	x	verified		11111.subst("1","x",:x(2)) eq "xx111"
+Cool	subst	nth	verified		1212.subst("1","x",:nth(2)) eq "12x2"
+Cool	subst	th	verified		1212.subst("1","x",:th(2)) eq "12x2"
+Cool	subst-mutate	g	verified		do { my $x = 1212; $x.subst-mutate("1","x",:g); $x eq "x2x2" }
+Cool	split	skip-empty	verified		1010.split("0",:skip-empty).elems != 1010.split("0").elems
+Cool	split	v	verified		1010.split("0",:v).elems != 1010.split("0").elems
+Cool	split	k	verified		1010.split("0",:k).elems != 1010.split("0").elems
+Cool	trans	squash	verified		1223.trans("23" => "xy", :squash) ne 1223.trans("23" => "xy")
+Cool	trans	complement	verified		1223.trans("2" => "x", :complement) ne 1223.trans("2" => "x")
+Cool	substr-eq	ignorecase	verified		(1+2i).substr-eq("I", 3, :ignorecase) && !(1+2i).substr-eq("I", 3)
+Cool	index	ignorecase	verified		(1+2i).index("I", :ignorecase) == 3 && !(1+2i).index("I").defined
+Cool	indices	ignorecase	verified		(1+2i).indices("I", :ignorecase).elems == 1 && (1+2i).indices("I").elems == 0
+Cool	indices	overlap	verified		11110.indices("11", :overlap).elems == 3 && 11110.indices("11").elems == 2
+Cool	contains	ignorecase	verified		(1+2i).contains("I", :ignorecase) && !(1+2i).contains("I")
+Cool	starts-with	ignorecase	verified		(1+2i).starts-with("1+2I", :ignorecase) && !(1+2i).starts-with("1+2I")
+Cool	ends-with	ignorecase	verified		(1+2i).ends-with("I", :ignorecase) && !(1+2i).ends-with("I")
+Date	new	formatter	verified		Date.new(2020,1,1, formatter => { "X" }).Str eq "X"
+Date	new-from-daycount	formatter	verified		Date.new-from-daycount(58000, formatter => { "X" }).Str eq "X"
+Date	today	formatter	verified		Date.today(formatter => { "X" }).Str eq "X"
+Date	clone	year	verified		Date.new(2020,1,1).clone(:year(2021)).year == 2021
+Date	clone	month	verified		Date.new(2020,1,1).clone(:month(3)).month == 3
+Date	clone	day	verified		Date.new(2020,1,1).clone(:day(15)).day == 15
+Date	clone	formatter	verified		Date.new(2020,1,31).clone(:formatter({"Z"})).Str eq "Z"
+DateTime	new	hour	verified		DateTime.new(:date(Date.new(2020,1,1)),:hour(5)).hour != DateTime.new(:date(Date.new(2020,1,1))).hour
+DateTime	new	minute	verified		DateTime.new(:date(Date.new(2020,1,1)),:minute(5)).minute != DateTime.new(:date(Date.new(2020,1,1))).minute
+DateTime	new	second	verified		DateTime.new(:date(Date.new(2020,1,1)),:second(5)).second != DateTime.new(:date(Date.new(2020,1,1))).second
+DateTime	new	day	verified		DateTime.new(:date(Date.new(2020,1,1)),:day(5)).day != DateTime.new(:date(Date.new(2020,1,1))).day
+DateTime	new	timezone	verified		DateTime.new("2020-01-01T00:00:00",:timezone(3600)).Str ne DateTime.new("2020-01-01T00:00:00").Str
+DateTime	new	formatter	verified		DateTime.new(:date(Date.new(2020,1,1)),:formatter({"X"})).Str ne DateTime.new(:date(Date.new(2020,1,1))).Str
+DateTime	clone	year	verified		DateTime.new(2020,1,1,0,0,0).clone(:year(2021)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	month	verified		DateTime.new(2020,1,1,0,0,0).clone(:month(3)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	day	verified		DateTime.new(2020,1,1,0,0,0).clone(:day(3)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	hour	verified		DateTime.new(2020,1,1,0,0,0).clone(:hour(7)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	minute	verified		DateTime.new(2020,1,1,0,0,0).clone(:minute(3)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	second	verified		DateTime.new(2020,1,1,0,0,0).clone(:second(3)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	timezone	verified		DateTime.new(2020,1,1,0,0,0).clone(:timezone(3600)).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	clone	formatter	verified		DateTime.new(2020,1,1,0,0,0).clone(:formatter({"X"})).Str ne DateTime.new(2020,1,1,0,0,0).clone.Str
+DateTime	posix	real	verified		DateTime.new(2020,1,1,0,0,0.5).posix(:real) != DateTime.new(2020,1,1,0,0,0.5).posix
+Dateish	later	day	verified		DateTime.new(2020,1,1,0,0,0).later(:day(1)).day != DateTime.new(2020,1,1,0,0,0).day
+Dateish	later	hour	verified		DateTime.new(2020,1,2,0,0,0).later(:hour(1)).hour != DateTime.new(2020,1,2,0,0,0).hour
+Dateish	earlier	day	verified		DateTime.new(2020,1,2,0,0,0).earlier(:day(1)).day != DateTime.new(2020,1,2,0,0,0).day
+Dateish	earlier	month	verified		DateTime.new(2020,1,2,0,0,0).earlier(:month(1)).month != DateTime.new(2020,1,2,0,0,0).month
+Encoding::Builtin	encoder	replacement	verified		(try Encoding::Registry.find("ascii").encoder.encode-chars("\x[263A]")) === Nil && Encoding::Registry.find("ascii").encoder(:replacement("?")).encode-chars("\x[263A]").decode("ascii") eq "?"
+Encoding::Builtin	decoder	strict	verified		do { my $a := Encoding::Registry.find("windows-1252").decoder(:strict); my $b := Encoding::Registry.find("windows-1252").decoder; $a.add-bytes(Blob.new(129)); $b.add-bytes(Blob.new(129)); (try $a.consume-all-chars()) === Nil && (try $b.consume-all-chars()).defined }
+Encoding::Builtin	decoder	translate-nl	verified		do { my $a := Encoding::Registry.find("utf8").decoder(:translate-nl); my $b := Encoding::Registry.find("utf8").decoder; $a.add-bytes("a\r\nb".encode("utf8")); $b.add-bytes("a\r\nb".encode("utf8")); $a.consume-all-chars() ne $b.consume-all-chars() }
+Hash	classify-list	as	verified		(my %a).classify-list({ $_ %% 2 }, 1, 2, :as(* * 10)){True}[0] != (my %b).classify-list({ $_ %% 2 }, 1, 2){True}[0]
+Hash	categorize-list	as	verified		(my %a).categorize-list({ ($_ %% 2,) }, 1, 2, :as(* * 10)){True}[0] != (my %b).categorize-list({ ($_ %% 2,) }, 1, 2){True}[0]
+X::Symbol::NotDynamic	new	symbol	verified		X::Symbol::NotDynamic.new(:symbol<foo>, :package<Bar>).message ne X::Symbol::NotDynamic.new(:symbol<baz>, :package<Bar>).message
+X::Symbol::NotDynamic	new	package	verified		X::Symbol::NotDynamic.new(:symbol<foo>, :package<Bar>).message ne X::Symbol::NotDynamic.new(:symbol<foo>, :package<Baz>).message
+X::Symbol::NotLexical	new	symbol	verified		X::Symbol::NotLexical.new(:symbol<foo>, :package<Bar>).message ne X::Symbol::NotLexical.new(:symbol<baz>, :package<Bar>).message
+X::Symbol::NotLexical	new	package	verified		X::Symbol::NotLexical.new(:symbol<foo>, :package<Bar>).message ne X::Symbol::NotLexical.new(:symbol<foo>, :package<Baz>).message
+X::Caller::NotDynamic	new	symbol	verified		X::Caller::NotDynamic.new(:symbol<foo>).message ne X::Caller::NotDynamic.new(:symbol<baz>).message
+IO::Spec::Cygwin	splitpath	nofile	verified		IO::Spec::Cygwin.splitpath("/a/b/c.txt", :nofile).raku ne IO::Spec::Cygwin.splitpath("/a/b/c.txt").raku
+IO::Spec::Cygwin	canonpath	parent	verified		IO::Spec::Cygwin.canonpath("//n/a/b/../c", :parent) ne IO::Spec::Cygwin.canonpath("//n/a/b/../c")
+IO::Spec::Win32	splitpath	nofile	verified		IO::Spec::Win32.splitpath("C:/a/b/c.txt", :nofile).raku ne IO::Spec::Win32.splitpath("C:/a/b/c.txt").raku
+IO::Spec::Win32	canonpath	parent	verified		IO::Spec::Win32.canonpath("C:/a/b/../c", :parent) ne IO::Spec::Win32.canonpath("C:/a/b/../c")
+IO::Spec::Win32	rel2abs	omit-volume	verified		IO::Spec::Win32.rel2abs("/x", "C:/base", :omit-volume) ne IO::Spec::Win32.rel2abs("/x", "C:/base")
+IO::Spec::Unix	canonpath	parent	verified		IO::Spec::Unix.canonpath("/a/b/../c", :parent) ne IO::Spec::Unix.canonpath("/a/b/../c")
+IO::Spec::QNX	canonpath	parent	verified		IO::Spec::QNX.canonpath("//n/a/b/../c", :parent) ne IO::Spec::QNX.canonpath("//n/a/b/../c")
+Int	Str	superscript	verified		123.Str(:superscript) ne 123.Str
+Int	Str	subscript	verified		123.Str(:subscript) ne 123.Str
+Iterable	flat	hammer	verified		(1, $(2, 3)).flat(:hammer).elems != (1, $(2, 3)).flat.elems
+Mu	WALK	methods	verified		Any.new.WALK("gist").elems > Any.new.WALK("gist", :methods(False)).elems
+Mu	WALK	submethods	verified		do { my class W1 { submethod s {} }; W1.new.WALK("s").elems == 1 && W1.new.WALK("s", :submethods(False)).elems == 0 }
+Mu	WALK	descendant	verified		do { my class W2 { method f {} }; my class W3 is W2 { method f {} }; W3.new.WALK("f", :descendant).head.package.^name eq "W2" && W3.new.WALK("f").head.package.^name eq "W3" }
+Mu	WALK	super	verified		do { my class W4 { method f {} }; my class W5 is W4 { method f {} }; W5.new.WALK("f", :super).elems == 1 && W5.new.WALK("f").elems == 2 }
+Any	min	k	verified		(3,1,2,1).min(:by(&infix:<cmp>), :k) eqv (1,3)
+Any	min	v	verified		(3,1,2,1).min(:by(&infix:<cmp>), :v) eqv (1,1)
+Any	min	kv	verified		(3,1,2,1).min(:by(&infix:<cmp>), :kv) eqv (1,1,3,1)
+Any	min	p	verified		(3,1,2,1).min(:by(&infix:<cmp>), :p) eqv (1 => 1, 3 => 1)
+Any	max	k	verified		(3,1,2,3).max(:by(&infix:<cmp>), :k) eqv (0,3)
+Any	max	v	verified		(3,1,2,3).max(:by(&infix:<cmp>), :v) eqv (3,3)
+Any	max	kv	verified		(3,1,2,3).max(:by(&infix:<cmp>), :kv) eqv (0,3,3,3)
+Any	max	p	verified		(3,1,2,3).max(:by(&infix:<cmp>), :p) eqv (0 => 3, 3 => 3)
+ParallelSequence	grep	k	verified		(1..10).race.grep(* > 8, :k).sum == 17
+ParallelSequence	grep	kv	verified		(1..10).race.grep(* > 8, :kv).sum == 36
+ParallelSequence	grep	p	verified		(1..10).race.grep(* > 8, :p).head ~~ Pair
+Parameter	new	type	verified		Parameter.new(:name(Q|$x|), :type(Int)).type === Int && Parameter.new(:name(Q|$x|)).type === Any
+Parameter	new	default	verified		Parameter.new(:name(Q|$x|), :default(42)).default.defined && !Parameter.new(:name(Q|$x|)).default.defined
+Parameter	new	where	verified		Parameter.new(:name(Q|$x|), :where(* > 2)).constraint_list.elems == 1 && Parameter.new(:name(Q|$x|)).constraint_list.elems == 0
+Parameter	new	sub-signature	verified		Parameter.new(:name(Q|@x|), :sub-signature(:())).sub_signature.defined && !Parameter.new(:name(Q|@x|)).sub_signature.defined
+Proc::Async	new	w	verified		Proc::Async.new("echo", :w).w.so && !Proc::Async.new("echo").w.so
+Proc::Async	new	enc	verified		Proc::Async.new("echo", :enc<latin-1>).enc eq "latin-1" && Proc::Async.new("echo").enc eq "utf8"
+Proc::Async	new	arg0	verified		Proc::Async.new("echo", :arg0<zzz>).args.head eq "zzz" && Proc::Async.new("echo").args.head eq "echo"
+RakuAST::Node	grep	k	verified		"1 + 2".AST.grep(CORE::<RakuAST>.WHO<Literal>, :k).List eqv (0,1)
+RakuAST::Node	grep	kv	verified		"1 + 2".AST.grep(CORE::<RakuAST>.WHO<Literal>, :kv).elems == 4 && "1 + 2".AST.grep(CORE::<RakuAST>.WHO<Literal>).elems == 2
+RakuAST::Node	grep	p	verified		"1 + 2".AST.grep(CORE::<RakuAST>.WHO<Literal>, :p).head ~~ Pair
+RakuAST::Deparse	deparse	skip	verified		CORE::<RakuAST>.WHO<Deparse>.new.deparse(Q|my Int $x;|.AST.grep(CORE::<RakuAST>.WHO<Type>.WHO<Simple>).head, :skip<Int>) eq ""
+RakuAST::Deparse	deparse	no-sink	verified		CORE::<RakuAST>.WHO<Deparse>.new.deparse(Q|say 1; say 2;|.AST, :no-sink).ends-with("say 2;\n")
+Range	first	end	verified		(1..10).first(* %% 3, :end) != (1..10).first(* %% 3)
+Range	first	k	verified		(1..10).first(* %% 3, :k) != (1..10).first(* %% 3)
+Range	first	p	verified		(1..10).first(* %% 3, :p) ~~ Pair && (1..10).first(* %% 3) !~~ Pair
+Range	first	kv	verified		(1..10).first(* %% 3, :kv) !eqv (1..10).first(* %% 3)
+Rakudo::Internals::ShapedArrayCommon	sort	k	verified		do { my @a[3] = 3,1,2; @a.sort(:k).List !eqv @a.sort.List }
+Rakudo::Internals::HyperRaceSharedImpl	grep	k	verified		(1..10).hyper(:batch(2)).grep(* %% 3, :k).List !eqv (1..10).hyper(:batch(2)).grep(* %% 3).List
+Rakudo::Internals::HyperRaceSharedImpl	grep	p	verified		(1..10).hyper(:batch(2)).grep(* %% 3, :p).List !eqv (1..10).hyper(:batch(2)).grep(* %% 3).List
+Rakudo::Internals::HyperRaceSharedImpl	grep	kv	verified		(1..10).hyper(:batch(2)).grep(* %% 3, :kv).List !eqv (1..10).hyper(:batch(2)).grep(* %% 3).List
+RakuAST::Node	EVAL	check	unverifiable	Could not find symbol '&IntLiteral' in 'Failure'	do { use experimental :rakuast; use MONKEY-SEE-NO-EVAL; RakuAST::IntLiteral.new(42).EVAL(:check) !=== RakuAST::IntLiteral.new(42).EVAL }
+Str	subst	g	verified		"aaa".subst("a","b",:g) ne "aaa".subst("a","b")
+Str	subst	global	verified		"aaa".subst("a","b",:global) ne "aaa".subst("a","b")
+Str	subst	ii	verified		"ABC".subst("ABC","xyz",:ii) ne "ABC".subst("ABC","xyz")
+Str	subst	samecase	verified		"ABC".subst("ABC","xyz",:samecase) ne "ABC".subst("ABC","xyz")
+Str	subst	ss	verified		"a  b".subst("a  b","x y",:ss) ne "a  b".subst("a  b","x y")
+Str	subst	samespace	verified		"a  b".subst("a  b","x y",:samespace) ne "a  b".subst("a  b","x y")
+Str	subst	mm	verified		"ǟb".subst("ǟb","xy",:mm) ne "ǟb".subst("ǟb","xy")
+Str	subst	samemark	verified		"ǟb".subst("ǟb","xy",:samemark) ne "ǟb".subst("ǟb","xy")
+Str	subst	s	verified		"A  B".subst(/"A  B"/,"x y",:ii,:s) ne "A  B".subst(/"A  B"/,"x y",:ii)
+Str	subst	sigspace	verified		"A  B".subst(/"A  B"/,"x y",:ii,:sigspace) ne "A  B".subst(/"A  B"/,"x y",:ii)
+Str	subst	x	verified		"aaa".subst(/a/,"b",:x(2)) ne "aaa".subst(/a/,"b")
+Str	subst	nth	verified		"aaa".subst(/a/,"b",:nth(2)) ne "aaa".subst(/a/,"b")
+Str	subst	st	verified		"aaa".subst(/a/,"b",:st(2)) ne "aaa".subst(/a/,"b")
+Str	subst	nd	verified		"aaa".subst(/a/,"b",:nd(2)) ne "aaa".subst(/a/,"b")
+Str	subst	rd	verified		"aaaa".subst(/a/,"b",:rd(3)) ne "aaaa".subst(/a/,"b")
+Str	subst	th	verified		"aaaa".subst(/a/,"b",:th(4)) ne "aaaa".subst(/a/,"b")
+Str	subst	p	verified		"aaa".subst(/a/,"b",:p(1)) ne "aaa".subst(/a/,"b")
+Str	subst	pos	verified		"aaa".subst(/a/,"b",:pos(1)) ne "aaa".subst(/a/,"b")
+Str	subst	c	verified		"aaa".subst(/a/,"b",:c(1)) ne "aaa".subst(/a/,"b")
+Str	subst	continue	verified		"aaa".subst(/a/,"b",:continue(1)) ne "aaa".subst(/a/,"b")
+Str	subst	as	verified		(try "aaa".subst(/a/,"b",:g,:as(Str))) === Nil
+Str	subst	ov	verified		(try "aaaa".subst(/aa/,"b",:ov)) === Nil
+Str	subst	ex	verified		(try "aaaa".subst(/a+/,"b",:ex)) === Nil
+Str	subst	overlap	verified		"aaaa".subst(/aa/,"b",:overlap) ne "aaaa".subst(/aa/,"b")
+Str	subst	exhaustive	verified		(try "aaaa".subst(/a+/,"b",:exhaustive)) === Nil
+Str	subst	i	inert	probe returned False	"AAA".subst(/a/,"b",:i) ne "AAA".subst(/a/,"b")
+Str	subst	ignorecase	inert	probe returned False	"AAA".subst(/a/,"b",:ignorecase) ne "AAA".subst(/a/,"b")
+Str	subst	m	inert	probe returned False	"ǟ".subst(/a/,"b",:m) ne "ǟ".subst(/a/,"b")
+Str	subst	ignoremark	inert	probe returned False	"ǟ".subst(/a/,"b",:ignoremark) ne "ǟ".subst(/a/,"b")
+Str	subst	r	inert	probe returned False	"aaa".subst(/a+a/,"b",:r) ne "aaa".subst(/a+a/,"b")
+Str	subst	ratchet	inert	probe returned False	"aaa".subst(/a+a/,"b",:ratchet) ne "aaa".subst(/a+a/,"b")
+Str	subst	P5	inert	probe returned False	"a\nb".subst(/a.b/,"x",:P5) ne "a\nb".subst(/a.b/,"x")
+Str	subst	Perl5	inert	probe returned False	"a\nb".subst(/a.b/,"x",:Perl5) ne "a\nb".subst(/a.b/,"x")
+Str	subst-mutate	g	verified		my $a="aaa"; $a.subst-mutate("a","b",:g); my $b="aaa"; $b.subst-mutate("a","b"); $a ne $b
+Str	subst-mutate	global	verified		my $a="aaa"; $a.subst-mutate("a","b",:global); my $b="aaa"; $b.subst-mutate("a","b"); $a ne $b
+Str	subst-mutate	x	verified		my $a="aaa"; $a.subst-mutate(/a/,"b",:x(2)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	nth	verified		my $a="aaa"; $a.subst-mutate(/a/,"b",:nth(2)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	st	verified		my $a="aaa"; $a.subst-mutate(/a/,"b",:st(2)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	nd	verified		my $a="aaa"; $a.subst-mutate(/a/,"b",:nd(2)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	p	verified		my $a="aaa"; $a.subst-mutate(/a/,"b",:p(1)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	pos	verified		my $a="aaa"; $a.subst-mutate(/a/,"b",:pos(1)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	c	verified		my $a="aaa"; $a.subst-mutate(/a/,"b",:c(1)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	continue	verified		my $a="aaa"; $a.subst-mutate(/a/,"b",:continue(1)); my $b="aaa"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	subst-mutate	ov	verified		my $a="aaaa"; $a.subst-mutate(/aa/,"b",:ov); my $b="aaaa"; $b.subst-mutate(/aa/,"b"); $a ne $b
+Str	subst-mutate	overlap	verified		my $a="aaaa"; $a.subst-mutate(/aa/,"b",:overlap); my $b="aaaa"; $b.subst-mutate(/aa/,"b"); $a ne $b
+Str	subst-mutate	ex	verified		my $a="aaaa"; (try $a.subst-mutate(/a+/,"b",:ex)) === Nil
+Str	subst-mutate	exhaustive	verified		my $a="aaaa"; (try $a.subst-mutate(/a+/,"b",:exhaustive)) === Nil
+Str	subst-mutate	as	verified		my $a="aaa"; (try $a.subst-mutate(/a/,"b",:g,:as(Str))) === Nil
+Str	subst-mutate	s	verified		my $a="A  B"; $a.subst-mutate(/"A  B"/,"x y",:ii,:s); my $b="A  B"; $b.subst-mutate(/"A  B"/,"x y",:ii); $a ne $b
+Str	subst-mutate	sigspace	verified		my $a="A  B"; $a.subst-mutate(/"A  B"/,"x y",:ii,:sigspace); my $b="A  B"; $b.subst-mutate(/"A  B"/,"x y",:ii); $a ne $b
+Str	subst-mutate	i	inert	probe returned False	my $a="AAA"; $a.subst-mutate(/a/,"b",:i); my $b="AAA"; $b.subst-mutate(/a/,"b"); $a ne $b
+Str	match	i	inert	probe returned False	"AAA".match(/a/,:i).Bool != "AAA".match(/a/).Bool
+Str	match	ignorecase	inert	probe returned False	"AAA".match(/a/,:ignorecase).Bool != "AAA".match(/a/).Bool
+Str	match	m	inert	probe returned False	"ǟ".match(/a/,:m).Bool != "ǟ".match(/a/).Bool
+Str	match	ignoremark	inert	probe returned False	"ǟ".match(/a/,:ignoremark).Bool != "ǟ".match(/a/).Bool
+Str	match	s	inert	probe returned False	"ab".match(/a b/,:s).Bool != "ab".match(/a b/).Bool
+Str	match	sigspace	inert	probe returned False	"ab".match(/a b/,:sigspace).Bool != "ab".match(/a b/).Bool
+Str	match	r	inert	probe returned False	"aaa".match(/a+a/,:r).Bool != "aaa".match(/a+a/).Bool
+Str	match	ratchet	inert	probe returned False	"aaa".match(/a+a/,:ratchet).Bool != "aaa".match(/a+a/).Bool
+Str	match	P5	inert	probe returned False	"a\nb".match(/a.b/,:P5).Bool != "a\nb".match(/a.b/).Bool
+Str	match	Perl5	inert	probe returned False	"a\nb".match(/a.b/,:Perl5).Bool != "a\nb".match(/a.b/).Bool
+Str	trans	c	verified		"abc".trans("a" => "x", :c) ne "abc".trans("a" => "x")
+Str	trans	complement	verified		"abc".trans("a" => "x", :complement) ne "abc".trans("a" => "x")
+Str	trans	s	verified		"aab".trans("a" => "x", :s) ne "aab".trans("a" => "x")
+Str	trans	squash	verified		"aab".trans("a" => "x", :squash) ne "aab".trans("a" => "x")
+Str	trans	d	verified		"abc".trans("ab" => "x", :d) ne "abc".trans("ab" => "x")
+Str	trans	delete	verified		"abc".trans("ab" => "x", :delete) ne "abc".trans("ab" => "x")
+Str	substr-eq	i	verified		"ABC".substr-eq("abc",:i) != "ABC".substr-eq("abc")
+Str	substr-eq	ignorecase	verified		"ABC".substr-eq("abc",:ignorecase) != "ABC".substr-eq("abc")
+Str	substr-eq	m	verified		"ǟbc".substr-eq("abc",:m) != "ǟbc".substr-eq("abc")
+Str	substr-eq	ignoremark	verified		"ǟbc".substr-eq("abc",:ignoremark) != "ǟbc".substr-eq("abc")
+Str	IO	CWD	verified		"-".IO(:CWD("/zzz-probe")).CWD eq "/zzz-probe"
+Str	IO	SPEC	verified		"-".IO(:SPEC(IO::Spec::Win32.new)).SPEC.^name eq "IO::Spec::Win32"
+Allomorph	subst	g	verified		<442>.subst("4","5",:g) ne <442>.subst("4","5")
+Allomorph	subst-mutate	g	verified		{ my $x = <442>; $x.subst-mutate("4","5",:g); $x eq "552" }()
+Allomorph	comb	match	verified		(<12>.comb(/\d/,:match).head ~~ Match) && !(<12>.comb(/\d/).head ~~ Match)
+Allomorph	split	skip-empty	verified		<100>.split("0",:skip-empty).elems != <100>.split("0").elems
+Allomorph	split	v	verified		<100>.split("0",:v).elems != <100>.split("0").elems
+Supply	act	done	verified		{ my $d = 0; supply { emit 1 }.act(-> $ {}, done => { $d = 1 }); $d == 1 }()
+Supply	act	quit	verified		{ my $q = 0; supply { die "boom" }.act(-> $ {}, quit => -> $ { $q = 1 }); $q == 1 }()
+Supply	act	tap	verified		{ my $t = 0; supply { emit 1 }.act(-> $ {}, tap => -> $ { $t = 1 }); $t == 1 }()
+Supply	split	skip-empty	verified		supply { emit "a,,b" }.split(",", :skip-empty).list.elems == 2 && supply { emit "a,,b" }.split(",").list.elems == 3
+Supply	split	v	verified		supply { emit "a,b" }.split(",", :v).list.elems != supply { emit "a,b" }.split(",").list.elems
+Thread	start	name	verified		Thread.start(-> {}, :name<zippy>).name eq "zippy" && Thread.start(-> {}).name eq "<anon>"
+Thread	start	app_lifetime	verified		Thread.start(-> {}, :app_lifetime).app_lifetime && !Thread.start(-> {}).app_lifetime
+ThreadPoolScheduler	cue	catch	verified		{ my $p = Promise.new; $*SCHEDULER.cue({ die "x" }, :in(0), :catch(-> $ { $p.keep(1) })); await Promise.anyof($p, Promise.in(5)); $p.status == Kept }()
+sub	postcircumfix:<[ ]>	delete	verified		my @a = 1,2,3; (@a[1]:delete) == 2 && !(@a[1]:exists)
+sub	postcircumfix:<[ ]>	exists	verified		my @a = 1,2,3; (@a[1]:exists) === True && (@a[9]:exists) === False
+sub	postcircumfix:<[ ]>	kv	verified		my @a = 1,2,3; (@a[1]:kv) eqv (1,2) && @a[1] == 2
+sub	postcircumfix:<[ ]>	p	verified		my @a = 1,2,3; (@a[1]:p) eqv (1 => 2) && @a[1] == 2
+sub	postcircumfix:<[ ]>	k	verified		my @a = 1,2,3; (@a[1]:k) eqv 1 && @a[1] == 2
+sub	postcircumfix:<[ ]>	v	verified		my @a = 1,2,3; (@a[1]:v) eqv 2 && (@a[9]:v) eqv ()
+sub	postcircumfix:<[ ]>	BIND	verified		my @a; my $x = 42; postcircumfix:<[ ]>(@a, 0, BIND => $x); $x = 43; @a[0] == 43
+sub	postcircumfix:<{ }>	delete	verified		my %h = a => 1; (%h<a>:delete) == 1 && !(%h<a>:exists)
+sub	postcircumfix:<{ }>	exists	verified		my %h = a => 1; (%h<a>:exists) === True && (%h<b>:exists) === False
+sub	postcircumfix:<{ }>	kv	verified		my %h = a => 1; (%h<a>:kv) eqv ("a", 1) && %h<a> == 1
+sub	postcircumfix:<{ }>	p	verified		my %h = a => 1; (%h<a>:p) eqv (a => 1) && %h<a> == 1
+sub	postcircumfix:<{ }>	k	verified		my %h = a => 1; (%h<a>:k) eqv "a" && %h<a> == 1
+sub	postcircumfix:<{ }>	v	verified		my %h = a => 1; (%h<a>:v) eqv 1 && (%h<b>:v) eqv ()
+sub	postcircumfix:<{ }>	BIND	verified		my %h; my $x = 42; postcircumfix:<{ }>(%h, "a", BIND => $x); $x = 43; %h<a> == 43
+sub	postcircumfix:<[; ]>	delete	verified		my @a[2;2]; @a[0;0] = 5; (@a[0;0]:delete) == 5 && !(@a[0;0]:exists)
+sub	postcircumfix:<[; ]>	exists	verified		my @a[2;2]; @a[0;0] = 5; (@a[0;0]:exists) === True && (@a[1;1]:exists) === False
+sub	postcircumfix:<[; ]>	kv	verified		my @a[2;2]; @a[0;0] = 5; (@a[0;0]:kv) eqv ((0,0), 5)
+sub	postcircumfix:<[; ]>	p	verified		my @a[2;2]; @a[0;0] = 5; (@a[0;0]:p) eqv ((0,0) => 5)
+sub	postcircumfix:<[; ]>	k	verified		my @a[2;2]; @a[0;0] = 5; (@a[0;0]:k) eqv (0,0)
+sub	postcircumfix:<[; ]>	v	verified		my @a[2;2]; @a[0;0] = 5; (@a[0;0]:v) eqv 5 && (@a[1;1]:v) eqv ()
+sub	postcircumfix:<[; ]>	BIND	verified		my @a[2;2]; postcircumfix:<[; ]>(@a, (0,0), BIND => 42); @a[0;0] == 42 && !(try @a[0;0] = 5)
+sub	postcircumfix:<{; }>	exists	verified		my %h = a => { b => 1 }; (%h{"a";"b"}:exists) === True && (%h{"a";"c"}:exists) === False
+sub	trait_mod:<is>	rw	verified		do { my $o = (anon class { has $.x is rw }).new(:x(1)); $o.x = 5; $o.x == 5 } && !(so try { my $p = (anon class { has $.y }).new(:y(1)); $p.y = 5; True })
+sub	trait_mod:<is>	readonly	verified		!(so try { my $q = (anon class { has $.x is readonly }).new(:x(1)); $q.x = 5; True }) && (so try { my $r = (anon class { has $.x is rw }).new(:x(1)); $r.x = 5; True })
+sub	trait_mod:<is>	required	verified		!(so try (anon class { has $.x is required }).new) && (so (anon class { has $.y }).new)
+sub	trait_mod:<is>	default	verified		(anon class { has $.x is default(42) }).new.x === 42 && (anon class { has $.y }).new.y === Any
+sub	trait_mod:<is>	built	verified		(anon class { has $.x is built(False) }).new(:x(9)).x === Any && (anon class { has $.y }).new(:y(9)).y === 9
+sub	trait_mod:<is>	DEPRECATED	verified		(anon class { has $.x is DEPRECATED("use y") }).^attributes[0].DEPRECATED eq "use y" && !(anon class { has $.y }).^attributes[0].^can("DEPRECATED")
+sub	trait_mod:<is>	implementation-detail	verified		(anon sub i1() is implementation-detail { }).is-implementation-detail && !(anon sub i2() { }).is-implementation-detail
+sub	trait_mod:<is>	nodal	verified		(anon sub f1() is nodal { }).?nodal === True && (anon sub f2() { }).?nodal === Nil
+sub	trait_mod:<is>	hidden-from-backtrace	verified		(anon sub j1() is hidden-from-backtrace { }).?is-hidden-from-backtrace === True && (anon sub j2() { }).?is-hidden-from-backtrace === Nil
+sub	trait_mod:<is>	copy	verified		do { my $a = 1; (sub ($p is copy) { $p = 7 })($a); $a } == 1 && do { my $b = 1; (sub ($p is rw) { $p = 7 })($b); $b } == 7
+sub	trait_mod:<is>	pure	verified		(anon sub p1() is pure { 1 }).?is-pure === True && (anon sub p2() { 1 }).?is-pure === Nil
+sub	trait_mod:<is>	raw	verified		(sub ($p is raw) { $p.VAR.^name })(1) eq 'Int' && (sub ($q) { $q.VAR.^name })(1) eq 'Scalar'
