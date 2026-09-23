@@ -42,4 +42,45 @@ class DocumentationTargetTest : CommaFixtureTestCase() {
     fun testTopLevelDeclarationHasNoContainer() {
         assertNull(RakuDocRendering.containerText(elementAt("quickDocsClass")))
     }
+
+    // computeDocumentationBlocking dereferences the pointer before computing,
+    // so this covers createPointer() as well as the content. External elements
+    // are synthesised from the symbol cache and have no file for a smart
+    // pointer to track, which is why they use a hard pointer.
+    fun testTargetSurvivesItsOwnPointer() {
+        val target = RakuDocumentationTarget(elementAt("methodExternalFromCORE"), null)
+        val data = com.intellij.platform.backend.documentation.impl.computeDocumentationBlocking(
+            target.createPointer())
+        assertNotNull("the pointer must still dereference to a live target", data)
+        assertTrue(data!!.html!!.contains("Throws X::Cannot::Capture"))
+    }
+
+    fun testTargetHintMatchesTheRenderedLine() {
+        val element = elementAt("methodExternalFromCORE")
+        assertEquals(RakuDocRendering.hintLine(element),
+                     RakuDocumentationTarget(element, null).computeDocumentationHint())
+    }
+
+    fun testTargetPresentationCarriesAllFourSlots() {
+        val presentation = RakuDocumentationTarget(elementAt("methodExternalFromCORE"), null)
+            .computePresentation()
+        assertEquals("Capture(--&gt; Mu)", presentation.presentableText)
+        assertEquals("CORE.setting", presentation.locationText)
+        assertNotNull("a Raku symbol should carry the Camelia icon", presentation.icon)
+    }
+
+    // containerText's owner-resolution branch is otherwise untested: Task 2
+    // only pinned the null case. This is the slot where a wrong answer is
+    // plausible, because a CORE method's owner is reached by hopping to an
+    // ExternalRakuPackageDecl rather than a real PSI package.
+    //
+    // Expected owner is "Int", not "Mu": the fixture is `Int.Capture`, and
+    // Int.rakumod declares its own `method Capture() { X::Cannot::Capture...
+    // .throw }` rather than inheriting Mu's. The reference resolves to the
+    // nearest declaration in the MRO, so its owner is Int.
+    fun testCoreMethodIsOwnedByItsType() {
+        val owner = RakuDocRendering.containerText(elementAt("methodExternalFromCORE"))
+        assertNotNull("a CORE method must report the type that owns it", owner)
+        assertEquals("Int", owner)
+    }
 }
