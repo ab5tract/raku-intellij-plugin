@@ -1,6 +1,8 @@
 package org.raku.comma.docs
 
+import com.intellij.platform.backend.documentation.impl.computeDocumentationBlocking
 import org.raku.comma.CommaFixtureTestCase
+import org.raku.comma.psi.RakuMethodCall
 
 class DocumentationTargetTest : CommaFixtureTestCase() {
     override fun getTestDataPath(): String = "testData/docs"
@@ -102,5 +104,17 @@ class DocumentationTargetTest : CommaFixtureTestCase() {
         val owner = RakuDocRendering.containerText(elementAt("methodExternalFromCORE"))
         assertNotNull("a CORE method must report the type that owns it", owner)
         assertEquals("Int", owner)
+    }
+
+    // The async branch is selected by the element's TYPE, and every other test
+    // hands the target an already-resolved declaration -- so without this, the
+    // readAction path ships unexecuted.
+    fun testCallSiteDocumentationResolvesThroughTheAsyncPath() {
+        myFixture.configureByFile("methodExternalFromCOREClass.p6")
+        val call = myFixture.findElementByText(".end", RakuMethodCall::class.java)
+        val target = RakuDocumentationTarget(call, call)
+        val html = computeDocumentationBlocking(target.createPointer())?.html
+        assertNotNull("the async branch must produce documentation", html)
+        assertTrue(html!!.contains("returns the last index of that list"))
     }
 }
