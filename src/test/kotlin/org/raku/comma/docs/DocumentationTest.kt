@@ -24,13 +24,18 @@ class DocumentationTest : CommaFixtureTestCase() {
         assertEquals(result, targetFor(getTestName(true)).computeDocumentationHint())
     }
 
-    // externalUrl is asserted through the rendering object rather than read
-    // back out of DocumentationData: LinkData is reachable only through an
-    // internal accessor, and the wiring into .externalUrl() is one line covered
-    // by DocumentationTargetTest.
+    // Goes through the platform DocumentationData rather than
+    // RakuDocRendering directly, mirroring
+    // DocumentationTargetTest.testTargetWiresTheExternalUrl: LinkData is
+    // reachable via reflection, so this proves the URL actually makes it
+    // through computeDocumentation()'s immutable builder, not just that the
+    // renderer computes the right string.
     private fun testURL(result: String) {
-        myFixture.configureByFile(getTestName(true) + ".p6")
-        assertEquals(result, RakuDocRendering.externalUrl(myFixture.elementAtCaret))
+        val target = targetFor(getTestName(true))
+        val data = computeDocumentationBlocking(target.createPointer())
+        val links = data!!.javaClass.getMethod("getLinks\$intellij_platform_lang_impl").invoke(data)
+        val url = links.javaClass.getMethod("getExternalUrl").invoke(links)
+        assertEquals(result, url)
     }
 
     fun testQuickDocsClass() {
@@ -148,8 +153,11 @@ class DocumentationTest : CommaFixtureTestCase() {
         assertTrue(decls.isNotEmpty())
         val target = RakuDocumentationTarget(decls[0].element!!, element)
         assertEquals("method end(--&gt; Int)", target.computeDocumentationHint())
-        assertEquals("<p><pre><code>multi method end(Any:U: --&gt; 0)<br>multi method end(Any:D:)</code></pre></p><p>Interprets the invocant as a list, and returns the last index of that list.</p><p><pre><code>say 6.end;                      # OUTPUT: «0␤»<br>say &lt;a b c&gt;.end;                # OUTPUT: «2␤»</code></pre></p>",  computeDocumentationBlocking(target.createPointer())?.html)
-        assertEquals("https://docs.raku.org/routine/end", RakuDocRendering.externalUrl(decls[0].element!!))
+        val data = computeDocumentationBlocking(target.createPointer())
+        assertEquals("<p><pre><code>multi method end(Any:U: --&gt; 0)<br>multi method end(Any:D:)</code></pre></p><p>Interprets the invocant as a list, and returns the last index of that list.</p><p><pre><code>say 6.end;                      # OUTPUT: «0␤»<br>say &lt;a b c&gt;.end;                # OUTPUT: «2␤»</code></pre></p>",  data?.html)
+        val links = data!!.javaClass.getMethod("getLinks\$intellij_platform_lang_impl").invoke(data)
+        val url = links.javaClass.getMethod("getExternalUrl").invoke(links)
+        assertEquals("https://docs.raku.org/routine/end", url)
     }
 
     fun testOperatorDocs() {
