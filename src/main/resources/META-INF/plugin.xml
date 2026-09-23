@@ -298,8 +298,8 @@
                              implementationClass="org.raku.comma.descriptors.RakuExpressionSurroundDescriptor"/>
     <lang.surroundDescriptor language="Raku"
                              implementationClass="org.raku.comma.descriptors.RakuSRegexAtomSurroundDescriptor"/>
-    <lang.documentationProvider language="Raku"
-                                implementationClass="org.raku.comma.docs.RakuDocumentationProvider"/>
+    <platform.backend.documentation.psiTargetProvider
+        implementation="org.raku.comma.docs.RakuPsiDocumentationTargetProvider"/>
     <virtualFileSystem key="raku" implementationClass="org.raku.comma.vfs.RakuFileSystem"/>
     <library.type implementation="org.raku.comma.library.RakuLibraryType"/>
 

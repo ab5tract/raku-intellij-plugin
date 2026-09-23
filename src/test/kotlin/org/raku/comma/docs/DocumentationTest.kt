@@ -1,6 +1,6 @@
 package org.raku.comma.docs
 
-import com.intellij.codeInsight.documentation.DocumentationManager
+import com.intellij.platform.backend.documentation.impl.computeDocumentationBlocking
 import com.intellij.psi.PsiPolyVariantReference
 import org.raku.comma.CommaFixtureTestCase
 import org.raku.comma.psi.RakuMethodCall
@@ -10,28 +10,27 @@ class DocumentationTest : CommaFixtureTestCase() {
         return "testData/docs"
     }
 
+    private fun targetFor(fixture: String): RakuDocumentationTarget {
+        myFixture.configureByFile("$fixture.p6")
+        return RakuDocumentationTarget(myFixture.elementAtCaret, null)
+    }
+
     private fun testGeneratedDoc(result: String) {
-        myFixture.configureByFile(getTestName(true) + ".p6")
-        val element = myFixture.getElementAtCaret()
-        val provider = DocumentationManager.getProviderFromElement(element)
-        val generatedDoc = provider.generateDoc(element, null)
-        assertEquals(result, generatedDoc)
+        val target = targetFor(getTestName(true))
+        assertEquals(result, computeDocumentationBlocking(target.createPointer())?.html)
     }
 
     private fun testQuickDoc(result: String) {
-        myFixture.configureByFile(getTestName(true) + ".p6")
-        val element = myFixture.getElementAtCaret()
-        val provider = DocumentationManager.getProviderFromElement(element)
-        val quickNavigateInfo = provider.getQuickNavigateInfo(element, null)
-        assertEquals(result, quickNavigateInfo)
+        assertEquals(result, targetFor(getTestName(true)).computeDocumentationHint())
     }
 
+    // externalUrl is asserted through the rendering object rather than read
+    // back out of DocumentationData: LinkData is reachable only through an
+    // internal accessor, and the wiring into .externalUrl() is one line covered
+    // by DocumentationTargetTest.
     private fun testURL(result: String) {
         myFixture.configureByFile(getTestName(true) + ".p6")
-        val element = myFixture.getElementAtCaret()
-        val provider = DocumentationManager.getProviderFromElement(element)
-        val urls = provider.getUrlFor(element, null)
-        assertContainsElements(urls!!, result)
+        assertEquals(result, RakuDocRendering.externalUrl(myFixture.elementAtCaret))
     }
 
     fun testQuickDocsClass() {
@@ -144,13 +143,13 @@ class DocumentationTest : CommaFixtureTestCase() {
     fun testMethodExternalFromCOREClass() {
         myFixture.configureByFile(getTestName(true) + ".p6")
         val element = myFixture.findElementByText(".end", RakuMethodCall::class.java)
-        val provider = DocumentationManager.getProviderFromElement(element)
         val resolved = element.reference as PsiPolyVariantReference
         val decls = resolved.multiResolve(false)
         assertTrue(decls.isNotEmpty())
-        assertEquals("method end(--&gt; Int)", provider.getQuickNavigateInfo(decls[0].element, null))
-        assertEquals("<p><pre><code>multi method end(Any:U: --&gt; 0)<br>multi method end(Any:D:)</code></pre></p><p>Interprets the invocant as a list, and returns the last index of that list.</p><p><pre><code>say 6.end;                      # OUTPUT: «0␤»<br>say &lt;a b c&gt;.end;                # OUTPUT: «2␤»</code></pre></p>",  provider.generateDoc(decls[0].element, element))
-        assertContainsElements(provider.getUrlFor(decls[0].element, element)!!, "https://docs.raku.org/routine/end")
+        val target = RakuDocumentationTarget(decls[0].element!!, element)
+        assertEquals("method end(--&gt; Int)", target.computeDocumentationHint())
+        assertEquals("<p><pre><code>multi method end(Any:U: --&gt; 0)<br>multi method end(Any:D:)</code></pre></p><p>Interprets the invocant as a list, and returns the last index of that list.</p><p><pre><code>say 6.end;                      # OUTPUT: «0␤»<br>say &lt;a b c&gt;.end;                # OUTPUT: «2␤»</code></pre></p>",  computeDocumentationBlocking(target.createPointer())?.html)
+        assertEquals("https://docs.raku.org/routine/end", RakuDocRendering.externalUrl(decls[0].element!!))
     }
 
     fun testOperatorDocs() {
