@@ -154,9 +154,25 @@ object RakuDocRendering {
         return owner?.packageName
     }
 
-    /** Where the symbol came from: the setting for CORE, else the file. */
+    /**
+     * Where the symbol came from: the setting for CORE, else the file.
+     *
+     * Deliberately returns the literal [CORE_SETTING_LABEL] rather than
+     * [ProjectSdkSymbolCache.SETTING_FILE_NAME]. That constant names the
+     * LightVirtualFile the plugin synthesises internally to back CORE
+     * symbols ("SETTINGS.rakumod") -- an implementation detail. This slot is
+     * user-facing, and "CORE.setting" is the name a Raku developer actually
+     * uses and the one docs.raku.org uses. The accepted cost is that
+     * Ctrl-clicking a CORE symbol still opens an editor tab titled
+     * "SETTINGS.rakumod", so the popup and the tab disagree; reconciling them
+     * would mean renaming the constant, which feeds symbol-cache lookups and
+     * file construction and is out of scope here. Do not "fix" this back to
+     * the constant.
+     */
     fun locationText(element: PsiElement): String? = when (element) {
-        is RakuExternalPsiElement -> ProjectSdkSymbolCache.SETTING_FILE_NAME
+        is RakuExternalPsiElement -> CORE_SETTING_LABEL
         else -> element.containingFile?.name
     }
+
+    private const val CORE_SETTING_LABEL = "CORE.setting"
 }

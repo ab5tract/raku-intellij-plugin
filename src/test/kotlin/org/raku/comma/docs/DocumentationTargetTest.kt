@@ -24,11 +24,13 @@ class DocumentationTargetTest : CommaFixtureTestCase() {
         assertEquals("class Magician is Cool does Int", RakuDocRendering.presentableText(element))
     }
 
-    // ProjectSdkSymbolCache.SETTING_FILE_NAME is the real value used to name
-    // the synthetic file backing CORE's external symbols -- "SETTINGS.rakumod",
-    // not the docs.raku.org-flavored "CORE.setting" one might guess.
+    // Deliberately the literal "CORE.setting", not ProjectSdkSymbolCache
+    // .SETTING_FILE_NAME ("SETTINGS.rakumod"). That constant names the
+    // synthetic virtual file backing CORE symbols -- an implementation
+    // detail -- while this user-facing slot uses the name a Raku developer
+    // and docs.raku.org actually use.
     fun testCoreSymbolIsLocatedInTheSetting() {
-        assertEquals("SETTINGS.rakumod", RakuDocRendering.locationText(elementAt("methodExternalFromCORE")))
+        assertEquals("CORE.setting", RakuDocRendering.locationText(elementAt("methodExternalFromCORE")))
     }
 
     fun testProjectSymbolIsLocatedInItsFile() {
