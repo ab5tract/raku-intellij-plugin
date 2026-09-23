@@ -108,8 +108,14 @@ Note `externalUrl` returns `String?` where `getUrlFor` returned `List<String>?`.
 
 Replace the three method bodies in `RakuDocumentationProvider.kt` with delegation. Keep `@Synchronized` for now — removing it is Task 5.
 
+Note there are **two** `@Synchronized` annotations in the original, on
+`getQuickNavigateInfo` (line 30) and on `generateDoc` (line 103). Both stay put
+in this task — dropping either here would make this extraction a behaviour
+change. Task 5 removes both, deliberately and separably.
+
 ```kotlin
 class RakuDocumentationProvider : DocumentationProvider {
+    @Synchronized
     override fun getQuickNavigateInfo(element: PsiElement, originalElement: PsiElement?): String? =
         RakuDocRendering.hintLine(element)
 
@@ -500,9 +506,21 @@ Isolated deliberately. The spec records that `1bef5d59` added this annotation wi
 **Files:**
 - Modify: `src/main/java/org/raku/comma/docs/RakuDocumentationProvider.kt`
 
-- [ ] **Step 1: Remove the annotation**
+- [ ] **Step 1: Remove both annotations**
 
-Delete `@Synchronized` from `generateDoc` in `RakuDocumentationProvider.kt`. It is the only occurrence in that file.
+Delete **both** `@Synchronized` annotations from `RakuDocumentationProvider.kt`
+— one on `getQuickNavigateInfo`, one on `generateDoc`. Confirm with:
+
+```bash
+raku -e 'say "src/main/java/org/raku/comma/docs/RakuDocumentationProvider.kt".IO.lines.grep(*.contains("Synchronized")).elems, " left"'
+```
+
+Expected after the edit: `0 left`.
+
+Both guard the same thing, and the spec's reasoning covers both: the data behind
+them is either an immutable field populated when the symbol cache was built, or
+PSI that the read action already guards. Removing one and keeping the other
+would leave a lock whose only remaining justification is that nobody removed it.
 
 - [ ] **Step 2: Run the full suite**
 
