@@ -155,6 +155,15 @@ label. The rule is "drop a leading routine keyword", not "drop the first word".
 `containerText` is null for a top-level sub, which renders as name plus location
 with no owner — the intended degradation, not a gap.
 
+`locationText` for a CORE symbol is the literal `CORE.setting`, **not**
+`ProjectSdkSymbolCache.SETTING_FILE_NAME`, whose value is `SETTINGS.rakumod` —
+the name of the `LightVirtualFile` the plugin synthesises to hold CORE symbols.
+That name is an implementation detail; `CORE.setting` is what a Raku developer
+calls it and what docs.raku.org uses. The accepted cost is that Ctrl-clicking a
+CORE symbol opens a tab titled `SETTINGS.rakumod`, so the popup and the tab
+disagree. Renaming the constant would reconcile them, but it feeds symbol-cache
+lookups and virtual-file construction and is out of scope here.
+
 ## Threading
 
 ```kotlin

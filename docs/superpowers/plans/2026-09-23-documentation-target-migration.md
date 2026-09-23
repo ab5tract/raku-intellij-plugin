@@ -252,11 +252,27 @@ Append to `RakuDocRendering`:
         return owner?.packageName
     }
 
-    /** Where the symbol came from: the setting for CORE, else the file. */
+    /**
+     * Where the symbol came from: the setting for CORE, else the file.
+     *
+     * Deliberately the literal "CORE.setting" rather than
+     * ProjectSdkSymbolCache.SETTING_FILE_NAME, whose value is
+     * "SETTINGS.rakumod" -- the name of the LightVirtualFile the plugin
+     * synthesises to back CORE symbols. That is an implementation detail; the
+     * name a Raku developer knows, and the one docs.raku.org uses, is
+     * CORE.setting.
+     *
+     * The cost, accepted: Ctrl-clicking a CORE symbol opens a tab titled
+     * SETTINGS.rakumod, so the popup and the tab disagree. Renaming the
+     * constant would fix that but it feeds symbol-cache lookups and file
+     * construction, well outside this migration.
+     */
     fun locationText(element: PsiElement): String? = when (element) {
-        is RakuExternalPsiElement -> ProjectSdkSymbolCache.SETTING_FILE_NAME
+        is RakuExternalPsiElement -> CORE_SETTING_LABEL
         else -> element.containingFile?.name
     }
+
+    private const val CORE_SETTING_LABEL = "CORE.setting"
 ```
 
 If `containerText` returns the wrong owner for an external element — CORE methods hang off `ExternalRakuPackageDecl`, which `getParentOfType(…, RakuPackageDecl::class.java)` should still match, since `ExternalRakuPackageDecl` implements `RakuPackageDecl` (see `RakuDocumentationProvider.kt:88-90`, which relies on exactly that) — fix it here rather than in the target.
@@ -268,7 +284,13 @@ export PATH="$RAKU_PREFIX/bin:$PATH"
 ./gradlew test --rerun --tests "org.raku.comma.docs.DocumentationTargetTest"
 ```
 
-Expected: `5 tests completed, 0 failed`. If `testCoreSymbolIsLocatedInTheSetting` fails on the literal, read the real value from `ProjectSdkSymbolCache.SETTING_FILE_NAME` and fix the **test's** expectation — it is new, not frozen.
+Expected: `5 tests completed, 0 failed`.
+
+`testCoreSymbolIsLocatedInTheSetting` asserts the literal `"CORE.setting"`. Do
+**not** replace it with `ProjectSdkSymbolCache.SETTING_FILE_NAME` — that constant
+is `"SETTINGS.rakumod"`, the synthesised virtual file's name, and showing it in
+the popup was considered and rejected. The display label and the constant are
+intentionally decoupled; see the KDoc on `locationText`.
 
 - [ ] **Step 5: Commit**
 
