@@ -135,4 +135,28 @@ object RakuDocRendering {
         }
         return null
     }
+
+    /**
+     * The narrow slot in a popup or list row. For routines the kind keyword is
+     * dropped -- the icon and container already say "method" -- but only for
+     * routines: stripping the first word of "class Magician is Cool does Int"
+     * would leave a fragment rather than a shorter label.
+     */
+    fun presentableText(element: PsiElement): String? {
+        val line = hintLine(element) ?: return null
+        if (element !is RakuRoutineDecl) return line
+        return line.substringAfter(' ', line)
+    }
+
+    /** The owning package, or null for a top-level declaration. */
+    fun containerText(element: PsiElement): String? {
+        val owner = PsiTreeUtil.getParentOfType(element, RakuPackageDecl::class.java)
+        return owner?.packageName
+    }
+
+    /** Where the symbol came from: the setting for CORE, else the file. */
+    fun locationText(element: PsiElement): String? = when (element) {
+        is RakuExternalPsiElement -> ProjectSdkSymbolCache.SETTING_FILE_NAME
+        else -> element.containingFile?.name
+    }
 }
