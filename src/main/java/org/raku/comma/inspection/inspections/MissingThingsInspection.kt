@@ -29,38 +29,38 @@ class MissingThingsInspection : RakuInspection() {
             }
 
             is RakuArrayComposer -> {
-                val opener = element.getNode().getChildren(T_ARRAY_COMP_OPEN)
-                val closer = element.getNode().getChildren(T_ARRAY_COMP_CLOSE)
+                val opener = element.node.getChildren(T_ARRAY_COMP_OPEN)
+                val closer = element.node.getChildren(T_ARRAY_COMP_CLOSE)
                 if (opener.isNotEmpty() && closer.isEmpty())  Report(opener.first().startOffsetInParent, "]") else null
             }
 
             is RakuArrayIndex -> {
-                val opener = element.getNode().getChildren(T_ARRAY_INDEX_OPEN)
-                val closer = element.getNode().getChildren(T_ARRAY_INDEX_CLOSE)
+                val opener = element.node.getChildren(T_ARRAY_INDEX_OPEN)
+                val closer = element.node.getChildren(T_ARRAY_INDEX_CLOSE)
                 if (opener.isNotEmpty() && closer.isEmpty()) Report(opener.first().startOffsetInParent,"]") else null
             }
 
             is RakuBlockoid -> {
-                val opener = element.getNode().getChildren(T_BLOCK_OPEN)
-                val closer = element.getNode().getChildren(T_BLOCK_CLOSE)
+                val opener = element.node.getChildren(T_BLOCK_OPEN)
+                val closer = element.node.getChildren(T_BLOCK_CLOSE)
                 if (opener.isNotEmpty() && closer.isEmpty()) Report(opener.first().startOffsetInParent,"}") else null
             }
 
             is RakuRegexGroup -> {
-                val opener = element.getNode().getChildren(T_RX_GROUP_OPEN)
-                val closer = element.getNode().getChildren(T_RX_GROUP_CLOSE)
+                val opener = element.node.getChildren(T_RX_GROUP_OPEN)
+                val closer = element.node.getChildren(T_RX_GROUP_CLOSE)
                 if (opener.isNotEmpty() && closer.isEmpty()) Report(opener.first().startOffsetInParent, "]") else null
             }
 
             is RakuRegexAssertion -> {
-                val opener = element.getNode().getChildren(T_RX_ASSERT_OPEN)
-                val closer = element.getNode().getChildren(T_RX_ASSERT_CLOSE)
+                val opener = element.node.getChildren(T_RX_ASSERT_OPEN)
+                val closer = element.node.getChildren(T_RX_ASSERT_CLOSE)
                 if (opener.isNotEmpty() && closer.isEmpty()) Report(opener.first().startOffsetInParent, ">") else null
             }
 
             is RakuRegexCapturePositional -> {
-                val opener = element.getNode().getChildren(T_RX_CAP_OPEN)
-                val closer = element.getNode().getChildren(T_RX_CAP_CLOSE)
+                val opener = element.node.getChildren(T_RX_CAP_OPEN)
+                val closer = element.node.getChildren(T_RX_CAP_CLOSE)
                 if (opener.isNotEmpty() && closer.isEmpty()) Report(opener.first().startOffsetInParent,")") else null
             }
 
