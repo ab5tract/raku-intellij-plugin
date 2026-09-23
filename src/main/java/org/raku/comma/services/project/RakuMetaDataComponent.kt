@@ -15,7 +15,6 @@ import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ContentEntry
 import com.intellij.openapi.roots.ModuleRootManager
@@ -33,6 +32,7 @@ import kotlinx.serialization.json.Json
 import org.json.JSONArray
 import org.raku.comma.RakuIcons
 import org.raku.comma.metadata.MetaFile
+import org.raku.comma.module.RakuModules
 import org.raku.comma.utils.CommaProjectUtil
 import org.raku.comma.utils.RakuUtils
 import java.io.IOException
@@ -112,10 +112,10 @@ class RakuMetaDataComponent(private val project: Project, val runScope: Coroutin
         }
     }
 
+    // Same rule as everywhere else: the module we report is one the plugin is
+    // allowed to manage, never whichever module happens to come first.
     val module: Module?
-        get() = Arrays.stream(ModuleManager.getInstance(project).modules)
-            .findFirst()
-            .orElse(null)
+        get() = RakuModules.managedModule(project)
 
     private fun checkOldMetaFile(metaParent: VirtualFile): VirtualFile? {
         val metaFile: VirtualFile? = metaParent.findChild(META_OBSOLETE_NAME)

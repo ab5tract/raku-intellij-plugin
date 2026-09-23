@@ -5,20 +5,23 @@ import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.modules
 import com.intellij.openapi.roots.*
 import com.intellij.openapi.roots.impl.libraries.LibraryEx
 import com.intellij.serviceContainer.AlreadyDisposedException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.raku.comma.library.RakuLibraryType
+import org.raku.comma.module.RakuModules
 import org.raku.comma.services.project.RakuMetaDataComponent
 import org.raku.comma.services.project.RakuProjectSdkService
 import java.util.concurrent.ConcurrentHashMap
 
 class ProjectModelSync(private val project: Project, private val runScope: CoroutineScope) {
 
-    private val module: Module? = project.modules.firstOrNull()
+    // Not simply the project's first module: on a Gradle or Maven project that is
+    // somebody else's, and syncing Raku dependencies onto it strips the classpath
+    // its own build system just resolved.
+    private val module: Module? = RakuModules.managedModule(project)
 
     fun syncExternalLibraries(completeDependencies: Set<String>, sdkName: String? = null) {
         if (ApplicationManager.getApplication().isUnitTestMode) return
@@ -95,24 +98,43 @@ class ProjectModelSync(private val project: Project, private val runScope: Corou
     private fun looksLikeModuleName(name: String): Boolean =
         name.isNotBlank() && name.none { it.isWhitespace() || it in "{}[]\"" }
 
-    private fun removeOrderEntriesNotInMETA(
+    // "Not in META" is only a reason to drop an entry that META put there in the
+    // first place. This used to prune the model indiscriminately, which meant the
+    // sync removed the JDK, the module's own sources, and every library another
+    // build system had contributed -- on this very plugin's project that left
+    // `raku-intellij-plugin.main` holding nothing but its Raku libraries, so all
+    // of `com.intellij.*` went unresolved the moment the dependency sync ran.
+    internal fun removeOrderEntriesNotInMETA(
         model: ModifiableRootModel,
         entriesPresentInMETA: MutableSet<String>
     ) {
         val currentEntries = model.orderEntries
         currentEntries.forEach { entry: OrderEntry ->
-            if (! entriesPresentInMETA.contains(entry.presentableName)) {
+            if (isRakuOwned(entry) && ! entriesPresentInMETA.contains(entry.presentableName)) {
                 model.removeOrderEntry(entry)
             }
         }
     }
 
-    private fun removeDuplicateEntries(model: ModifiableRootModel, name: String?) {
+    // Everything this sync removes, anywhere, has to pass through here first: the
+    // module-level libraries it creates itself, and dependencies on Raku modules.
+    // A JDK, a module's own sources and any library or module another build
+    // system contributed are never ours, whatever their name says.
+    internal fun isRakuOwned(entry: OrderEntry): Boolean = when (entry) {
+        is LibraryOrderEntry -> entry.isModuleLevel &&
+                                (entry.library as? LibraryEx)?.kind == RakuLibraryType.LIBRARY_KIND
+        is ModuleOrderEntry  -> entry.module?.let(RakuModules::isRakuModule) == true
+        else                 -> false
+    }
+
+    // Deduplication is a removal like any other, so it answers to the same rule.
+    // A second copy of an entry we do not own is still not ours to tidy away.
+    internal fun removeDuplicateEntries(model: ModifiableRootModel, name: String?) {
         var seen = false
         for (entry in model.orderEntries) {
             if (entry.presentableName == name) {
                 if (seen) {
-                    model.removeOrderEntry(entry)
+                    if (isRakuOwned(entry)) model.removeOrderEntry(entry)
                 } else {
                     seen = true
                 }
