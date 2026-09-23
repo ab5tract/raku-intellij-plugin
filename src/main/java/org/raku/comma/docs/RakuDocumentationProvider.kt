@@ -6,14 +6,12 @@ import com.intellij.psi.PsiManager
 
 class RakuDocumentationProvider : DocumentationProvider {
 
-    @Synchronized
     override fun getQuickNavigateInfo(element: PsiElement, originalElement: PsiElement?): String? =
         RakuDocRendering.hintLine(element)
 
     override fun getUrlFor(element: PsiElement, originalElement: PsiElement?): List<String>? =
         RakuDocRendering.externalUrl(element)?.let { listOf(it) }
 
-    @Synchronized
     override fun generateDoc(element: PsiElement, originalElement: PsiElement?): String? =
         RakuDocRendering.docHtml(element)
 
