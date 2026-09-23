@@ -618,13 +618,18 @@ import com.intellij.platform.backend.documentation.impl.computeDocumentationBloc
         assertEquals(result, targetFor(getTestName(true)).computeDocumentationHint())
     }
 
-    // externalUrl is asserted through the rendering object rather than read
-    // back out of DocumentationData: LinkData is reachable only through an
-    // internal accessor, and the wiring into .externalUrl() is one line covered
-    // by DocumentationTargetTest.
+    // Goes through the target, not straight to RakuDocRendering. LinkData's
+    // accessor is Kotlin-internal, but Task 3 established that reflection
+    // reaches it, so every URL fixture can verify the value AND the wiring --
+    // rather than only proving the renderer computes a string nobody plugged in.
+    // That distinction is not hypothetical: a discarded builder return in
+    // computeDocumentation silently dropped this exact slot once already.
     private fun testURL(result: String) {
-        myFixture.configureByFile(getTestName(true) + ".p6")
-        assertEquals(result, RakuDocRendering.externalUrl(myFixture.elementAtCaret))
+        val target = targetFor(getTestName(true))
+        val data = computeDocumentationBlocking(target.createPointer())
+        val links = data!!.javaClass.getMethod("getLinks\$intellij_platform_lang_impl").invoke(data)
+        val url = links.javaClass.getMethod("getExternalUrl").invoke(links)
+        assertEquals(result, url)
     }
 ```
 
