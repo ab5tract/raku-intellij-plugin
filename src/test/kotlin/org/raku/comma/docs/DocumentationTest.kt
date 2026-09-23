@@ -12,7 +12,7 @@ class DocumentationTest : CommaFixtureTestCase() {
 
     private fun targetFor(fixture: String): RakuDocumentationTarget {
         myFixture.configureByFile("$fixture.p6")
-        return RakuDocumentationTarget(myFixture.elementAtCaret, null)
+        return RakuDocumentationTarget(myFixture.elementAtCaret)
     }
 
     private fun testGeneratedDoc(result: String) {
@@ -151,7 +151,7 @@ class DocumentationTest : CommaFixtureTestCase() {
         val resolved = element.reference as PsiPolyVariantReference
         val decls = resolved.multiResolve(false)
         assertTrue(decls.isNotEmpty())
-        val target = RakuDocumentationTarget(decls[0].element!!, element)
+        val target = RakuDocumentationTarget(decls[0].element!!)
         assertEquals("method end(--&gt; Int)", target.computeDocumentationHint())
         val data = computeDocumentationBlocking(target.createPointer())
         assertEquals("<p><pre><code>multi method end(Any:U: --&gt; 0)<br>multi method end(Any:D:)</code></pre></p><p>Interprets the invocant as a list, and returns the last index of that list.</p><p><pre><code>say 6.end;                      # OUTPUT: «0␤»<br>say &lt;a b c&gt;.end;                # OUTPUT: «2␤»</code></pre></p>",  data?.html)

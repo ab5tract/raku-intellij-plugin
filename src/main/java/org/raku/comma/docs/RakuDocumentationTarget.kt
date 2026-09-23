@@ -23,14 +23,6 @@ class RakuDocumentationTarget(
 ) : DocumentationTarget {
 
     /**
-     * Compatibility constructor for DocumentationTest.kt, which is frozen and
-     * still constructs targets with a second, original-element argument. No
-     * RakuDocRendering function ever reads it -- see [createPointer] -- so it
-     * is discarded immediately rather than stored.
-     */
-    constructor(element: PsiElement, @Suppress("UNUSED_PARAMETER") originalElement: PsiElement?) : this(element)
-
-    /**
      * A target must survive being carried across read actions.
      *
      * A RakuExternalPsiElement is synthesised in memory from the SDK symbol
