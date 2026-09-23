@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Rakudo:** run every gradle invocation with `export PATH="$RAKU_PREFIX/bin:$PATH"` and `--rerun`. Never pin a rakubrew release. See `CLAUDE.md`.
-- **Green baseline is 1307 tests, 0 failures.** It was 1297 before Task 2; Task 2 and Task 3 added the 10 tests of `DocumentationTargetTest` between them. Any task that ends with a different number must explain why.
+- **Green baseline is 1309 tests, 0 failures.** It was 1297 before Task 2; Tasks 2-3 added the 10 tests of `DocumentationTargetTest`, and Task 6 added 2 in `RakuPsiDocumentationTargetProviderTest`. Any task that ends with a different number must explain why.
 - **The 25 `DocumentationTest` expectations are frozen.** No task may edit a string inside a `testQuickDoc(...)`, `testGeneratedDoc(...)`, `testURL(...)` or `assertEquals(...)` call in that file. Only the three helper bodies change. If an expectation needs to change, stop — that is a regression, not a task.
 - **Platform version floor:** `sinceBuild = "261"` (`build.gradle.kts`). Every API used below exists in 262; none is guarded.
 - **Text processing:** prefer `raku -e`. Python is permitted for now (`CLAUDE.md`).
@@ -570,7 +570,7 @@ export PATH="$RAKU_PREFIX/bin:$PATH"
 ./gradlew test --rerun
 ```
 
-Expected: `1307 tests, 0 failures`. A flaky or hanging documentation test here is the signal that the lock was load-bearing — revert this task and report, rather than continuing.
+Expected: `1309 tests, 0 failures`. A flaky or hanging documentation test here is the signal that the lock was load-bearing — revert this task and report, rather than continuing.
 
 - [ ] **Step 3: Commit**
 
@@ -665,7 +665,7 @@ export PATH="$RAKU_PREFIX/bin:$PATH"
 ./gradlew test --rerun
 ```
 
-Expected: `1307 tests, 0 failures`. Every one of the 25 frozen expectations passing through the new API is the proof of parity.
+Expected: `1309 tests, 0 failures`. Every one of the 25 frozen expectations passing through the new API is the proof of parity.
 
 - [ ] **Step 5: Eyeball the real output**
 
@@ -731,7 +731,7 @@ export PATH="$RAKU_PREFIX/bin:$PATH"
 ./gradlew test --rerun
 ```
 
-Expected: `1307 tests, 0 failures`. `testMethodExternalFromCOREClass` resolves `.end` through `multiResolve`, so it exercises exactly the branch being made async — and `computeDocumentationBlocking` resolves async results, so the helper needs no change.
+Expected: `1309 tests, 0 failures`. `testMethodExternalFromCOREClass` resolves `.end` through `multiResolve`, so it exercises exactly the branch being made async — and `computeDocumentationBlocking` resolves async results, so the helper needs no change.
 
 - [ ] **Step 3: Commit**
 
@@ -749,7 +749,7 @@ machinery for no win."
 
 ## Done when
 
-- `./gradlew test --rerun` reports **1307 tests, 0 failures** with `$RAKU_PREFIX` on `PATH`.
+- `./gradlew test --rerun` reports **1309 tests, 0 failures** with `$RAKU_PREFIX` on `PATH`.
 - No string inside a `testQuickDoc`/`testGeneratedDoc`/`testURL`/`assertEquals` call in `DocumentationTest.kt` differs from `HEAD` at the start of this plan. Check with:
   `git diff <base> -- src/test/kotlin/org/raku/comma/docs/DocumentationTest.kt` — only helper bodies and imports should appear.
 - `/tmp/docdump.txt` matches its pre-migration content.
