@@ -420,12 +420,21 @@ class RakuDocumentationTarget(
 
     override fun computeDocumentation(): DocumentationResult? {
         val html = RakuDocRendering.docHtml(element) ?: return null
-        val result = DocumentationResult.documentation(html)
-        RakuDocRendering.externalUrl(element)?.let { result.externalUrl(it) }
+        var result = DocumentationResult.documentation(html)
+        // `externalUrl` RETURNS a new Documentation -- DocumentationData
+        // implements it with a copy(). Discarding the return value drops the
+        // URL silently and Shift+F1 does nothing, with every test still green.
+        RakuDocRendering.externalUrl(element)?.let { result = result.externalUrl(it) }
         return result
     }
 }
 ```
+
+**Both** of the platform types used here are immutable builders whose methods
+return a new instance: `TargetPresentationBuilder` and
+`DocumentationResult.Documentation`. Assign the result of every call. A
+discarded return compiles, runs, and quietly produces a value missing that
+slot.
 
 `TargetPresentationBuilder` methods return the builder, so the `?.let` calls must use the return value if the builder is immutable. If Step 4 shows the container or location missing, reassign instead:
 
@@ -701,8 +710,9 @@ Only `RakuMethodCall` and `RakuSubCall` go async — those are the elements whos
 
     private fun documentation(): DocumentationResult.Documentation? {
         val html = RakuDocRendering.docHtml(element) ?: return null
-        val result = DocumentationResult.documentation(html)
-        RakuDocRendering.externalUrl(element)?.let { result.externalUrl(it) }
+        var result = DocumentationResult.documentation(html)
+        // Immutable builder: assign the return value or the URL is dropped.
+        RakuDocRendering.externalUrl(element)?.let { result = result.externalUrl(it) }
         return result
     }
 ```
