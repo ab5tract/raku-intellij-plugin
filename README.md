@@ -35,5 +35,18 @@ To build, simply:
 Gradle target options (look for the elephant on the left side of the IDEA window).
 3) Enjoy! And please report any issues you have to the issue tracker here.
 
+A plain `git clone` is all the build needs. The `org/` directory is an **optional
+submodule**, [`org-llm-raku`](https://github.com/ab5tract/org-llm-raku) — notes and
+measurements written by AI agents that have worked on this codebase, kept in a
+separate repository so that nobody has to take them along. Leaving it empty changes
+nothing about building, running or testing the plugin.
+
+If you do want it:
+
+```bash
+git submodule update --init          # in an existing clone
+git clone --recurse-submodules …     # or ask for it up front
+```
+
 [^discontinuation]: Read the [discontinuation](https://commaide.com/discontinued) announcement.
 [^build]: The plugin will be produced as `build/distributions/comma-${version}.zip`.
