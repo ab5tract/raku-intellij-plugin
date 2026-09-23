@@ -191,12 +191,26 @@ Neither touches disk or network at documentation time, so wrapping them in
 call-site branch is different: it runs `multiResolve(false)`, which can consult
 indexes, and today it does so on the EDT path.
 
-`@Synchronized` on `generateDoc` is removed. The data behind it is either an
-immutable field or PSI that the read action already guards. That annotation
-arrived in `1bef5d59` ("2026.2 beta.5"), a bulk release commit that records no
-rationale for it, so we cannot tell whether it guards a known race or is
-defensive. **It is therefore removed in its own commit**, separable from the
-migration, so it can be reverted without unpicking anything else.
+Both `@Synchronized` annotations are removed — there are two, on
+`getQuickNavigateInfo` and on `generateDoc`. They arrived together in
+`1bef5d59` ("2026.2 beta.5"), a bulk release commit that records no rationale,
+so we cannot tell whether they guard a known race or are defensive. **They are
+therefore removed in their own commit**, separable from the migration, so it can
+be reverted without unpicking anything else.
+
+The justification, stated precisely rather than loosely: the real-PSI path
+(`RakuDocumented.getDocsString()`) holds no state at all — it recomputes by
+walking sibling PSI on every call, and the read action already guards that. The
+CORE path reads `RakuExternalPsiElement.myDocs`, which is *effectively*
+immutable rather than provably so: it is a `private var` with a public
+`setDocs()`, but all five call sites (`RakuExternalNamesParser`) write it once
+immediately after construction and before the element is published, and cache
+invalidation replaces whole instances rather than mutating live ones. Nothing
+memoizes, and `multiResolve` keeps no plugin-owned cache.
+
+So the safety is real but rests on a convention the type system does not
+enforce. A future caller could legally call `setDocs` on a published element,
+and that — not the removal of the annotations — is what would make this unsafe.
 
 ## Testing
 
