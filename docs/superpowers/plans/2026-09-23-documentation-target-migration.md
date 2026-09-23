@@ -346,6 +346,16 @@ Append to `DocumentationTargetTest`:
         assertEquals("CORE.setting", presentation.locationText)
         assertNotNull("a Raku symbol should carry the Camelia icon", presentation.icon)
     }
+
+    // containerText's owner-resolution branch is otherwise untested: Task 2
+    // only pinned the null case. This is the slot where a wrong answer is
+    // plausible, because a CORE method's owner is reached by hopping to an
+    // ExternalRakuPackageDecl rather than a real PSI package.
+    fun testCoreMethodIsOwnedByItsType() {
+        val owner = RakuDocRendering.containerText(elementAt("methodExternalFromCORE"))
+        assertNotNull("a CORE method must report the type that owns it", owner)
+        assertEquals("Mu", owner)
+    }
 ```
 
 - [ ] **Step 2: Run it to make sure it fails**
