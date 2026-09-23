@@ -6,6 +6,7 @@ import com.intellij.psi.PsiManager
 
 class RakuDocumentationProvider : DocumentationProvider {
 
+    @Synchronized
     override fun getQuickNavigateInfo(element: PsiElement, originalElement: PsiElement?): String? =
         RakuDocRendering.hintLine(element)
 
