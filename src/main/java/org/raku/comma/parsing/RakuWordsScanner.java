@@ -41,7 +41,7 @@ public class RakuWordsScanner extends VersionedWordsScanner {
     // un-swallowed regex-heavy files; v5: indirect method names ::($m)
     // un-swallowed their bodies; v6: indirect token/rule names). ParserChangeVersionGuardTest enforces
     // the pairing.
-    public static final int VERSION = 6;
+    public static final int VERSION = 7;
 
     @Override
     public int getVersion() {

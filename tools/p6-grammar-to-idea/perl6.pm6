@@ -3155,6 +3155,9 @@ grammar MAIN {
     }
 
     token quote_tr {
+        # MIRROR 5: quotepair_rx assigns $*RX_S for :s/:sigspace, but this
+        # rule never declared it -- tr:s/// threw at lex time.
+        :my $*RX_S = 0;
         <?before [['tr'||'TR'] <.ws> [<.has-delimiter> || <.quotepair>]]>
         <.start-element('TRANSLITERATION')>
         [
@@ -3412,7 +3415,7 @@ grammar MAIN {
         || <?before 'h'> { $*Q_HASHES = 1 }
         || <?before 'f'> { $*Q_FUNCTIONS = 1 }
         || <?before 'c'> { $*Q_CLOSURES = 1 }
-        || <?before 'b'> { $*Q_BACKSLASHES = 1 }
+        || <?before 'b'> { $*Q_BACKSLASH = 1 }   # MIRROR 4: was Q_BACKSLASHES (undeclared)
         ]?
         <.quote_mod>
     }

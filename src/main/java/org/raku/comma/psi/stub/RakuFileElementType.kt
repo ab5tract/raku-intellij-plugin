@@ -61,6 +61,6 @@ class RakuFileElementType : IStubFileElementType<RakuFileStub>(RakuLanguage.INST
         // installs with "PSI and index do not match" mismatch errors until a
         // manual invalidation. ParserChangeVersionGuardTest enforces the
         // pairing with the generated-parser sources.
-        const val STUB_VERSION: Int = 34
+        const val STUB_VERSION: Int = 35
     }
 }

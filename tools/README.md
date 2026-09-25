@@ -12,8 +12,8 @@ token/element types) from `perl6.pm6`, and the Cro-template equivalents from
 `org/llm/raku/traces/parser-generated-lexer-architecture.md` previously
 described as living only in an ephemeral `/tmp` checkout — it now lives here.
 
-**Mirror status:** our fork carries three hand-edits to the vendored
-`MAINBraid.java`, and all three are mirrored into this `perl6.pm6` (marked
+**Mirror status:** our fork carries five hand-edits to the vendored
+`MAINBraid.java`, and all five are mirrored into this `perl6.pm6` (marked
 with `MIRROR` comments above the affected rules):
 
 1. `token infix` — the `$*PREC`/`$*PRECLIM` guard only applies outside meta
@@ -22,6 +22,17 @@ with `MIRROR` comments above the affected rules):
    fallback must not fire in meta context (reduce-metaop fix 2).
 3. `token term_name` — `nqp::const::` names are no-argument terms emitting
    `NO_ARGS` (`parser-nqp-const-term.md`).
+4. `token quote_mod_Q` — the `b` modifier assigns `$*Q_BACKSLASH`, not
+   `$*Q_BACKSLASHES`. The plural was a typo: nothing ever declared it, so
+   `qb/…/` and `Qb/…/` threw "Dynamic variable $*Q_BACKSLASHES not found" at
+   lex time and aborted indexing of the whole file.
+5. `token quote_tr` — declares `:my $*RX_S = 0;`. It uses `quotepair_rx`,
+   which assigns `$*RX_S` for `:s`/`:sigspace`, but unlike `quote_rxlang` it
+   never declared it, so `tr:s///` threw the same way.
+
+Both 4 and 5 change parse output for text that previously failed to lex, so
+they were paired with bumps to `RakuFileElementType.STUB_VERSION` (34→35) and
+`RakuWordsScanner.VERSION` (6→7); see `ParserChangeVersionGuardTest`.
 
 The modified grammar parses cleanly in the tool's own DSL parser (verified:
 `raku -Ilib -e '...P6GrammarToIdea::Parser.parse(slurp("perl6.pm6")...)'`).

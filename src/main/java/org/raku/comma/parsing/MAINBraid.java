@@ -26121,6 +26121,7 @@ public class MAINBraid extends Cursor<MAINBraid> {
             switch (this.state) {
             case 0:
                 this.checkArgs(0);
+                this.declareDynamicVariable("$*RX_S", 0);
                 if (!(this.lookahead(472))) {
                     if (this.backtrack()) {
                         continue;
@@ -27865,7 +27866,7 @@ public class MAINBraid extends Cursor<MAINBraid> {
                         return -2;
                     }
                 }
-                this.assignDynamicVariable("$*Q_BACKSLASHES", 1);
+                this.assignDynamicVariable("$*Q_BACKSLASH", 1);
                 this.state = 7;
                 continue;
 
