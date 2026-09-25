@@ -319,6 +319,9 @@
     <toolWindow id="Raku Grammar Preview" anchor="right"
                 factoryClass="org.raku.comma.grammar.RakuGrammarPreviewFactory"
                 secondary="false" canCloseContents="false"/>
+    <toolWindow id="RakuAST Viewer" anchor="right"
+                factoryClass="org.raku.comma.rakuast.RakuAstViewerFactory"
+                secondary="true" canCloseContents="false"/>
     <backgroundPostStartupActivity implementation="org.raku.comma.project.activity.RakuServiceStarter"
                                    order="last"/>
     <backgroundPostStartupActivity implementation="org.raku.comma.utils.RakuLegacyExtensionsDetector"/>

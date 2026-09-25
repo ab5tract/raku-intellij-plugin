@@ -2,6 +2,8 @@ package org.raku.comma.utils;
 
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.execution.process.CapturingProcessHandler;
+import com.intellij.execution.process.ProcessOutput;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.text.VersionComparatorUtil;
@@ -64,32 +66,62 @@ public class RakuCommandLine extends GeneralCommandLine {
         return executeAndRead(null);
     }
 
+    /**
+     * Runs the process and returns everything it produced: stdout, stderr and
+     * the exit code.
+     *
+     * Prefer this over {@link #executeAndRead(File)}, which can only say
+     * "nothing came back" and cannot say why. Both streams are drained
+     * concurrently, which also removes a hang: reading stdout alone deadlocks
+     * a child that fills the stderr pipe buffer, and Rakudo emits compile-time
+     * worries there.
+     *
+     * @param timeoutMs wall-clock limit, or 0 to wait indefinitely.
+     */
+    @NotNull
+    public ProcessOutput executeAndCapture(@Nullable File scriptFile, int timeoutMs) {
+        try {
+            CapturingProcessHandler handler = new CapturingProcessHandler(this);
+            return timeoutMs > 0 ? handler.runProcess(timeoutMs) : handler.runProcess();
+        } catch (ExecutionException e) {
+            LOG.warn(e);
+            ProcessOutput failed = new ProcessOutput();
+            failed.appendStderr(e.getMessage() == null ? "Could not start the process." : e.getMessage());
+            failed.setExitCode(-1);
+            return failed;
+        } finally {
+            deleteScriptFile(scriptFile);
+        }
+    }
+
+    /**
+     * Legacy convenience wrapper: stdout lines on success, an empty list on
+     * any failure.
+     *
+     * The empty-list-on-failure contract is preserved because callers depend
+     * on it, but the reason is no longer thrown away silently — it now reaches
+     * the log. A caller that needs to tell the user what went wrong should use
+     * {@link #executeAndCapture} instead.
+     */
     @NotNull
     public List<String> executeAndRead(@Nullable File scriptFile) {
-        List<String> results = new LinkedList<>();
-        try {
-            Process p = createProcess();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) results.add(line);
-                if (p.waitFor() != 0) {
-                    if (scriptFile != null) {
-                        if (!scriptFile.delete()) {
-                            LOG.warn("Could not delete script file: " + scriptFile.getAbsolutePath());
-                        }
-                    }
-                    return new ArrayList<>();
-                }
-            } catch (IOException e) {
-                LOG.warn(e);
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            LOG.warn(e);
+        ProcessOutput output = executeAndCapture(scriptFile, 0);
+        if (output.isTimeout()) {
+            LOG.warn("Timed out: " + getCommandLineString());
+            return new ArrayList<>();
         }
-        if (scriptFile != null) {
-            if (!scriptFile.delete()) LOG.warn("Could not delete script file: " + scriptFile.getAbsolutePath());
+        if (output.getExitCode() != 0) {
+            LOG.warn("Exited " + output.getExitCode() + ": " + getCommandLineString()
+                     + (output.getStderr().isEmpty() ? "" : "\nstderr: " + output.getStderr()));
+            return new ArrayList<>();
         }
-        return results;
+        return new LinkedList<>(output.getStdoutLines());
+    }
+
+    private static void deleteScriptFile(@Nullable File scriptFile) {
+        if (scriptFile != null && !scriptFile.delete()) {
+            LOG.warn("Could not delete script file: " + scriptFile.getAbsolutePath());
+        }
     }
 
     @Nullable
