@@ -669,7 +669,7 @@ the cached one is stale."
 - Test: `src/test/kotlin/org/raku/comma/actions/LegacyExtensionScanTest.kt` (create)
 
 **Interfaces:**
-- Consumes: `RakuProjectKind.hasRakuFiles` (Task 1).
+- Consumes: `RakuProjectKind.hasRakuFiles`, `RakuProjectKind.awaitRakuFiles` (Task 1).
 - Produces: `UpdateExtensionsAction.collectFilesWithLegacyNames(project: Project)` — **note the changed signature**, `Project` instead of `Array<Module>`.
 
 - [ ] **Step 1: Write the failing test**
@@ -778,7 +778,12 @@ class RakuLegacyExtensionsDetector : ProjectActivity {
         // Advice about Raku source needs Raku source. The pattern matches .pm,
         // .pod and .t, which are current Perl 5 extensions -- without this a
         // Perl project is told its files are "obsolete Raku extensions".
-        if (! RakuProjectKind.hasRakuFiles(project)) return
+        // awaitRakuFiles, not hasRakuFiles: this is a one-shot startup
+        // activity that runs while the index may still be building, and it
+        // also calls FilenameIndex below, which throws IndexNotReadyException
+        // in dumb mode -- hasRakuFiles would either answer false for good or
+        // let the crash through, depending on timing.
+        if (! RakuProjectKind.awaitRakuFiles(project)) return
 
         val filesToUpdate = UpdateExtensionsAction.collectFilesWithLegacyNames(project)
         // ...rest of the existing body unchanged

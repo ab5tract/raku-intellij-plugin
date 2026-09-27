@@ -1,5 +1,7 @@
 package org.raku.comma.project
 
+import com.intellij.testFramework.DumbModeTestUtils
+import kotlinx.coroutines.runBlocking
 import org.raku.comma.CommaFixtureTestCase
 
 class RakuProjectKindTest : CommaFixtureTestCase() {
@@ -54,5 +56,24 @@ class RakuProjectKindTest : CommaFixtureTestCase() {
         } finally {
             if (existing != null) meta.writeText(existing)
         }
+    }
+
+    fun testAwaitRakuFilesWaitsForTheIndexInsteadOfAnsweringNo() {
+        myFixture.addFileToProject("lib/Waited.rakumod", "unit module Waited;")
+        var answered: Boolean? = null
+        val worker = Thread { answered = runBlocking { RakuProjectKind.awaitRakuFiles(project) } }
+        val token = DumbModeTestUtils.startEternalDumbModeTask(project)
+        try {
+            assertFalse("precondition: the plain predicate gives up while indexing",
+                        RakuProjectKind.hasRakuFiles(project))
+            worker.start()
+            worker.join(500)
+            assertNull("awaitRakuFiles must not answer while the index is unavailable",
+                       answered)
+        } finally {
+            DumbModeTestUtils.endEternalDumbModeTaskAndWaitForSmartMode(project, token)
+        }
+        worker.join(10_000)
+        assertEquals("it should answer once the index is ready", true, answered)
     }
 }

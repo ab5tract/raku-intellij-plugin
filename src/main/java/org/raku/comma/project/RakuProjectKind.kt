@@ -1,8 +1,10 @@
 package org.raku.comma.project
 
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import org.raku.comma.filetypes.RakuModuleFileType
@@ -47,4 +49,21 @@ object RakuProjectKind {
     /** A META6.json at the project root -- no dependencies exist without one. */
     fun isRakuDistribution(project: Project): Boolean =
         CommaProjectUtil.projectHasMetaFile(project)
+
+    /**
+     * For callers that get one shot. A background post-startup activity runs
+     * while the index is still building, so `hasRakuFiles` would tell it
+     * `false` and it would never ask again -- costing a real Raku project its
+     * ecosystem for the whole session. Waiting is cheap: a project that never
+     * becomes Raku simply gets `false` a moment later.
+     */
+    suspend fun awaitRakuFiles(project: Project): Boolean {
+        project.waitForSmartMode()
+        // hasRakuFiles queries FileTypeIndex, which asserts it is called from
+        // inside a read action -- true regardless of thread, and not granted
+        // merely by having waited for smart mode. A caller off the platform's
+        // own coroutine dispatchers (this method has no control over who
+        // calls it) has no read lock to inherit, so one is taken explicitly.
+        return readAction { hasRakuFiles(project) }
+    }
 }

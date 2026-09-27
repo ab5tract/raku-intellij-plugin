@@ -7,7 +7,7 @@ import org.raku.comma.utils.CommaProjectUtil
 
 class RakuServiceStarter : ProjectActivity {
     override suspend fun execute(project: Project) {
-        if (! RakuProjectKind.hasRakuFiles(project)) return
+        if (! RakuProjectKind.awaitRakuFiles(project)) return
         CommaProjectUtil.refreshProjectState(project)
     }
 }
