@@ -22,15 +22,37 @@ class RakuProjectKindTest : CommaFixtureTestCase() {
                     RakuProjectKind.hasRakuFiles(project))
     }
 
+    // isRakuDistribution is a raw filesystem check against project.basePath, so
+    // addFileToProject cannot drive it -- that writes into the source root, not
+    // the base dir. Worse, the shared light fixture may scaffold a META6.json
+    // during setup, which would make a naive positive test pass for the wrong
+    // reason and the negative test impossible. So each of these controls the
+    // file itself and restores what it found.
+    private fun meta6File() = java.io.File(project.basePath!!, "META6.json")
+
     fun testMeta6MakesItADistribution() {
-        myFixture.addFileToProject("META6.json", """{"name":"Thing"}""")
-        assertTrue(RakuProjectKind.isRakuDistribution(project))
+        val meta = meta6File()
+        val existing = if (meta.exists()) meta.readText() else null
+        if (existing == null) meta.writeText("""{"name":"Thing"}""")
+        try {
+            assertTrue(RakuProjectKind.isRakuDistribution(project))
+        } finally {
+            if (existing == null) meta.delete()
+        }
     }
 
-    // The tiering: Raku files are not enough for the ecosystem fetch.
     fun testRakuFilesWithoutMeta6AreNotADistribution() {
         myFixture.addFileToProject("lib/Thing.rakumod", "unit module Thing;")
         assertTrue(RakuProjectKind.hasRakuFiles(project))
-        assertFalse(RakuProjectKind.isRakuDistribution(project))
+
+        val meta = meta6File()
+        val existing = if (meta.exists()) meta.readText() else null
+        if (existing != null) meta.delete()
+        try {
+            assertFalse("Raku files without a META6.json are not a distribution",
+                        RakuProjectKind.isRakuDistribution(project))
+        } finally {
+            if (existing != null) meta.writeText(existing)
+        }
     }
 }
