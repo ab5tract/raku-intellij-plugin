@@ -25,7 +25,7 @@ class RakuStatusBarWidget(
     }
 
     override fun createPopup(context: DataContext): ListPopup? {
-        return JBPopupFactory.getInstance().createListPopup(RakuStatusBarListPopupStep(project))
+        return JBPopupFactory.getInstance().createListPopup(RakuStatusBarListPopupStep(project, scope))
     }
 
     override fun getWidgetState(file: VirtualFile?): WidgetState {
