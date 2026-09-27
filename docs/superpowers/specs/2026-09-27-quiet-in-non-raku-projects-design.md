@@ -9,7 +9,7 @@ Opening a project with no Raku in it still gets the Raku plugin's attention: the
 ecosystem is fetched over the network, zef may be prompted for, an SDK warning
 can fire, and the Camelia widget appears in the status bar.
 
-The obvious guess — that these features are ungated — is wrong. They are gated:
+Two of them are gated already; the guess that none are is wrong:
 
 | feature | existing gate |
 |---|---|
@@ -36,7 +36,7 @@ to conclude "no".
 
 ## Goal
 
-Three features stay silent unless the project earns them, the verdict is
+Four features stay silent unless the project earns them, the verdict is
 current rather than cached, and a project that wants the ecosystem can ask for
 it without qualifying automatically.
 
@@ -125,6 +125,7 @@ blocking `.join()` out of service construction.
 | `RakuServiceStarter` as a whole | `hasRakuFiles` |
 | `RakuStatusBarWidgetFactory.isAvailable` | `hasRakuFiles` |
 | `RakuSdkUtil.reactToSdkIssue` | early return unless `hasRakuFiles` |
+| `RakuLegacyExtensionsDetector` | `hasRakuFiles` |
 
 ### Butterfly menu
 
@@ -150,16 +151,52 @@ one is not that — silencing it would hide a genuine global SDK problem.
 decide whether a directory can be opened as a Raku project, and that runs
 before any project exists — so `FileTypeIndex`, which needs a project scope, is
 not available there. It keeps the extension check and loses only the substring
-clause. Nothing else calls it once the three gates move to `RakuProjectKind`.
+clause. Nothing else calls it once the four gates move to `RakuProjectKind`.
 
 The asymmetry is deliberate and worth stating: opening a directory is a
 one-shot question asked without a project, so a bounded tree walk is the only
-tool available; the three gated features run repeatedly inside a live project,
+tool available; the gated features run repeatedly inside a live project,
 where the index is both cheaper and more correct.
+
+### `RakuLegacyExtensionsDetector` — gated, and stops walking by hand
+
+The third startup activity, and the worst-behaved. It is ungated, and
+`UpdateExtensionsAction.collectFilesWithLegacyNames` walks each module source
+root with
+
+```kotlin
+FileUtil.findFilesByMask(FULL_LEGACY_EXTENSION_PATTERN, root.toNioPath().toFile())
+```
+
+a raw `java.io` recursion that takes a `File` and therefore cannot know about
+IntelliJ's exclude folders. On rakudo, `t` is a source root, so it descends
+straight into `t/spec` — 2158 of the 2792 files under `t/`, all of them inside
+a directory the module model explicitly excludes.
+
+The pattern is `.+?\.(p6|pl6|pm6|pm|pod6|pod|t)`. Three of those — `pm`, `pod`,
+`t` — are current **Perl 5** extensions, so in a Perl project this activity
+announces "Obsolete Raku extensions are detected" about files that are nothing
+of the kind.
+
+Two changes, matching the rest of this design:
+
+1. **Gate on `hasRakuFiles`.** Same tier as the widget and the SDK prompt: it
+   is advice about Raku source, so it needs Raku source. This alone silences
+   the Perl 5 false positive, since such a project has `.pm` and `.t` but no
+   Script, Module or Pod file.
+2. **Replace the hand-rolled walk with an index query.**
+   `FilenameIndex.getAllFilesByExt(project, ext, GlobalSearchScope.projectScope(project))`
+   per legacy extension. Index-backed rather than O(tree), and the project
+   scope honours excluded folders for free — which is what stops the descent
+   into `t/spec`.
+
+Not changed: whether `.t` belongs in the legacy list at all. Raku test files
+are still `.t`, so calling it obsolete looks wrong, but that is the detector's
+own semantics and a separate question from the noise this design is fixing.
 
 ### Dumb mode
 
-`FileTypeIndex` requires smart mode, and two of the four call sites run at
+`FileTypeIndex` requires smart mode, and three of the five call sites run at
 startup. During indexing the answer is **false** — stay quiet — and the widget
 re-evaluates through `StatusBarWidgetsManager.updateWidget` on the transition
 to smart mode. Quiet-then-appear is the correct failure direction: the
@@ -181,6 +218,12 @@ Plus: `refresh()` actually re-fetches after a completed initialize (the bug
 that would make the menu item a no-op), and `reactToSdkIssue` returns without
 notifying when `hasRakuFiles` is false.
 
+And for the legacy detector, the case that motivated folding it in: a project
+whose source root contains an **excluded** subdirectory full of `.t` files
+reports nothing. Against the old `FileUtil.findFilesByMask` walk that test
+fails, which is what makes it worth having -- it pins the exclusion-awareness,
+not merely the gate.
+
 ## Risks
 
 **Removing the eager initializer is the real behaviour change.** Anything
@@ -199,11 +242,6 @@ few seconds after startup may read as a glitch.
 
 ## Out of scope
 
-- `RakuLegacyExtensionsDetector`, the third startup activity, is ungated and
-  walks every module source root with a raw `java.io` recursion that ignores
-  IntelliJ's exclude folders — on rakudo that means descending into
-  `t/spec`. It is a real problem and a separate one; this design does not
-  touch it.
 - Making `Refresh Ecosystem` reachable as a plain action (Tools menu / Find
   Action) as well as from the widget. Worth doing, since the widget is now
   hidden in more projects, but it is additive and can follow.
