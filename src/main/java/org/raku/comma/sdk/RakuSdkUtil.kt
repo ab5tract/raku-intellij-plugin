@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiManager
 import java.util.concurrent.atomic.AtomicBoolean
 import org.raku.comma.RakuIcons
+import org.raku.comma.project.RakuProjectKind
 import org.raku.comma.psi.RakuFile
 import org.raku.comma.psi.RakuPackageDecl
 import org.raku.comma.psi.symbols.MOPSymbolsAllowed
@@ -93,6 +94,11 @@ class RakuSdkUtil {
         @Synchronized
         fun reactToSdkIssue(project: Project?, title: String, message: String? = null, ex: Exception? = null) {
             val finalMessage = message ?: if (ex != null) ex.message!! else ""
+
+            // Only suppressed where we can see it is not a Raku project. A null
+            // project cannot be attributed to one, and silencing that would
+            // hide a genuine global SDK problem rather than reduce noise.
+            if (project != null && ! RakuProjectKind.hasRakuFiles(project)) return
 
             if (ex != null) {
                 LOG.error(ex)

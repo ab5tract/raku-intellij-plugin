@@ -1,11 +1,10 @@
 package org.raku.comma.ui.editorMenu
 
-import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import kotlinx.coroutines.CoroutineScope
-import org.raku.comma.services.project.RakuProjectDetailsService
+import org.raku.comma.project.RakuProjectKind
 
 class RakuStatusBarWidgetFactory : StatusBarWidgetFactory {
     private val ID: String = "RakuStatusBarWidgetFactory"
@@ -15,7 +14,7 @@ class RakuStatusBarWidgetFactory : StatusBarWidgetFactory {
     }
 
     override fun isAvailable(project: Project): Boolean {
-        return project.service<RakuProjectDetailsService>().doesProjectContainRakuCode
+        return RakuProjectKind.hasRakuFiles(project)
     }
 
     override fun createWidget(project: Project, scope: CoroutineScope): StatusBarWidget {

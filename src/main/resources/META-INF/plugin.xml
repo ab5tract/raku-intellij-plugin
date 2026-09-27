@@ -325,6 +325,7 @@
     <backgroundPostStartupActivity implementation="org.raku.comma.project.activity.RakuServiceStarter"
                                    order="last"/>
     <backgroundPostStartupActivity implementation="org.raku.comma.utils.RakuLegacyExtensionsDetector"/>
+    <backgroundPostStartupActivity implementation="org.raku.comma.ui.editorMenu.RakuWidgetSmartModeRefresher"/>
 <!--    <backgroundPostStartupActivity implementation="org.raku.comma.services.project.RakuModuleInstallPromptStarter"-->
 <!--                                   order="last" />-->
     <!--    <moduleService serviceImplementation="org.raku.comma.services.project.RakuMetaDataComponent"/>-->

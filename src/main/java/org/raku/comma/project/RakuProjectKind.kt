@@ -1,6 +1,6 @@
 package org.raku.comma.project
 
-import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
@@ -43,7 +43,12 @@ object RakuProjectKind {
     fun hasRakuFiles(project: Project): Boolean {
         if (project.isDisposed || DumbService.isDumb(project)) return false
         val scope = GlobalSearchScope.projectScope(project)
-        return WAKING_FILE_TYPES.any { FileTypeIndex.containsFileOfType(it, scope) }
+        // FileTypeIndex asserts a read action on any thread. Held here rather
+        // than at each call site: isAvailable and reactToSdkIssue are both
+        // non-suspend and neither has an ambient read lock to inherit.
+        return ReadAction.compute<Boolean, RuntimeException> {
+            WAKING_FILE_TYPES.any { FileTypeIndex.containsFileOfType(it, scope) }
+        }
     }
 
     /** A META6.json at the project root -- no dependencies exist without one. */
@@ -59,11 +64,6 @@ object RakuProjectKind {
      */
     suspend fun awaitRakuFiles(project: Project): Boolean {
         project.waitForSmartMode()
-        // hasRakuFiles queries FileTypeIndex, which asserts it is called from
-        // inside a read action -- true regardless of thread, and not granted
-        // merely by having waited for smart mode. A caller off the platform's
-        // own coroutine dispatchers (this method has no control over who
-        // calls it) has no read lock to inherit, so one is taken explicitly.
-        return readAction { hasRakuFiles(project) }
+        return hasRakuFiles(project)
     }
 }
