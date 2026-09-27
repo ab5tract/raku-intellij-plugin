@@ -50,9 +50,9 @@ class GrammarNoiseFollowupsTest : CommaFixtureTestCase() {
     private fun setRakudoCore(value: Boolean) {
         val details = project.service<RakuProjectDetailsService>()
         // getState()'s one-time refresh re-derives the flag from the project
-        // name; mark the scan done first so the manual value sticks
+        // name; mark it determined first so the manual value sticks
         // regardless of test order.
-        details.hasScannedForRakuFiles = true
+        details.hasDeterminedRakudoCore = true
         details.projectState.isProjectRakudoCore = value
     }
 

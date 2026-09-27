@@ -69,12 +69,14 @@ object CommaProjectUtil {
     fun pathContainsRakuCode(path: VirtualFile): Boolean {
         val foundFiles = mutableListOf<VirtualFile>()
         val filter = VirtualFileFilter { file ->
+            // No content sniffing: an extensionless file whose first line merely
+            // contained "raku" used to make a whole project Raku, and reading
+            // every such file made the walk expensive as well as wrong. The
+            // registered shebang file-type detectors handle real
+            // `#!/usr/bin/env raku` scripts properly, for the callers that have
+            // a project to index.
             (file.isDirectory && !file.path.endsWith(".idea"))
                     || rakuExtensions.contains(file.extension)
-                    || (file.isFile && (file.extension.isNullOrEmpty() && file.readText()
-                .lines()
-                .first()
-                .contains("raku")))
         }
         VfsUtilCore.iterateChildrenRecursively(path, filter) {
             if (it.isFile) foundFiles.add(it)
@@ -83,11 +85,6 @@ object CommaProjectUtil {
             return@iterateChildrenRecursively true
         }
         return foundFiles.isNotEmpty()
-    }
-
-    @JvmStatic
-    fun projectContainsNoRakuCode(project: Project): Boolean {
-        return !project.service<RakuProjectDetailsService>().doesProjectContainRakuCode
     }
 
     @JvmStatic

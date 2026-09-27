@@ -5,7 +5,6 @@ import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
 import org.raku.comma.services.RakuServiceConstants
-import org.raku.comma.utils.CommaProjectUtil
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.PROJECT)
@@ -40,13 +39,6 @@ class RakuProjectDetailsService(
         get() = missingDependencyNotificationStatus.get()
         set(value) = missingDependencyNotificationStatus.set(value)
 
-    // projectFilesScannedStatus
-    // Tracks whether the project files have been scanned for Raku files and Rakudo core status.
-    private val projectFilesScannedStatus = AtomicBoolean(false)
-    var hasScannedForRakuFiles: Boolean
-        get() = projectFilesScannedStatus.get()
-        set(value) = projectFilesScannedStatus.set(value)
-
     // projectSdkPromptedStatus
     // Tracks whether the SDK prompt has already been shown to the user. This allows 'Cancel' to be
     // meaningfully selected without resulting in the popup repeatedly appearing as a result.
@@ -61,26 +53,28 @@ class RakuProjectDetailsService(
     val isProjectRakudoCore: Boolean
         get() = state.isProjectRakudoCore
 
+    // rakudoCoreDeterminedStatus
+    // determineIfProjectIsRakudoCore() is derived once and then left alone, so a
+    // manual override (tests pin a project to "is Rakudo core" without renaming
+    // it) survives later reads instead of being silently re-derived away.
+    private val rakudoCoreDeterminedStatus = AtomicBoolean(false)
+    var hasDeterminedRakudoCore: Boolean
+        get() = rakudoCoreDeterminedStatus.get()
+        set(value) = rakudoCoreDeterminedStatus.set(value)
+
     private fun determineIfProjectIsRakudoCore(): Boolean {
         return project.name == "rakudo" || project.basePath?.endsWith("rakudo") == true
     }
 
-    // Detail:  doesProjectContainRakuCode
-    // Purpose: Suppress all Raku-related services unless the project actually contains Raku files
-    val doesProjectContainRakuCode: Boolean
-        get() = state.doesProjectContainRakuCode
-
     private fun refreshState(state: RakudoProjectState): RakudoProjectState {
-        if (!hasScannedForRakuFiles) {
-            state.doesProjectContainRakuCode = CommaProjectUtil.projectContainsRakuCode(project)
+        if (!hasDeterminedRakudoCore) {
             state.isProjectRakudoCore = determineIfProjectIsRakudoCore()
         }
-        hasScannedForRakuFiles = true
+        hasDeterminedRakudoCore = true
         return state
     }
 }
 
 class RakudoProjectState : BaseState() {
-    var doesProjectContainRakuCode by property(false)
     var isProjectRakudoCore by property(false)
 }
