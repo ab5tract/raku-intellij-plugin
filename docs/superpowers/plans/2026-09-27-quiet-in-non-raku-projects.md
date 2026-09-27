@@ -464,6 +464,11 @@ export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 
 Expected: 1330 tests, 0 failures (this task adds none).
 
+(Historical: this task shipped at 1330. Its review then found that a one-shot
+startup activity cannot ask an index-dependent predicate, and the fix added
+`awaitRakuFiles` plus one test -- so the baseline every later task works from
+is 1331. See Task 4 Step 0.)
+
 - [ ] **Step 4: Commit**
 
 ```bash
@@ -481,12 +486,50 @@ files rather than the old substring-matching walk."
 ## Task 4: Gate the widget and the SDK prompt
 
 **Files:**
+- Modify: `src/main/java/org/raku/comma/project/RakuProjectKind.kt`
 - Modify: `src/main/java/org/raku/comma/ui/editorMenu/RakuStatusBarWidgetFactory.kt`
 - Modify: `src/main/java/org/raku/comma/sdk/RakuSdkUtil.kt`
 
 **Interfaces:**
 - Consumes: `RakuProjectKind.hasRakuFiles` (Task 1).
 - Produces: nothing new.
+
+- [ ] **Step 0: Make `hasRakuFiles` hold its own read action**
+
+Task 3's fix round found that `FileTypeIndex.containsFileOfType` requires a
+read action -- a real platform contract, not a test artifact: in production
+`Application.assertReadAccessAllowed` logs through `Logger.error` and then
+carries on reading a structure with no race guarantee, which is worse than
+throwing. It was patched at one call site, inside `awaitRakuFiles`. This task
+adds the two callers that would each have to remember the same thing, so move
+it into the predicate instead:
+
+```kotlin
+    fun hasRakuFiles(project: Project): Boolean {
+        if (project.isDisposed || DumbService.isDumb(project)) return false
+        val scope = GlobalSearchScope.projectScope(project)
+        // FileTypeIndex asserts a read action on any thread. Held here rather
+        // than at each call site: isAvailable and reactToSdkIssue are both
+        // non-suspend and neither has an ambient read lock to inherit.
+        return ReadAction.compute<Boolean, RuntimeException> {
+            WAKING_FILE_TYPES.any { FileTypeIndex.containsFileOfType(it, scope) }
+        }
+    }
+```
+
+Add `import com.intellij.openapi.application.ReadAction`. Then delete the now
+redundant `readAction { ... }` wrapper inside `awaitRakuFiles`, leaving
+`return hasRakuFiles(project)` -- nested read actions are reentrant, so it is
+harmless either way, but two of them state the requirement twice and invite
+the next reader to wonder which one matters.
+
+Do not change the `isDisposed` / `isDumb` guard or its position: the
+fail-quiet-while-indexing behaviour is what three call sites depend on, and
+`awaitRakuFiles` is what the one-shot startup path uses instead.
+
+The existing `RakuProjectKindTest` covers this -- its cases call
+`hasRakuFiles` directly from the test thread. If any of them regress, the
+read action is in the wrong place.
 
 - [ ] **Step 1: Gate the widget**
 
@@ -569,18 +612,20 @@ never become Raku.
 export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 ```
 
-Expected: 1330 tests, 0 failures (this task adds none).
+Expected: 1331 tests, 0 failures (this task adds none).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/main/java/org/raku/comma/ui/editorMenu/RakuStatusBarWidgetFactory.kt \
+git add src/main/java/org/raku/comma/project/RakuProjectKind.kt \
+        src/main/java/org/raku/comma/ui/editorMenu/RakuStatusBarWidgetFactory.kt \
         src/main/java/org/raku/comma/ui/editorMenu/RakuWidgetSmartModeRefresher.kt \
         src/main/resources/META-INF/plugin.xml \
         src/main/java/org/raku/comma/sdk/RakuSdkUtil.kt
 git commit -m "Hide the widget and the SDK warning without Raku files
 
-Both asked a persisted, substring-matching predicate; both now ask the index.
+Both asked a persisted, substring-matching predicate; both now ask the index,
+which holds its own read action now that more than one caller needs it.
 A null project still gets the SDK warning -- it cannot be attributed to a
 project, so suppressing it would hide real failures rather than reduce noise."
 ```
@@ -814,7 +859,7 @@ scan, never the test.
 export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 ```
 
-Expected: 1332 tests (1330 + your 2), 0 failures.
+Expected: 1333 tests (1331 + your 2), 0 failures.
 
 - [ ] **Step 7: Commit**
 
@@ -915,7 +960,7 @@ Expected: the declarations, plus the call in `canOpenFileAsProject`. If
 export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 ```
 
-Expected: 1332 tests, 0 failures (this task adds none; it only deletes).
+Expected: 1333 tests, 0 failures (this task adds none; it only deletes).
 
 - [ ] **Step 4: Commit**
 
@@ -940,7 +985,7 @@ question before a project exists and so cannot use an index."
 
 ## Done when
 
-- `./gradlew test --rerun` reports **1332 tests, 0 failures** with `$RAKU_PREFIX` on `PATH` — or 1331 in a fresh clone, where the untracked `DocDumpProbe.kt` is absent.
+- `./gradlew test --rerun` reports **1333 tests, 0 failures** with `$RAKU_PREFIX` on `PATH` — or 1332 in a fresh clone, where the untracked `DocDumpProbe.kt` is absent.
 - `grep -rn "doesProjectContainRakuCode\|hasScannedForRakuFiles" src/` returns nothing.
 - `grep -rn 'contains("raku")' src/main/java/org/raku/comma/utils/CommaProjectUtil.kt` returns nothing.
 - `grep -rn "findFilesByMask" src/main` returns nothing.
