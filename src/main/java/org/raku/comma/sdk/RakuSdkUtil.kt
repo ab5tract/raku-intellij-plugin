@@ -95,14 +95,16 @@ class RakuSdkUtil {
         fun reactToSdkIssue(project: Project?, title: String, message: String? = null, ex: Exception? = null) {
             val finalMessage = message ?: if (ex != null) ex.message!! else ""
 
-            // Only suppressed where we can see it is not a Raku project. A null
-            // project cannot be attributed to one, and silencing that would
-            // hide a genuine global SDK problem rather than reduce noise.
-            if (project != null && ! RakuProjectKind.hasRakuFiles(project)) return
-
             if (ex != null) {
                 LOG.error(ex)
             }
+
+            // Only the notification is suppressed, and only where we can see
+            // it is not a Raku project -- the exception above is still logged,
+            // because a log entry is diagnostics rather than noise. A null
+            // project cannot be attributed to one, and silencing that would
+            // hide a genuine global SDK problem.
+            if (project != null && ! RakuProjectKind.hasRakuFiles(project)) return
 
             if (! alreadyPrompted.get()) {
                 alreadyPrompted.set(true)

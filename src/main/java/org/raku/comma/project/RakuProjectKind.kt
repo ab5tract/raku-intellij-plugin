@@ -1,6 +1,7 @@
 package org.raku.comma.project
 
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
@@ -42,13 +43,10 @@ object RakuProjectKind {
      */
     fun hasRakuFiles(project: Project): Boolean {
         if (project.isDisposed || DumbService.isDumb(project)) return false
-        val scope = GlobalSearchScope.projectScope(project)
-        // FileTypeIndex asserts a read action on any thread. Held here rather
-        // than at each call site: isAvailable and reactToSdkIssue are both
-        // non-suspend and neither has an ambient read lock to inherit.
-        return ReadAction.compute<Boolean, RuntimeException> {
-            WAKING_FILE_TYPES.any { FileTypeIndex.containsFileOfType(it, scope) }
-        }
+        // Blocking, because both callers of this form are non-suspend and
+        // have no read lock to inherit: RakuStatusBarWidgetFactory.isAvailable
+        // and RakuSdkUtil.reactToSdkIssue.
+        return ReadAction.compute<Boolean, RuntimeException> { indexHasRakuFiles(project) }
     }
 
     /** A META6.json at the project root -- no dependencies exist without one. */
@@ -64,6 +62,16 @@ object RakuProjectKind {
      */
     suspend fun awaitRakuFiles(project: Project): Boolean {
         project.waitForSmartMode()
-        return hasRakuFiles(project)
+        if (project.isDisposed || DumbService.isDumb(project)) return false
+        // The suspend form, not hasRakuFiles: this runs on a platform
+        // coroutine dispatcher with limited parallelism, and blocking one of
+        // those threads on the read lock starves it.
+        return readAction { indexHasRakuFiles(project) }
+    }
+
+    /** Requires a read action; the two entry points above each take their own. */
+    private fun indexHasRakuFiles(project: Project): Boolean {
+        val scope = GlobalSearchScope.projectScope(project)
+        return WAKING_FILE_TYPES.any { FileTypeIndex.containsFileOfType(it, scope) }
     }
 }
