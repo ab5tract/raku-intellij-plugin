@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Rakudo:** every gradle invocation runs as `export PATH="$RAKU_PREFIX/bin:$PATH"` then `./gradlew … --rerun`, in ONE command. `$RAKU_PREFIX` is `/home/longwalker/code/raku/x.core/raku-prefix`. Never rakubrew, never pin a release. `--rerun` is mandatory: `PATH` is not a declared task input, so without it gradle reports success having run zero tests.
-- **Green baseline is 1322 tests, 0 failures** (1321 tracked + 1 from the untracked `DocDumpProbe.kt`). Any task ending on a different number must say why.
+- **The green baseline moves as tasks add tests.** It was 1322 at the start (1321 tracked + 1 from the untracked `DocDumpProbe.kt`); Task 1 added 5, Task 2 added 3. Each task below states the total it should end on. Any task ending on a different number must say why.
 - **Verify from `build/test-results/test/TEST-*.xml`**, not console output, and check the XML is newer than your edits. The rich console does not reliably print a summary line here.
 - **Never `git add -A`.** Name files explicitly. `src/test/kotlin/org/raku/comma/docs/DocDumpProbe.kt` is an untracked local probe and must stay untracked.
 - **Platform floor:** `sinceBuild = "261"`. Every API used below exists in 262.
@@ -379,7 +379,7 @@ surface, via `RakuDependencyService.ecoProvideToModule`.
 export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 ```
 
-Expected: 1324 tests (1322 + your 2), 0 failures. **If a completion test fails,
+Expected: 1330 tests (1327 + your 3), 0 failures. **If a completion test fails,
 stop and report** — do not paper over it by restoring the eager fetch, and do
 not adjust the failing expectation. It is the signal this task exists to find.
 
@@ -462,7 +462,7 @@ exactly as it is.
 export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 ```
 
-Expected: 1324 tests, 0 failures.
+Expected: 1330 tests, 0 failures (this task adds none).
 
 - [ ] **Step 4: Commit**
 
@@ -569,7 +569,7 @@ never become Raku.
 export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 ```
 
-Expected: 1324 tests, 0 failures.
+Expected: 1330 tests, 0 failures (this task adds none).
 
 - [ ] **Step 5: Commit**
 
@@ -809,7 +809,7 @@ scan, never the test.
 export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 ```
 
-Expected: 1326 tests (1324 + your 2), 0 failures.
+Expected: 1332 tests (1330 + your 2), 0 failures.
 
 - [ ] **Step 7: Commit**
 
@@ -910,7 +910,7 @@ Expected: the declarations, plus the call in `canOpenFileAsProject`. If
 export PATH="$RAKU_PREFIX/bin:$PATH" && ./gradlew test --rerun
 ```
 
-Expected: 1326 tests, 0 failures.
+Expected: 1332 tests, 0 failures (this task adds none; it only deletes).
 
 - [ ] **Step 4: Commit**
 
@@ -935,7 +935,7 @@ question before a project exists and so cannot use an index."
 
 ## Done when
 
-- `./gradlew test --rerun` reports **1326 tests, 0 failures** with `$RAKU_PREFIX` on `PATH` — or 1325 in a fresh clone, where the untracked `DocDumpProbe.kt` is absent.
+- `./gradlew test --rerun` reports **1332 tests, 0 failures** with `$RAKU_PREFIX` on `PATH` — or 1331 in a fresh clone, where the untracked `DocDumpProbe.kt` is absent.
 - `grep -rn "doesProjectContainRakuCode\|hasScannedForRakuFiles" src/` returns nothing.
 - `grep -rn 'contains("raku")' src/main/java/org/raku/comma/utils/CommaProjectUtil.kt` returns nothing.
 - `grep -rn "findFilesByMask" src/main` returns nothing.
