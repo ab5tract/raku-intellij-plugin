@@ -823,18 +823,25 @@ Replace the whole method:
          */
         @JvmStatic
         fun collectFilesWithLegacyNames(project: Project): MutableMap<String, MutableList<File>> {
-            val filesToUpdate: MutableMap<String, MutableList<File>> = HashMap()
-            val scope = GlobalSearchScope.projectScope(project)
-            for (ext in LEGACY_EXTENSIONS) {
-                for (vf in FilenameIndex.getAllFilesByExt(project, ext, scope)) {
-                    val matcher: Matcher = FULL_LEGACY_EXTENSION_PATTERN.matcher(vf.name)
-                    if (matcher.matches()) {
-                        val key = matcher.group(1)
-                        filesToUpdate.computeIfAbsent(key) { mutableListOf() }.add(File(vf.path))
+            // FilenameIndex asserts a read action, and this is public: the
+            // startup detector calls it off a coroutine dispatcher and
+            // actionPerformed calls it from the EDT. Held here so no caller
+            // has to know. Nested read actions are reentrant, so the
+            // detector's own smartReadAction costs nothing extra.
+            return ReadAction.compute<MutableMap<String, MutableList<File>>, RuntimeException> {
+                val filesToUpdate: MutableMap<String, MutableList<File>> = HashMap()
+                val scope = GlobalSearchScope.projectScope(project)
+                for (ext in LEGACY_EXTENSIONS) {
+                    for (vf in FilenameIndex.getAllFilesByExt(project, ext, scope)) {
+                        val matcher: Matcher = FULL_LEGACY_EXTENSION_PATTERN.matcher(vf.name)
+                        if (matcher.matches()) {
+                            val key = matcher.group(1)
+                            filesToUpdate.computeIfAbsent(key) { mutableListOf() }.add(File(vf.path))
+                        }
                     }
                 }
+                filesToUpdate
             }
-            return filesToUpdate
         }
 ```
 
@@ -845,7 +852,8 @@ alternation so the two cannot drift:
         private val LEGACY_EXTENSIONS = listOf("p6", "pl6", "pm6", "pm", "pod6", "pod", "t")
 ```
 
-Imports to add: `com.intellij.openapi.project.Project`,
+Imports to add: `com.intellij.openapi.application.ReadAction`,
+`com.intellij.openapi.project.Project`,
 `com.intellij.psi.search.FilenameIndex`,
 `com.intellij.psi.search.GlobalSearchScope`. Remove
 `com.intellij.openapi.util.io.FileUtil` and the `ModuleRootManager` /
@@ -869,11 +877,18 @@ class RakuLegacyExtensionsDetector : ProjectActivity {
         // let the crash through, depending on timing.
         if (! RakuProjectKind.awaitRakuFiles(project)) return
 
-        val filesToUpdate = UpdateExtensionsAction.collectFilesWithLegacyNames(project)
+        // smartReadAction, because FilenameIndex throws IndexNotReadyException
+        // in dumb mode and awaitRakuFiles only guarantees smart mode at the
+        // instant it returned -- indexing can restart in the gap. This form
+        // re-runs instead of letting the exception out of a startup activity.
+        val filesToUpdate = smartReadAction(project) {
+            UpdateExtensionsAction.collectFilesWithLegacyNames(project)
+        }
         // ...rest of the existing body unchanged
 ```
 
-Add `import org.raku.comma.project.RakuProjectKind`; drop the
+Add `import org.raku.comma.project.RakuProjectKind` and
+`import com.intellij.openapi.application.smartReadAction`; drop the
 `ModuleManager` import.
 
 Then in `UpdateExtensionsAction.actionPerformed`, the call currently reads
