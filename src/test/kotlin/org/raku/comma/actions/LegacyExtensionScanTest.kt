@@ -7,8 +7,8 @@ class LegacyExtensionScanTest : CommaFixtureTestCase() {
     fun testFindsLegacyFilesInTheProject() {
         myFixture.addFileToProject("lib/Old.pm6", "unit module Old;")
         val found = UpdateExtensionsAction.collectFilesWithLegacyNames(project)
-        assertTrue("a .pm6 file should be offered for renaming",
-                   found.values.flatten().any { it.name == "Old.pm6" })
+        assertTrue("a .pm6 file should be offered for renaming, grouped under \"pm6\"",
+                   found["pm6"]?.any { it.name == "Old.pm6" } ?: false)
     }
 
     // The reason this task exists. FileUtil.findFilesByMask took a java.io.File

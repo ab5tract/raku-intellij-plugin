@@ -155,8 +155,13 @@ class UpdateExtensionsAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     companion object {
-        val FULL_LEGACY_EXTENSION_PATTERN: Pattern = Pattern.compile(".+?\\.(p6|pl6|pm6|pm|pod6|pod|t)")
+        // The pattern is built from this list, not kept in step with it by
+        // hand -- these two drifting apart would mean a file matched by one
+        // and invisible to the other.
         private val LEGACY_EXTENSIONS = listOf("p6", "pl6", "pm6", "pm", "pod6", "pod", "t")
+
+        val FULL_LEGACY_EXTENSION_PATTERN: Pattern =
+            Pattern.compile(".+?\\.(" + LEGACY_EXTENSIONS.joinToString("|") + ")")
         private val nonLegacyExts: MutableMap<String?, String?> = HashMap<String?, String?>()
 
         init {
