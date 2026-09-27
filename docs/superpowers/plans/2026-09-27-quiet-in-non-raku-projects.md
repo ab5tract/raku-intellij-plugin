@@ -636,6 +636,7 @@ project, so suppressing it would hide real failures rather than reduce noise."
 
 **Files:**
 - Modify: `src/main/java/org/raku/comma/ui/editorMenu/RakuStatusBarListPopupStep.kt`
+- Modify: `src/main/java/org/raku/comma/ui/editorMenu/RakuStatusBarWidget.kt`
 
 **Interfaces:**
 - Consumes: `RakuEcosystem.refresh()` (Task 2).
@@ -663,22 +664,59 @@ string. Three edits, all in that file.
             "Refresh Ecosystem" -> refreshEcosystem()
 ```
 
-and the handler:
+and the handler. `refresh()` returns as soon as it has launched the fetch, so
+nothing here freezes -- but the fetch takes seconds, and without a progress
+indicator the menu item looks like it did nothing at all. The spec calls for
+`withBackgroundProgress`, so the step needs a scope to launch in:
 
 ```kotlin
     /**
      * Gated projects never fetch on their own, so this is the only way in for
      * a project with no META6.json -- and the only way to re-fetch a stale
      * ecosystem for one that has it.
+     *
+     * Under a progress indicator because the fetch is a network round trip:
+     * refresh() itself returns immediately, and without this the only
+     * evidence anything happened would be the ecosystem quietly changing
+     * some seconds later.
      */
     private fun refreshEcosystem() {
-        ApplicationManager.getApplication().service<RakuEcosystem>().refresh()
+        scope.launch {
+            withBackgroundProgress(project, "Refreshing the Raku ecosystem...") {
+                withContext(Dispatchers.IO) {
+                    service<RakuEcosystem>().refresh().get()
+                }
+            }
+        }
     }
 ```
 
-Imports to add: `com.intellij.openapi.application.ApplicationManager`,
-`org.raku.comma.services.application.RakuEcosystem`. (`service` is already
-imported.)
+The scope comes from the widget, whose lifecycle this work belongs to.
+Change the class header:
+
+```kotlin
+class RakuStatusBarListPopupStep(
+    val project: Project,
+    private val scope: CoroutineScope,
+) : ListPopupStep<String> {
+```
+
+and in `RakuStatusBarWidget.createPopup`, pass the scope it already holds:
+
+```kotlin
+        return JBPopupFactory.getInstance().createListPopup(RakuStatusBarListPopupStep(project, scope))
+```
+
+`RakuStatusBarWidget` takes `scope: CoroutineScope` as a constructor
+parameter and already captures it for `createInstance`, so no change to its
+signature is needed.
+
+Imports to add to `RakuStatusBarListPopupStep.kt`:
+`com.intellij.openapi.components.service` (already imported),
+`com.intellij.platform.ide.progress.withBackgroundProgress`,
+`kotlinx.coroutines.CoroutineScope`, `kotlinx.coroutines.Dispatchers`,
+`kotlinx.coroutines.launch`, `kotlinx.coroutines.withContext`,
+`org.raku.comma.services.application.RakuEcosystem`.
 
 `getSeparatorAbove` currently puts a separator above `Launch REPL`. Leave it
 as-is; `Refresh Ecosystem` sits below `Launch REPL` in the same group.
@@ -696,7 +734,8 @@ contains a string it was just handed would assert nothing.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/main/java/org/raku/comma/ui/editorMenu/RakuStatusBarListPopupStep.kt
+git add src/main/java/org/raku/comma/ui/editorMenu/RakuStatusBarListPopupStep.kt \
+        src/main/java/org/raku/comma/ui/editorMenu/RakuStatusBarWidget.kt
 git commit -m "Offer Refresh Ecosystem from the Raku widget
 
 Gating the automatic fetch leaves scripts-only projects with no way to get an
