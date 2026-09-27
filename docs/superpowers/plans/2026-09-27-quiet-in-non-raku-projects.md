@@ -310,7 +310,39 @@ delete the initializer call and start from empty state:
     private var initializationFuture = CompletableFuture<EcosystemDetailsState>()
 ```
 
-Note `initializationFuture` becomes a `var`, since `refresh` replaces it.
+Note `initializationFuture` becomes a `var`, since `refresh` replaces it --
+and that is exactly why the launch inside `initialize` must stop completing
+the *field*. Change its body to capture the future first:
+
+```kotlin
+    @Synchronized
+    fun initialize(): CompletableFuture<EcosystemDetailsState> {
+        if (isNotInitializing && isNotInitialized) {
+            isInitializing = true
+            // Capture, do not read the field at completion time. refresh()
+            // reassigns it, and a fetch takes seconds -- so an in-flight
+            // coroutine reading the field would complete whichever future is
+            // current, orphaning the one its own caller is blocked on.
+            // CommaProjectUtil.refreshProjectState does exactly such a .get().
+            val target = initializationFuture
+            runScope.launch {
+                ecosystemState = moduleListFetcher.fillState(EcosystemDetailsState())
+                target.complete(ecosystemState.copy())
+                isInitializing = false
+            }
+            return target
+        } else {
+            return if (isInitializing) initializationFuture
+                   else CompletableFuture.completedFuture(ecosystemState)
+        }
+    }
+```
+
+`@Synchronized` on both methods serialises the field mutations. It costs
+nothing: both return as soon as the coroutine is launched, so the lock is never
+held across the fetch. Without it, `isNotInitializing && isNotInitialized` is a
+non-atomic check-then-act and two concurrent callers can both launch.
+
 Then add:
 
 ```kotlin
@@ -320,6 +352,7 @@ Then add:
      * [initialize] cannot do this: it short-circuits once the future is
      * complete, so calling it again returns the old state.
      */
+    @Synchronized
     fun refresh(): CompletableFuture<EcosystemDetailsState> {
         initializationFuture = CompletableFuture()
         isInitializing = false
