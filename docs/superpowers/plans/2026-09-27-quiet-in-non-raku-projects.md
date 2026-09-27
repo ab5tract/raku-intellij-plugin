@@ -240,21 +240,35 @@ class RakuEcosystemRefreshTest : CommaFixtureTestCase() {
     // initialize() is guarded by isNotInitializing && isNotInitialized, so once
     // the future completes it hands back cached state forever. A menu item
     // wired to it would silently do nothing, which is worse than no menu item.
-    fun testRefreshFetchesAgainAfterInitialize() {
+    //
+    // Asserted by identity, not by isInitialized: fillState returns a fresh
+    // state object per fetch, so a re-fetch is observable as a different
+    // instance. That holds no matter who initialised the service first, which
+    // matters because it is an APP-level singleton the test JVM never resets --
+    // CommaProjectUtil.refreshProjectState calls initialize() too, so any test
+    // touching that path initialises it for the rest of the run.
+    fun testRefreshReFetchesRatherThanReturningCachedState() {
         val eco = service<RakuEcosystem>()
         eco.initialize().get()
-        assertTrue("initialize should have completed", eco.isInitialized)
-
-        val second = eco.refresh()
-        assertNotNull("refresh must hand back a future, not null", second)
-        second.get()
-        assertTrue("the service must be initialized again after refresh", eco.isInitialized)
+        val before = eco.ecosystem
+        eco.refresh().get()
+        assertNotSame("refresh must re-fetch, not hand back the cached state",
+                      before, eco.ecosystem)
     }
 
-    // The service must not fetch merely because something resolved it.
-    fun testResolvingTheServiceDoesNotFetch() {
-        val eco = service<RakuEcosystem>()
-        assertFalse("constructing the service must not start a fetch", eco.isInitialized)
+    // The no-fetch-on-construction property cannot be observed at runtime in a
+    // shared test JVM: by the time this class runs, something else may already
+    // have initialised the singleton, and asserting isInitialized would then
+    // fail for a reason unrelated to the defect. So it is pinned at the source,
+    // the way ParserChangeVersionGuardTest pins its version constants -- and for
+    // the same reason, that the runtime value is not a trustworthy witness.
+    fun testServiceDoesNotFetchFromItsFieldInitializer() {
+        val source = java.io.File(
+            "src/main/java/org/raku/comma/services/application/RakuEcosystem.kt").readText()
+        assertFalse(
+            "the field initializer must not fetch: it made gating the call sites " +
+            "impossible and blocked whichever thread resolved the service",
+            source.contains("initialize().join()"))
     }
 }
 ```
