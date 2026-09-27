@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.raku.comma.metadata.ExternalMetaFile
+import org.raku.comma.project.RakuProjectKind
 import org.raku.comma.services.application.RakuEcosystem
 import org.raku.comma.services.project.*
 import java.io.File
@@ -123,6 +124,13 @@ object CommaProjectUtil {
 
     suspend fun refreshProjectState(project: Project) {
         val sdkService = project.service<RakuProjectSdkService>()
+
+        // The ecosystem is a network fetch plus a possible zef install, and it
+        // only means anything where there are declared dependencies to
+        // resolve. A folder of loose scripts gets neither; Tools > the Raku
+        // widget > Refresh Ecosystem is how such a project opts in.
+        if (! RakuProjectKind.isRakuDistribution(project)) return
+
         val maybeInstallZef =   if (sdkService.zef == null)
                                     project.service<RakuModuleInstallPrompt>().installZefItself()
                                 else CompletableFuture.completedFuture(0)
