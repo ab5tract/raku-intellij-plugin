@@ -395,5 +395,14 @@
   <actions>
     <action id="org.raku.comma.actions.NewRakuFileAction" class="org.raku.comma.actions.NewRakuFileAction"
             text="New Raku File..." description="Add a new Raku file at selected location"/>
+    <!-- Development aid: every DefaultLanguageHighlighterColors key as a
+         swatch in the live scheme, marked with which Raku constructs
+         already inherit it. See docs/color-principles.md. Delete freely. -->
+    <action id="Raku.ShowPlatformPalette"
+            class="org.raku.comma.highlighter.ShowPlatformPaletteAction"
+            text="Raku: Platform Color Palette"
+            description="Show every platform highlighter color key in the current scheme">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
   </actions>
 </idea-plugin>
