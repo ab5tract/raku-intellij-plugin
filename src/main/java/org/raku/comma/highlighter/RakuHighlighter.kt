@@ -387,7 +387,7 @@ object RakuHighlighter {
 
     @JvmField
     val SELF = key(
-        "RAKU_SELF", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
+        "RAKU_SELF", DefaultLanguageHighlighterColors.INSTANCE_FIELD,
         Group.NAMES_AND_TYPES, "Current Object (self, sigil in \$.foo(...))"
     )
 
@@ -443,13 +443,13 @@ object RakuHighlighter {
 
     @JvmField
     val NAMED_PARAMETER_SYNTAX = key(
-        "RAKU_NAMED_PARAMETER_SYNTAX", DefaultLanguageHighlighterColors.INSTANCE_FIELD,
+        "RAKU_NAMED_PARAMETER_SYNTAX", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
         Group.SIGNATURES, "Named parameter colon and parentheses"
     )
 
     @JvmField
     val NAMED_PARAMETER_NAME_ALIAS = key(
-        "RAKU_NAMED_PARAMETER_NAME_ALIAS", DefaultLanguageHighlighterColors.GLOBAL_VARIABLE,
+        "RAKU_NAMED_PARAMETER_NAME_ALIAS", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
         Group.SIGNATURES, "Named parameter name alias"
     )
 
@@ -739,13 +739,13 @@ object RakuHighlighter {
 
     @JvmField
     val BUILTIN_VARIABLE = key(
-        "RAKU_BUILTIN_VARIABLE", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
+        "RAKU_BUILTIN_VARIABLE", DefaultLanguageHighlighterColors.CONSTANT,
         Group.SEMANTIC, "Built-in variable"
     )
 
     @JvmField
     val BUILTIN_CALL = key(
-        "RAKU_BUILTIN_CALL", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
+        "RAKU_BUILTIN_CALL", DefaultLanguageHighlighterColors.FUNCTION_CALL,
         Group.SEMANTIC, "Built-in call"
     )
 
