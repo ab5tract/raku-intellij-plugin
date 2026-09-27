@@ -1,11 +1,10 @@
 package org.raku.comma.project
 
 import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.waitForSmartMode
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
 import org.raku.comma.filetypes.RakuModuleFileType
@@ -42,11 +41,15 @@ object RakuProjectKind {
      * late is better than one that appears in a project with no Raku at all.
      */
     fun hasRakuFiles(project: Project): Boolean {
-        if (project.isDisposed || DumbService.isDumb(project)) return false
-        // Blocking, because both callers of this form are non-suspend and
-        // have no read lock to inherit: RakuStatusBarWidgetFactory.isAvailable
-        // and RakuSdkUtil.reactToSdkIssue.
-        return ReadAction.compute<Boolean, RuntimeException> { indexHasRakuFiles(project) }
+        if (project.isDisposed) return false
+        // Blocking: both callers of this form are non-suspend and have no read
+        // lock to inherit -- RakuStatusBarWidgetFactory.isAvailable and
+        // RakuSdkUtil.reactToSdkIssue. The dumb check is inside the lock
+        // because holding it is what stops a dumb-mode transition landing
+        // between the check and the query.
+        return ReadAction.compute<Boolean, RuntimeException> {
+            if (DumbService.isDumb(project)) false else indexHasRakuFiles(project)
+        }
     }
 
     /** A META6.json at the project root -- no dependencies exist without one. */
@@ -59,17 +62,18 @@ object RakuProjectKind {
      * `false` and it would never ask again -- costing a real Raku project its
      * ecosystem for the whole session. Waiting is cheap: a project that never
      * becomes Raku simply gets `false` a moment later.
+     *
+     * `smartReadAction` rather than a wait followed by a read action: it holds
+     * the read lock across the check and the query, and re-runs if indexing
+     * restarts underneath. A wait that merely returns can be stale by the time
+     * anything acts on it.
      */
     suspend fun awaitRakuFiles(project: Project): Boolean {
-        project.waitForSmartMode()
-        if (project.isDisposed || DumbService.isDumb(project)) return false
-        // The suspend form, not hasRakuFiles: this runs on a platform
-        // coroutine dispatcher with limited parallelism, and blocking one of
-        // those threads on the read lock starves it.
-        return readAction { indexHasRakuFiles(project) }
+        if (project.isDisposed) return false
+        return smartReadAction(project) { indexHasRakuFiles(project) }
     }
 
-    /** Requires a read action; the two entry points above each take their own. */
+    /** Requires a read action and smart mode; both entry points arrange that. */
     private fun indexHasRakuFiles(project: Project): Boolean {
         val scope = GlobalSearchScope.projectScope(project)
         return WAKING_FILE_TYPES.any { FileTypeIndex.containsFileOfType(it, scope) }
