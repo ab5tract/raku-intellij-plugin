@@ -33,17 +33,25 @@ class RakuEcosystem(private val runScope: CoroutineScope) {
     val ecosystem: EcosystemDetailsState
         get() = ecosystemState
 
+    @Synchronized
     fun initialize(): CompletableFuture<EcosystemDetailsState> {
         if (isNotInitializing && isNotInitialized) {
             isInitializing = true
+            // Capture, do not read the field at completion time. refresh()
+            // reassigns it, and a fetch takes seconds -- so an in-flight
+            // coroutine reading the field would complete whichever future is
+            // current, orphaning the one its own caller is blocked on.
+            // CommaProjectUtil.refreshProjectState does exactly such a .get().
+            val target = initializationFuture
             runScope.launch {
                 ecosystemState = moduleListFetcher.fillState(EcosystemDetailsState())
-                initializationFuture.complete(ecosystemState.copy())
+                target.complete(ecosystemState.copy())
                 isInitializing = false
             }
-            return initializationFuture
+            return target
         } else {
-            return if (isInitializing) initializationFuture else CompletableFuture.completedFuture(ecosystemState)
+            return if (isInitializing) initializationFuture
+                   else CompletableFuture.completedFuture(ecosystemState)
         }
     }
 
@@ -53,6 +61,7 @@ class RakuEcosystem(private val runScope: CoroutineScope) {
      * [initialize] cannot do this: it short-circuits once the future is
      * complete, so calling it again returns the old state.
      */
+    @Synchronized
     fun refresh(): CompletableFuture<EcosystemDetailsState> {
         initializationFuture = CompletableFuture()
         isInitializing = false

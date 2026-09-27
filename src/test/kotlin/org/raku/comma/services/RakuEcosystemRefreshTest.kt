@@ -1,8 +1,12 @@
 package org.raku.comma.services
 
 import com.intellij.openapi.components.service
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import org.raku.comma.CommaFixtureTestCase
 import org.raku.comma.services.application.RakuEcosystem
+import java.util.concurrent.TimeUnit
 
 class RakuEcosystemRefreshTest : CommaFixtureTestCase() {
 
@@ -44,5 +48,33 @@ class RakuEcosystemRefreshTest : CommaFixtureTestCase() {
             "the field initializer must not fetch: it made gating the call sites " +
             "impossible and blocked whichever thread resolved the service",
             code.contains("initialize().join()"))
+    }
+
+    // initialize()'s coroutine used to complete whichever future was CURRENT
+    // in the field at completion time, not the one it captured at launch.
+    // refresh() reassigns that field, and a fetch takes seconds -- so a
+    // refresh() landing while the first fetch is still in flight orphaned the
+    // future the first caller was blocked on. CommaProjectUtil.refreshProjectState
+    // does exactly such a blocking .get(), so the failure mode was a permanent
+    // hang, not a thrown exception.
+    //
+    // A fresh RakuEcosystem is constructed directly here, rather than going
+    // through service<RakuEcosystem>(), so the starting "not yet initialized"
+    // state -- required for initialize() to actually still be in flight when
+    // refresh() lands -- is guaranteed regardless of what earlier tests already
+    // did to the shared application-level singleton.
+    fun testRefreshDuringInFlightFetchDoesNotOrphanTheFirstFuture() {
+        val scope = CoroutineScope(Dispatchers.Default)
+        val eco = RakuEcosystem(scope)
+        try {
+            val first = eco.initialize()
+            val second = eco.refresh()
+            assertNotSame("refresh must hand back a distinct future from the in-flight one",
+                          first, second)
+            first.get(30, TimeUnit.SECONDS)
+            second.get(30, TimeUnit.SECONDS)
+        } finally {
+            scope.cancel()
+        }
     }
 }
