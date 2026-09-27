@@ -6,15 +6,14 @@ import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.Pair
-import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.psi.search.FilenameIndex
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
@@ -36,9 +35,8 @@ import javax.swing.JPanel
 class UpdateExtensionsAction : AnAction() {
     override fun actionPerformed(event: AnActionEvent) {
         val project: Project = event.project ?: error("Action event not associated with a project: $event")
-        val modules = ModuleManager.getInstance(project).modules
 
-        val filesToUpdate: MutableMap<String, MutableList<File>> = collectFilesWithLegacyNames(modules)
+        val filesToUpdate: MutableMap<String, MutableList<File>> = collectFilesWithLegacyNames(project)
         if (filesToUpdate.isEmpty()) {
             Notifications.Bus.notify(
                 Notification(
@@ -158,6 +156,7 @@ class UpdateExtensionsAction : AnAction() {
 
     companion object {
         val FULL_LEGACY_EXTENSION_PATTERN: Pattern = Pattern.compile(".+?\\.(p6|pl6|pm6|pm|pod6|pod|t)")
+        private val LEGACY_EXTENSIONS = listOf("p6", "pl6", "pm6", "pm", "pod6", "pod", "t")
         private val nonLegacyExts: MutableMap<String?, String?> = HashMap<String?, String?>()
 
         init {
@@ -170,25 +169,34 @@ class UpdateExtensionsAction : AnAction() {
             nonLegacyExts.put("t", "rakutest")
         }
 
-        fun collectFilesWithLegacyNames(modules: Array<Module>): MutableMap<String, MutableList<File>> {
-            val filesToUpdate: MutableMap<String, MutableList<File>> = HashMap<String, MutableList<File>>()
-
-            for (module in modules) {
-                for (root in ModuleRootManager.getInstance(module).sourceRoots) {
-                    if (root.isDirectory) {
-                        val files = FileUtil.findFilesByMask(FULL_LEGACY_EXTENSION_PATTERN, root.toNioPath().toFile())
-                        for (file in files) {
-                            val matcher: Matcher = FULL_LEGACY_EXTENSION_PATTERN.matcher(file.getName())
-                            if (matcher.matches()) {
-                                val matchedFileKey = matcher.group(1)
-                                val replaceList = filesToUpdate.computeIfAbsent(matchedFileKey) { mutableListOf() }
-                                replaceList.add(file)
-                            }
+        /**
+         * Index-backed, so it honours excluded folders. The previous
+         * implementation handed a java.io.File to FileUtil.findFilesByMask,
+         * which cannot know what IntelliJ excludes -- on a rakudo checkout `t`
+         * is a source root, so it walked all 2158 files of the excluded
+         * t/spec.
+         */
+        @JvmStatic
+        fun collectFilesWithLegacyNames(project: Project): MutableMap<String, MutableList<File>> {
+            // FilenameIndex asserts a read action, and this is public: the
+            // startup detector calls it off a coroutine dispatcher and
+            // actionPerformed calls it from the EDT. Held here so no caller
+            // has to know. Nested read actions are reentrant, so the
+            // detector's own smartReadAction costs nothing extra.
+            return ReadAction.compute<MutableMap<String, MutableList<File>>, RuntimeException> {
+                val filesToUpdate: MutableMap<String, MutableList<File>> = HashMap()
+                val scope = GlobalSearchScope.projectScope(project)
+                for (ext in LEGACY_EXTENSIONS) {
+                    for (vf in FilenameIndex.getAllFilesByExt(project, ext, scope)) {
+                        val matcher: Matcher = FULL_LEGACY_EXTENSION_PATTERN.matcher(vf.name)
+                        if (matcher.matches()) {
+                            val key = matcher.group(1)
+                            filesToUpdate.computeIfAbsent(key) { mutableListOf() }.add(File(vf.path))
                         }
                     }
                 }
+                filesToUpdate
             }
-            return filesToUpdate
         }
     }
 }
