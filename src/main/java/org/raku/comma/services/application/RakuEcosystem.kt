@@ -13,7 +13,7 @@ class RakuEcosystem(private val runScope: CoroutineScope) {
 
     val moduleListFetcher = ModuleListFetcher(runScope)
 
-    private val initializationFuture = CompletableFuture<EcosystemDetailsState>()
+    private var initializationFuture = CompletableFuture<EcosystemDetailsState>()
     val isInitialized: Boolean
         get() = initializationFuture.isDone
     val isNotInitialized: Boolean get() = !isInitialized
@@ -25,8 +25,11 @@ class RakuEcosystem(private val runScope: CoroutineScope) {
     val isNotInitializing: Boolean
         get() = !isInitializing
 
-    // Load the data on service start
-    private var ecosystemState = initialize().join()
+    // Deliberately NOT `= initialize().join()`. That fetched the ecosystem the
+    // moment anything resolved the service -- so gating the call sites could
+    // not work, since RakuDependencyService touches it from three properties --
+    // and it blocked the resolving thread while doing so.
+    private var ecosystemState = EcosystemDetailsState()
     val ecosystem: EcosystemDetailsState
         get() = ecosystemState
 
@@ -42,6 +45,18 @@ class RakuEcosystem(private val runScope: CoroutineScope) {
         } else {
             return if (isInitializing) initializationFuture else CompletableFuture.completedFuture(ecosystemState)
         }
+    }
+
+    /**
+     * Re-fetch, discarding what is cached.
+     *
+     * [initialize] cannot do this: it short-circuits once the future is
+     * complete, so calling it again returns the old state.
+     */
+    fun refresh(): CompletableFuture<EcosystemDetailsState> {
+        initializationFuture = CompletableFuture()
+        isInitializing = false
+        return initialize()
     }
 }
 
