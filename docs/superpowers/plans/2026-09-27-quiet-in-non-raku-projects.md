@@ -263,12 +263,23 @@ class RakuEcosystemRefreshTest : CommaFixtureTestCase() {
     // the way ParserChangeVersionGuardTest pins its version constants -- and for
     // the same reason, that the runtime value is not a trustworthy witness.
     fun testServiceDoesNotFetchFromItsFieldInitializer() {
-        val source = java.io.File(
-            "src/main/java/org/raku/comma/services/application/RakuEcosystem.kt").readText()
+        // Comment lines are stripped first. The KDoc above the field quotes
+        // `initialize().join()` by name, to tell the next reader exactly what
+        // was removed and why -- so a raw substring match fires on the correct
+        // code. The property being pinned is that no CODE does this, and that
+        // comment is worth more than the convenience of a one-line assertion.
+        val code = java.io.File(
+            "src/main/java/org/raku/comma/services/application/RakuEcosystem.kt")
+            .readLines()
+            .filterNot {
+                val t = it.trimStart()
+                t.startsWith("//") || t.startsWith("*") || t.startsWith("/*")
+            }
+            .joinToString("\n")
         assertFalse(
             "the field initializer must not fetch: it made gating the call sites " +
             "impossible and blocked whichever thread resolved the service",
-            source.contains("initialize().join()"))
+            code.contains("initialize().join()"))
     }
 }
 ```
