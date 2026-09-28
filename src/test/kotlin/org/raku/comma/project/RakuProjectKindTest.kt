@@ -52,8 +52,13 @@ class RakuProjectKindTest : CommaFixtureTestCase() {
     }
 
     // The Perl 5 collision. Raku Test claims bare `.t`, so counting that file
-    // type would make any Perl project a Raku project.
+    // type would make any Perl project a Raku project. This is the assertion
+    // the whole WAKING_FILE_TYPES exclusion exists for, and it has to hold
+    // whatever order the runner picks -- the descriptor's stubbed
+    // lib/Module/Outer.rakumod is a Raku module, and whichever test runs
+    // first in a JVM sees it.
     fun testTestFilesAloneDoNotMakeItRaku() {
+        emptyTheSourceRoots()
         myFixture.addFileToProject("t/01-basic.t", "use Test;")
         assertFalse("a .t file alone must not wake the plugin",
                     RakuProjectKind.hasRakuFiles(project))

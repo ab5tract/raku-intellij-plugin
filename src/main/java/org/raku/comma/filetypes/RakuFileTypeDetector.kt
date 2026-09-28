@@ -21,4 +21,11 @@ class RakuFileTypeDetector : FileTypeRegistry.FileTypeDetector {
         if (parent.parent?.findChild("META6.json") == null) return null
         return RakuScriptFileType.INSTANCE
     }
+
+    // The platform caches a detected file type keyed by this version, so any
+    // change to detect() needs a bump or already-cached files keep the old
+    // answer. 1 is the bump for requiring a META6.json beside `bin`: without
+    // it, everyone already carrying `bin/mytool` cached as a Raku script goes
+    // on carrying it, and the fix never reaches the people it is for.
+    override fun getVersion(): Int = 1
 }
