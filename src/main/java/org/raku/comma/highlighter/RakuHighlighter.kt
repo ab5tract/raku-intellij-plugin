@@ -7,6 +7,8 @@ import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.editor.markup.TextAttributes
+import java.awt.Color
+import java.awt.Font
 
 /**
  * Every Raku text attribute, declared once.
@@ -31,6 +33,11 @@ import com.intellij.openapi.editor.markup.TextAttributes
  * handful of surviving overrides are listed in `docs/color-principles.md`;
  * each encodes something no platform key expresses, such as Pod `B<>` being
  * bold. Prefer picking a better fallback over adding an override.
+ *
+ * When what you want is a fallback's colour *plus* a font style -- "this, but
+ * italic" -- you do not need an override at all, and a fallback cannot express
+ * it. Layer [Style.ITALIC] or [Style.BOLD] over the base key instead; see
+ * [Style] for why a second key is the only way and how to apply one.
  *
  * ## External names are a compatibility surface
  *
@@ -72,8 +79,24 @@ object RakuHighlighter {
         fun path(label: String): String = if (title == null) label else "$title//$label"
     }
 
-    /** One key's color-panel presentation, in declaration order. */
-    data class Entry(val key: TextAttributesKey, val group: Group, val label: String, val inPanel: Boolean)
+    /**
+     * One key's declaration: how it is presented in the color panel, and what
+     * it adds on top of the colour it resolves to.
+     *
+     * [fontStyle] and [effect] are the decoration a fallback cannot carry --
+     * see [Style] and [StyleEffect] for why neither can live on the key
+     * itself. Recording them here rather than at the point of application
+     * keeps them from becoming the second hand-maintained list this class
+     * exists to avoid.
+     */
+    data class Entry(
+        val key: TextAttributesKey,
+        val group: Group,
+        val label: String,
+        val inPanel: Boolean,
+        val fontStyle: Int = Font.PLAIN,
+        val effect: StyleEffect? = null,
+    )
 
     private val mutableEntries = mutableListOf<Entry>()
 
@@ -86,6 +109,11 @@ object RakuHighlighter {
     /**
      * @param inPanel false for a key nothing currently applies, so the color
      *   panel does not offer a control that visibly does nothing.
+     * @param fontStyle a [Font] constant this key is always drawn with, on
+     *   top of whatever colour it resolves to. Declared here rather than at
+     *   the point of application, so the two cannot drift.
+     * @param effect likewise for an effect, which unlike a font style can
+     *   only ever be computed against a live scheme -- see [StyleEffect].
      */
     private fun key(
         externalName: String,
@@ -93,51 +121,270 @@ object RakuHighlighter {
         group: Group,
         label: String,
         inPanel: Boolean = true,
+        fontStyle: Int = Font.PLAIN,
+        effect: StyleEffect? = null,
     ): TextAttributesKey {
         val key = TextAttributesKey.createTextAttributesKey(externalName, fallback)
-        mutableEntries.add(Entry(key, group, label, inPanel))
+        mutableEntries.add(Entry(key, group, label, inPanel, fontStyle, effect))
         return key
     }
 
     /**
-     * [key]'s effect, with a color derived from the theme when nothing set one.
+     * What [key] should actually be drawn as in [scheme]: the colour it
+     * resolves to, plus whatever decoration its declaration asked for.
      *
-     * An effect draws only when *both* its type and its color are set, and a
-     * `colorSchemes/` entry cannot supply a color while leaving everything
-     * else to the fallback: `EditorColorsSchemeImpl.getAttributes` returns any
-     * directly defined attributes whole and only consults
-     * `getFallbackAttributeKey` when there are none. (The one inheritance form
-     * the XML has, `baseAttributes` on a `<value>`-less option, is all or
-     * nothing.) So an `EFFECT_COLOR` in `colorSchemes/` has to be a literal,
-     * which is how `RAKU_TEXT_UNDERLINE` and `RAKU_REGEX_SIG_SPACE` came to
-     * ship a light and a dark hardcode that no third-party theme ever saw.
-     *
-     * Deriving the color from the foreground the fallback already resolves to
-     * puts both back on the user's theme. A user who sets an effect of their
-     * own in the color panel still wins: a non-null effect color is the only
-     * evidence that one was configured, since [TextAttributes.getEffectType]
-     * defaults to [EffectType.BOXED] whether or not anything asked for it.
-     *
-     * Only the effect is returned. Leaving foreground null lets the run keep
-     * the color of whatever sits under it, which matters for Pod, where `U<>`
-     * can wrap spans the lexer colored differently.
+     * This is what callers want almost always. Applying a decorated key by
+     * handing the *key* to a range highlighter silently drops the decoration,
+     * because the decoration is exactly the part a `TextAttributesKey` cannot
+     * carry -- so anything that draws one of these has to come through here.
      */
     @JvmStatic
-    fun effectAttributes(
+    fun decoratedAttributes(scheme: EditorColorsScheme, key: TextAttributesKey): TextAttributes {
+        val entry = mutableEntries.firstOrNull { it.key == key }
+            ?: return scheme.getAttributes(key) ?: TextAttributes()
+        entry.effect?.let { return it.of(scheme, key) }
+        return styledAttributes(scheme, key, entry.fontStyle)
+    }
+
+    /**
+     * Effects you can derive over a run: the counterpart to [Style], and the
+     * only form an effect can take.
+     *
+     * [Style] can be a constant because a font style is just an `int` the
+     * editor ORs in. An effect cannot: it needs a *colour*, and the only
+     * colour that follows the user's theme is one read off the run it is
+     * being drawn over -- which means it cannot exist until a scheme does.
+     * See [Style] for the measurements behind that.
+     *
+     * So this is an enum of what we can draw, each value routing to the same
+     * derivation with its own [type]. Adding an effect means adding a value
+     * here, not threading another `EffectType` through call sites.
+     *
+     * ## Choosing a method
+     *
+     * ```kotlin
+     * // the common case: a key's effect, in the colour that key resolves to
+     * StyleEffect.BOLD_DOTTED_LINE.of(scheme, RakuHighlighter.REGEX_SIG_SPACE)
+     *
+     * // over a run you already composed -- this is what lets effects stack
+     * // on top of Style the way Style stacks on a base
+     * val styled = TextAttributes.merge(base, scheme.getAttributes(Style.BOLD))
+     * StyleEffect.BOLD_DOTTED_LINE.addedTo(styled, scheme)
+     * ```
+     *
+     * [of] and [over] return the effect **alone**, with no foreground, so the
+     * run keeps the colour of whatever sits under it. [addedTo] is the merged
+     * form, for when you want the whole thing back.
+     *
+     * **Worked example:** `PodFormatterInspection`'s `U<>` branch --
+     * `StyleEffect.LINE_UNDERSCORE.of(scheme, POD_TEXT_UNDERLINE)`. It sits
+     * beside the two [styledAttributes] calls for `B<>` and `I<>`, so the
+     * three read as one shape: the key supplies the colour, the helper
+     * supplies the decoration.
+     *
+     * ## A configured effect wins
+     *
+     * If the resolved attributes already carry an effect colour, that effect
+     * is honoured verbatim and [type] is ignored: a non-null effect colour is
+     * the only evidence available that a user set one, since
+     * [TextAttributes.getEffectType] defaults to [EffectType.BOXED] whether
+     * or not anything asked for it.
+     *
+     * The corollary bites when picking fallbacks: a platform key that already
+     * carries an effect of its own will defeat this derivation. That is why
+     * Pod `U<>` does not fall back to `REASSIGNED_LOCAL_VARIABLE`, tempting
+     * as the name is -- the platform draws reassigned variables underlined,
+     * so the key ships an `EFFECT_COLOR`.
+     */
+    enum class StyleEffect(private val type: EffectType) {
+        /** Sigspace and Pod `U<>`-style emphasis: visible on blank runs. */
+        BOLD_DOTTED_LINE(EffectType.BOLD_DOTTED_LINE),
+
+        /** A plain underline, for markup that means "underlined". */
+        LINE_UNDERSCORE(EffectType.LINE_UNDERSCORE),
+        ;
+
+        /** [key]'s effect, coloured from what [scheme] resolves the key to. */
+        fun of(scheme: EditorColorsScheme, key: TextAttributesKey): TextAttributes =
+            derive(scheme.getAttributes(key), scheme.defaultForeground)
+
+        /** The effect alone, coloured from [under]'s own foreground. */
+        fun over(under: TextAttributes?, scheme: EditorColorsScheme): TextAttributes =
+            derive(under, scheme.defaultForeground)
+
+        /** [under] with this effect merged in -- colour and style preserved. */
+        fun addedTo(under: TextAttributes, scheme: EditorColorsScheme): TextAttributes =
+            TextAttributes.merge(under, over(under, scheme))
+
+        private fun derive(under: TextAttributes?, fallbackColor: Color): TextAttributes {
+            val attributes = TextAttributes()
+            if (under?.effectColor != null) {
+                attributes.effectColor = under.effectColor
+                attributes.effectType = under.effectType
+            } else {
+                attributes.effectColor = under?.foregroundColor ?: fallbackColor
+                attributes.effectType = type
+            }
+            return attributes
+        }
+    }
+
+    /**
+     * Font styles you can layer over any other key -- the closest thing the
+     * platform has to "`DOC_COMMENT` but italic".
+     *
+     * ## Why a second key, rather than italics on the first one
+     *
+     * A fallback is a *lookup*, not a composition.
+     * `EditorColorsSchemeImpl.getAttributes` returns any directly defined
+     * attributes **whole** and consults `getFallbackAttributeKey` only when
+     * there are none -- so the moment a key carries a font style of its own it
+     * leaves the fallback path and loses the colour it was inheriting. There
+     * is no way to say "this fallback, plus italics" at a declaration site,
+     * and `colorSchemes/` cannot say it either: a `<value>` block, even a
+     * one-line `FONT_TYPE`, takes the key out of the fallback path the same
+     * way. See `docs/color-principles.md`.
+     *
+     * Composition happens a layer up instead. Hand the editor **both** keys
+     * and `TextAttributes.merge` keeps the lower layer's foreground where the
+     * upper one is null and ORs the two font types together -- so a
+     * colourless font-style key over a colour-bearing base renders as styled
+     * text in the active theme's own colour.
+     *
+     * ## Using one
+     *
+     * `SyntaxHighlighterBase.pack` is variadic, and the editor merges the keys
+     * it returns in order, so a lexer token composes at the call site:
+     *
+     * ```kotlin
+     * // in RakuSyntaxHighlighter.getTokenHighlights
+     * pack(RakuHighlighter.POD_TEXT, RakuHighlighter.Style.ITALIC)
+     * ```
+     *
+     * For code that hands the editor explicit attributes rather than keys --
+     * an annotator, or a range highlighter -- use [styledAttributes], which
+     * does the same merge eagerly against a scheme. That is what Pod's `B<>`
+     * and `I<>` use: see `PodFormatterInspection`, the worked example for
+     * both helpers.
+     *
+     * Reach for [Style] over [styledAttributes] when the run underneath is
+     * already coloured by something else and must keep that colour -- a
+     * modifier contributes no foreground at all, where [styledAttributes]
+     * imposes the one its key resolves to.
+     *
+     * ## Why there is no `Style.UNDERLINE` or `Style.BOLD_DOTTED_LINE`
+     *
+     * Font styles can be static; effects cannot, and the reason is in how
+     * `TextAttributes.merge` treats the two. `fontType` is an `int`, and merge
+     * **ORs** it -- so two layers genuinely combine, which is the whole trick
+     * above. An effect is a colour-and-type *pair*, and merge **picks**: the
+     * layer supplying a non-null `effectColor` contributes both halves and the
+     * other layer's effect is discarded entire.
+     *
+     * Measured, so it is not an argument from the docs:
+     *
+     * | below | above | merged |
+     * |---|---|---|
+     * | no effect | type, colour null | effect dropped |
+     * | no effect | type, colour set | draws the above |
+     * | colour + `LINE_UNDERSCORE` | `BOLD_DOTTED_LINE`, colour null | below wins; type discarded |
+     *
+     * The third row is the one that kills the idea. Even when the layer below
+     * already has a perfectly good effect colour sitting there, a type-only
+     * modifier does not pair with it. And a modifier cannot simply carry a
+     * colour: it is colourless by design -- that is what lets it layer without
+     * overwriting what is underneath -- and a literal would be the
+     * theme-specific hardcode described below.
+     *
+     * Giving it a literal colour is not the way out: that is the
+     * theme-specific hardcode `docs/color-principles.md` argues against, and
+     * it is the exact mistake `RAKU_TEXT_UNDERLINE` and `RAKU_REGEX_SIG_SPACE`
+     * used to ship -- one literal for Default, another for Darcula, and
+     * nothing at all for every other theme.
+     *
+     * So an effect has to have its colour resolved against the live scheme at
+     * apply time, which is what [StyleEffect] is for. The split is the
+     * whole story: **[Style] is the static half, [StyleEffect] the
+     * dynamic half**, and which one a thing needs is decided by whether it
+     * requires a colour to render.
+     *
+     * ## Why these carry default attributes instead of a `colorSchemes/` entry
+     *
+     * A font style is not a colour, so hardcoding it is not the
+     * theme-specific hardcode `docs/color-principles.md` argues against --
+     * italic is italic in every theme. Carrying it as the key's *default*
+     * attributes rather than a `colorSchemes/` override means it applies under
+     * every scheme, including third-party themes that derive from neither
+     * Default nor Darcula and so never see our `additionalTextAttributes` at
+     * all. It also keeps the override set at the three the
+     * `RakuColorSettingsPageTest` pins.
+     *
+     * These deliberately do **not** go through [key]: they are not colours a
+     * user should configure, so they get no entry in the color panel. Their
+     * external names are still a compatibility surface, so treat them as
+     * frozen like the rest.
+     */
+    object Style {
+        /**
+         * The default-attributes overload is deprecated, and used knowingly.
+         *
+         * The platform deprecates it to push everything onto fallback keys,
+         * which is right for colours and impossible here: a fallback resolves
+         * to *another key's* attributes, and there is no platform key whose
+         * attributes are "italic and nothing else". The alternative is a
+         * `colorSchemes/` `FONT_TYPE` entry, which is what this replaced --
+         * it is invisible to any theme not derived from Default or Darcula,
+         * so Pod `B<>` rendered unbolded under every third-party theme.
+         *
+         * If the overload is removed, the fallback is to go back to
+         * `colorSchemes/` entries and accept that gap, or to drop [Style] and
+         * compute attributes at apply time the way [StyleEffect] must.
+         */
+        @Suppress("DEPRECATION")
+        private fun modifier(externalName: String, fontType: Int): TextAttributesKey =
+            TextAttributesKey.createTextAttributesKey(
+                externalName,
+                TextAttributes(null, null, null, null, fontType)
+            )
+
+        @JvmField val BOLD: TextAttributesKey = modifier("RAKU_STYLE_BOLD", Font.BOLD)
+        @JvmField val ITALIC: TextAttributesKey = modifier("RAKU_STYLE_ITALIC", Font.ITALIC)
+        @JvmField val BOLD_ITALIC: TextAttributesKey =
+            modifier("RAKU_STYLE_BOLD_ITALIC", Font.BOLD or Font.ITALIC)
+    }
+
+    /**
+     * [key] as the scheme resolves it, with [fontType] OR-ed into its style.
+     *
+     * The eager counterpart to [Style], for callers that hand over
+     * [TextAttributes] rather than keys. Everything else the key resolves to
+     * -- foreground, background, effect -- is preserved, so this really is
+     * "that key, but bold/italic".
+     *
+     * Use [Style] instead wherever the consumer takes keys: it defers to the
+     * scheme at paint time and so keeps following the theme, where this
+     * snapshots whatever the scheme said when it was called.
+     *
+     * Note this differs from [StyleEffect], which deliberately leaves
+     * the foreground null so the run keeps the colour of whatever sits under
+     * it. If you are layering over text something else already coloured and
+     * must not disturb it, you want a bare font style ([Style]), not this.
+     *
+     * **Worked example:** `PodFormatterInspection`'s `B<>` and `I<>`
+     * branches -- `styledAttributes(scheme, POD_TEXT_BOLD, Font.BOLD)`. Those
+     * keys fall back alongside [POD_TEXT], so the run keeps the colour of the
+     * text around it unless someone configures one, and the helper adds the
+     * weight the key cannot carry.
+     */
+    @JvmStatic
+    fun styledAttributes(
         scheme: EditorColorsScheme,
         key: TextAttributesKey,
-        defaultEffect: EffectType,
+        fontType: Int,
     ): TextAttributes {
-        val resolved = scheme.getAttributes(key)
-        val attributes = TextAttributes()
-        if (resolved?.effectColor != null) {
-            attributes.effectColor = resolved.effectColor
-            attributes.effectType = resolved.effectType
-        } else {
-            attributes.effectColor = resolved?.foregroundColor ?: scheme.defaultForeground
-            attributes.effectType = defaultEffect
-        }
-        return attributes
+        val resolved = scheme.getAttributes(key)?.clone() ?: TextAttributes()
+        resolved.fontType = resolved.fontType or fontType
+        return resolved
     }
 
     /* Illegal syntax, mapped onto the platform's own rule for it. */
@@ -549,7 +796,7 @@ object RakuHighlighter {
      * REGEX_SIG_SPACE falls back to FUNCTION_CALL on purpose -- sigspace in a
      * `rule` is an implicit `<.ws>` call. The run is blank, so the dotted
      * underline `SigSpaceAnnotator` draws is all there is to see; it takes its
-     * color from that fallback via [effectAttributes] rather than from a
+     * color from that fallback via [StyleEffect] rather than from a
      * literal in `colorSchemes/`.
      */
 
@@ -629,7 +876,8 @@ object RakuHighlighter {
     @JvmField
     val REGEX_SIG_SPACE = key(
         "RAKU_REGEX_SIG_SPACE", DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT_HIGHLIGHTED,
-        Group.REGEX, "Rule Sigspace (implicit <.ws> call)"
+        Group.REGEX, "Rule Sigspace (implicit <.ws> call)",
+        effect = StyleEffect.BOLD_DOTTED_LINE
     )
 
     /* Transliteration */
@@ -668,7 +916,7 @@ object RakuHighlighter {
      * that. Font style is also the only thing an override can add without
      * losing the fallback's color, because range-highlighter attributes merge
      * over the text beneath. See `colorSchemes/`. POD_TEXT_UNDERLINE needs an
-     * effect color instead, so it goes through [effectAttributes].
+     * effect color instead, so it goes through [StyleEffect].
      */
 
     @JvmField
@@ -695,22 +943,49 @@ object RakuHighlighter {
         Group.POD, "Text"
     )
 
+    /**
+     * The worked example for [styledAttributes]: this key supplies the
+     * colour, the helper supplies the bold. `PodFormatterInspection` applies
+     * it for `B<>`.
+     *
+     * It falls back to the same key as [POD_TEXT] so that, left alone, `B<>`
+     * is the colour of the text around it and differs only in weight -- while
+     * still giving anyone who wants bold Pod text in its own colour a live
+     * control to do it with.
+     */
     @JvmField
     val POD_TEXT_BOLD = key(
-        "RAKU_TEXT_BOLD", DefaultLanguageHighlighterColors.DOC_COMMENT,
-        Group.POD, "Text (Bold)"
+        "RAKU_TEXT_BOLD", DefaultLanguageHighlighterColors.DOC_COMMENT_MARKUP,
+        Group.POD, "Text (Bold)", fontStyle = Font.BOLD
     )
 
+    /** `I<>`, on the same shape as [POD_TEXT_BOLD]. */
     @JvmField
     val POD_TEXT_ITALIC = key(
-        "RAKU_TEXT_ITALIC", DefaultLanguageHighlighterColors.DOC_COMMENT,
-        Group.POD, "Text (Italic)"
+        "RAKU_TEXT_ITALIC", DefaultLanguageHighlighterColors.DOC_COMMENT_MARKUP,
+        Group.POD, "Text (Italic)", fontStyle = Font.ITALIC
     )
 
     @JvmField
     val POD_TEXT_UNDERLINE = key(
-        "RAKU_TEXT_UNDERLINE", DefaultLanguageHighlighterColors.DOC_COMMENT,
-        Group.POD, "Text (Underlined)"
+        // Unlike its B<> and I<> siblings this key is still applied, and has
+        // to be: [Style] can be colourless and layer over whatever the lexer
+        // painted, but an effect cannot -- it needs a concrete colour. This
+        // key is where StyleEffect reads that colour from, which is also what
+        // keeps the underline user-configurable and theme-following.
+        //
+        // So it must match [POD_TEXT], not the DOC_COMMENT that B<> and I<>
+        // used to name: those two no longer use their keys at all, and the
+        // text U<> underlines is painted POD_TEXT. Pointing this elsewhere
+        // draws the underline in a different colour from the text above it.
+        //
+        // And not REASSIGNED_LOCAL_VARIABLE, tempting as the name is: the
+        // platform paints reassigned variables *underlined*, so that key
+        // ships an EFFECT_COLOR of its own, which StyleEffect reads as "the
+        // user configured an effect, honour it" and stops deriving anything.
+        // A fallback here has to carry a colour and no effect.
+        "RAKU_TEXT_UNDERLINE", DefaultLanguageHighlighterColors.DOC_COMMENT_MARKUP,
+        Group.POD, "Text (Underlined)", effect = StyleEffect.LINE_UNDERSCORE
     )
 
     @JvmField

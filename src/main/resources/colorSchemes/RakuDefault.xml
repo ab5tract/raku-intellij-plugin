@@ -10,28 +10,17 @@
      What is left encodes something no platform key can express. Add an entry
      here only when that is true; otherwise change the key's fallback. -->
 <list>
-  <!-- Pod B<> and I<> have to actually render bold and italic; that is what
-       the markup means. DOC_COMMENT carries a color but no font style, and
-       font style is the one thing that survives here: a range highlighter's
-       attributes merge over the text beneath, keeping its foreground when
-       ours is null and ORing the two font types together.
+  <!-- Pod B<> and I<> used to live here as FONT_TYPE entries. They are gone:
+       an entry in this file is only seen by schemes derived from this one, so
+       under a third-party theme B<> fell through to DOC_COMMENT and rendered
+       in the doc-comment color and not bold. They are now drawn by layering
+       RakuHighlighter.Style.BOLD / .ITALIC, whose font style is the key's own
+       default and so applies under every scheme.
 
-       U<> is not in this file. An underline needs an EFFECT_COLOR, and naming
-       one here would take the key out of the fallback path entirely, so it is
-       resolved from the active theme at apply time instead; see
-       RakuHighlighter.effectAttributes. RAKU_REGEX_SIG_SPACE left for the
-       same reason. -->
-  <option name="RAKU_TEXT_BOLD">
-    <value>
-      <option name="FONT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_TEXT_ITALIC">
-    <value>
-      <option name="FONT_TYPE" value="2" />
-    </value>
-  </option>
-
+       U<> was never here. An underline needs an EFFECT_COLOR, and naming one
+       would take the key out of the fallback path entirely, so it is resolved
+       from the active theme at apply time; see
+       RakuHighlighter.StyleEffect. RAKU_REGEX_SIG_SPACE likewise. -->
   <!-- The whole point of ALT_WARNING is to be distinguishable from an
        ordinary weak warning, which its WEAK_WARNING_ATTRIBUTES fallback
        would make it identical to.

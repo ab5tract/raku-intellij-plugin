@@ -1,6 +1,8 @@
 package org.raku.comma.highlighter
 
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors
+import com.intellij.openapi.editor.HighlighterColors
+import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.TextAttributes
@@ -23,19 +25,46 @@ object PlatformPalette {
         val name: String,
         val key: TextAttributesKey,
         val attributes: TextAttributes?,
-        /** Raku keys whose fallback chain reaches this one, by panel label. */
+        /**
+         * Raku keys that chose this one -- the first platform key on their
+         * fallback chain, by panel label.
+         */
         val claimedBy: List<String>,
+        /**
+         * Raku keys that only reach this one because the *platform* chains it
+         * behind the key they actually chose. Reported separately because
+         * this key is still free for a Raku key to point at directly.
+         */
+        val inheritedBy: List<String>,
     ) {
         val isClaimed: Boolean get() = claimedBy.isNotEmpty()
     }
 
-    /** Every `TextAttributesKey` constant on DefaultLanguageHighlighterColors. */
+    /**
+     * The classes a Raku key is allowed to fall back into.
+     *
+     * `DefaultLanguageHighlighterColors` is the bulk of it, but three Raku
+     * keys reach past it -- BAD_CHARACTER into [HighlighterColors], UNUSED and
+     * ALT_WARNING into [CodeInsightColors] -- and a palette that omits those
+     * cannot answer "what is this key inheriting" for them at all.
+     */
+    private val KEY_HOLDERS = listOf(
+        DefaultLanguageHighlighterColors::class.java,
+        HighlighterColors::class.java,
+        CodeInsightColors::class.java,
+    )
+
+    /** Every `TextAttributesKey` constant a Raku key can fall back to. */
     fun platformKeys(): List<Pair<String, TextAttributesKey>> =
-        DefaultLanguageHighlighterColors::class.java.fields
+        KEY_HOLDERS
+            .flatMap { it.fields.asList() }
             .filter { TextAttributesKey::class.java.isAssignableFrom(it.type) }
             .mapNotNull { field ->
                 (field.get(null) as? TextAttributesKey)?.let { field.name to it }
             }
+            // The same key can be exposed from more than one holder; keep one
+            // row per key rather than one per constant that names it.
+            .distinctBy { it.second }
             .sortedBy { it.first }
 
     /**
@@ -46,15 +75,47 @@ object PlatformPalette {
     private fun fallbackChain(key: TextAttributesKey): Sequence<TextAttributesKey> =
         generateSequence(key.fallbackAttributeKey) { it.fallbackAttributeKey }
 
+    /**
+     * Attribution stops at the *first* platform key on each chain.
+     *
+     * Crediting every link was the obvious reading of "which platform keys
+     * are spoken for" and the wrong one. The platform chains its own keys --
+     * `REASSIGNED_PARAMETER` falls back to `PARAMETER`, which falls back to
+     * `IDENTIFIER` -- so one Raku key crediting its whole chain reported
+     * three keys as taken, and the keys nearest the root came out claimed by
+     * almost everything. The question the tool exists to answer, "what is
+     * still free to point at", became unanswerable.
+     *
+     * The first platform key on the chain is the one a developer actually
+     * chose in `RakuHighlighter.kt`. The walk still has to follow the chain
+     * to find it, because a Raku key may point at another Raku key that
+     * points at the platform -- that is what the skipping is for. Everything
+     * past that first hit is the platform's own arrangement, reported as
+     * [Swatch.inheritedBy] so it is visible without being counted.
+     */
     fun swatches(scheme: EditorColorsScheme): List<Swatch> {
-        val claims = mutableMapOf<TextAttributesKey, MutableList<String>>()
+        val platform = platformKeys()
+        val isPlatformKey = platform.mapTo(HashSet()) { it.second }
+
+        val chosen = mutableMapOf<TextAttributesKey, MutableList<String>>()
+        val reached = mutableMapOf<TextAttributesKey, MutableList<String>>()
+
         for (entry in RakuHighlighter.entries) {
+            var pastTheChoice = false
             for (target in fallbackChain(entry.key)) {
-                claims.getOrPut(target) { mutableListOf() }.add(entry.label)
+                if (target !in isPlatformKey) continue
+                val into = if (pastTheChoice) reached else chosen
+                into.getOrPut(target) { mutableListOf() }.add(entry.label)
+                pastTheChoice = true
             }
         }
-        return platformKeys().map { (name, key) ->
-            Swatch(name, key, scheme.getAttributes(key), claims[key].orEmpty().sorted())
+
+        return platform.map { (name, key) ->
+            Swatch(
+                name, key, scheme.getAttributes(key),
+                chosen[key].orEmpty().sorted(),
+                reached[key].orEmpty().sorted(),
+            )
         }
     }
 }

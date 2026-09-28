@@ -214,8 +214,12 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
      * colors the active theme already supplies.
      */
     fun testSchemesOverrideOnlyWhatFallbacksCannotExpress() {
+        // Down to one. Pod B<> and I<> used to need a FONT_TYPE entry here;
+        // they are drawn by layering RakuHighlighter.Style now, which carries
+        // the style as a key default and so reaches every scheme rather than
+        // only those derived from Default and Darcula.
         assertEquals(
-            setOf("RAKU_TEXT_BOLD", "RAKU_TEXT_ITALIC", "RAKU_ALT_WARNING"),
+            setOf("RAKU_ALT_WARNING"),
             schemeKeys("RakuDefault"),
         )
     }
@@ -223,7 +227,7 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
     /**
      * ALT_WARNING is the only key left whose EFFECT_COLOR has to be a literal,
      * because it exists to *differ* from what its fallback resolves to. Any
-     * other effect belongs in [RakuHighlighter.effectAttributes], which derives
+     * other effect belongs in [RakuHighlighter.StyleEffect], which derives
      * its color from the fallback and so follows the user's theme.
      */
     fun testAltWarningIsTheOnlyHardcodedEffectColor() {
@@ -241,9 +245,14 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
     fun testEffectAttributesDeriveTheirColorFromTheKeyForeground() {
         val scheme = EditorColorsManager.getInstance().globalScheme
         for (key in listOf(RakuHighlighter.POD_TEXT_UNDERLINE, RakuHighlighter.REGEX_SIG_SPACE)) {
-            val attributes = RakuHighlighter.effectAttributes(scheme, key, EffectType.BOLD_DOTTED_LINE)
+            val attributes = RakuHighlighter.StyleEffect.BOLD_DOTTED_LINE.of(scheme, key)
             assertEquals(EffectType.BOLD_DOTTED_LINE, attributes.effectType)
-            assertEquals(scheme.getAttributes(key).foregroundColor, attributes.effectColor)
+            // Or the scheme's default foreground, where the key resolves to
+            // no colour of its own -- DOC_COMMENT_MARKUP does not set one in
+            // the default scheme, and the Pod text it colours renders in the
+            // same default, so the underline still matches the text.
+            val expected = scheme.getAttributes(key).foregroundColor ?: scheme.defaultForeground
+            assertEquals(expected, attributes.effectColor)
             // Only the effect: the run keeps the color of whatever is under it.
             assertNull(attributes.foregroundColor)
         }
@@ -259,7 +268,7 @@ class RakuColorSettingsPageTest : BasePlatformTestCase() {
         scheme.setAttributes(RakuHighlighter.POD_TEXT_UNDERLINE, configured)
 
         val attributes =
-            RakuHighlighter.effectAttributes(scheme, RakuHighlighter.POD_TEXT_UNDERLINE, EffectType.LINE_UNDERSCORE)
+            RakuHighlighter.StyleEffect.LINE_UNDERSCORE.of(scheme, RakuHighlighter.POD_TEXT_UNDERLINE)
         assertEquals(EffectType.WAVE_UNDERSCORE, attributes.effectType)
         assertEquals(Color.RED, attributes.effectColor)
     }

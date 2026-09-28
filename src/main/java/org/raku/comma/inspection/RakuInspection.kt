@@ -55,7 +55,7 @@ abstract class RakuInspection : LocalInspectionTool() {
 
     /**
      * For attributes resolved at apply time rather than named by a key -- see
-     * [org.raku.comma.highlighter.RakuHighlighter.effectAttributes]. Unlike the
+     * [org.raku.comma.highlighter.RakuHighlighter.StyleEffect]. Unlike the
      * key overload these do not re-resolve when the user switches scheme, which
      * costs nothing here because the inspection reruns and rebuilds them.
      */

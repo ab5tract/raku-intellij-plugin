@@ -4,24 +4,15 @@
      (Darcula neutralized three keys Default did not, Default colored
      RAKU_ROUTINE_NAME and Darcula did not). -->
 <list>
-  <!-- Pod B<> and I<> have to actually render bold and italic; that is what
-       the markup means. DOC_COMMENT carries a color but no font style.
+  <!-- Pod B<> and I<> used to live here as FONT_TYPE entries, and are gone
+       for the reason RakuDefault.xml gives: an entry here is invisible to a
+       theme not derived from this scheme. RakuHighlighter.Style.BOLD /
+       .ITALIC carry the style as key defaults instead.
 
        U<> and RAKU_REGEX_SIG_SPACE used to live here too, each with an
        EFFECT_COLOR that differed from RakuDefault.xml's and that no other
        theme ever saw. Both are now resolved from the active theme at apply
-       time; see RakuHighlighter.effectAttributes. -->
-  <option name="RAKU_TEXT_BOLD">
-    <value>
-      <option name="FONT_TYPE" value="1" />
-    </value>
-  </option>
-  <option name="RAKU_TEXT_ITALIC">
-    <value>
-      <option name="FONT_TYPE" value="2" />
-    </value>
-  </option>
-
+       time; see RakuHighlighter.StyleEffect. -->
   <!-- The whole point of ALT_WARNING is to be distinguishable from an
        ordinary weak warning, which its WEAK_WARNING_ATTRIBUTES fallback
        would make it identical to. -->
