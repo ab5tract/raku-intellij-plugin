@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import org.raku.comma.sdk.RakuSdkChooserUI
 import org.raku.comma.services.application.RakuEcosystem
 import org.raku.comma.services.project.RakuProjectSdkService
+import org.raku.comma.utils.CommaProjectUtil
 import javax.swing.Icon
 
 class RakuStatusBarListPopupStep(
@@ -102,6 +103,13 @@ class RakuStatusBarListPopupStep(
      * refresh() itself returns immediately, and without this the only
      * evidence anything happened would be the ecosystem quietly changing
      * some seconds later.
+     *
+     * The dependency service is re-initialised afterwards, not just the
+     * ecosystem. A gated project's dependency details were computed without
+     * an ecosystem -- or, for the whole life of a session that never got
+     * this far, not computed at all -- so refreshing only RakuEcosystem
+     * leaves every resolution and every `use` warning exactly as it was, and
+     * the opt-in this menu item is offered as does nothing visible.
      */
     private fun refreshEcosystem() {
         scope.launch {
@@ -110,6 +118,7 @@ class RakuStatusBarListPopupStep(
                     service<RakuEcosystem>().refresh().get()
                 }
             }
+            CommaProjectUtil.initializeDependencies(project)
         }
     }
 }

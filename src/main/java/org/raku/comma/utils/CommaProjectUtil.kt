@@ -126,32 +126,52 @@ object CommaProjectUtil {
         // only means anything where there are declared dependencies to
         // resolve. A folder of loose scripts gets neither; Tools > the Raku
         // widget > Refresh Ecosystem is how such a project opts in.
-        if (! RakuProjectKind.isRakuDistribution(project)) return
+        //
+        // The gate covers ONLY those two. Everything else here has to happen
+        // for every Raku project: gating the dependency service along with
+        // them left it uninitialised forever in a project with no META6.json
+        // -- and this is its only call site anywhere -- so UsedModuleInspection
+        // took its uninitialised branch permanently and flagged every
+        // non-pragma `use Foo;` as missing from a META6.json the project does
+        // not have.
+        if (RakuProjectKind.isRakuDistribution(project)) {
+            val maybeInstallZef =   if (sdkService.zef == null)
+                                        project.service<RakuModuleInstallPrompt>().installZefItself()
+                                    else CompletableFuture.completedFuture(0)
 
-        val maybeInstallZef =   if (sdkService.zef == null)
-                                    project.service<RakuModuleInstallPrompt>().installZefItself()
-                                else CompletableFuture.completedFuture(0)
-
-        withContext(Dispatchers.IO) {
-            withBackgroundProgress(project, "Loading ecosystem details...") {
-                reportProgress { progress ->
-                    progress.indeterminateStep {
-                        service<RakuEcosystem>().initialize().get()
+            withContext(Dispatchers.IO) {
+                withBackgroundProgress(project, "Loading ecosystem details...") {
+                    reportProgress { progress ->
+                        progress.indeterminateStep {
+                            service<RakuEcosystem>().initialize().get()
+                        }
                     }
                 }
             }
-        }
 
-        // Initialize metadata listeners
-        val metaService = project.service<RakuMetaDataComponent>()
-        val metaLoaded = withContext(Dispatchers.IO) {
-            metaService.metaLoaded?.get() == true
-        }
+            // Initialize metadata listeners -- and wait for the parse. The
+            // result is discarded; the ordering is not. installMissing() below
+            // reads metadata.allDependencies, which stays empty until this
+            // future has put the parsed META6.json in place, so skipping the
+            // wait would silently suppress the missing-dependency prompt.
+            val metaService = project.service<RakuMetaDataComponent>()
+            withContext(Dispatchers.IO) { metaService.metaLoaded?.get() }
 
-        if (withContext(Dispatchers.IO) { maybeInstallZef.get() } == 0) {
-            project.service<RakuProjectDetailsService>().moduleServiceDidStartup = false
-            project.service<RakuDependencyService>().initialize().join()
+            if (withContext(Dispatchers.IO) { maybeInstallZef.get() } != 0) return
+            initializeDependencies(project)
             project.service<RakuModuleInstallPrompt>().installMissing()
+        } else {
+            // No ecosystem and no zef for a folder of loose scripts -- but the
+            // dependency service still has to come up. It is what resolves
+            // `use` against installed modules, and there is no META6.json here
+            // to wait on.
+            project.service<RakuMetaDataComponent>()
+            initializeDependencies(project)
         }
+    }
+
+    suspend fun initializeDependencies(project: Project) {
+        project.service<RakuProjectDetailsService>().moduleServiceDidStartup = false
+        project.service<RakuDependencyService>().initialize().join()
     }
 }
