@@ -224,7 +224,7 @@ object RakuHighlighter {
     // it to ARRAY_COMPOSER, so editing it silently recolored array composers.
     @JvmField
     val HASH_COMPOSER = key(
-        "RAKU_HASH_COMPOSER", DefaultLanguageHighlighterColors.BRACKETS,
+        "RAKU_HASH_COMPOSER", DefaultLanguageHighlighterColors.OPERATION_SIGN,
         Group.BRACES_AND_OPERATORS, "Hash Composer ({...})", inPanel = false
     )
 
@@ -272,13 +272,13 @@ object RakuHighlighter {
 
     @JvmField
     val MULTI_DECLARATOR = key(
-        "RAKU_MULTI_DECLARATOR", DefaultLanguageHighlighterColors.KEYWORD,
+        "RAKU_MULTI_DECLARATOR", DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT_HIGHLIGHTED,
         Group.KEYWORDS, "Multi keyword"
     )
 
     @JvmField
     val ROUTINE_DECLARATOR = key(
-        "RAKU_ROUTINE_DECLARATOR", DefaultLanguageHighlighterColors.KEYWORD,
+        "RAKU_ROUTINE_DECLARATOR", DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT_HIGHLIGHTED,
         Group.KEYWORDS, "Routine keyword"
     )
 
@@ -387,7 +387,7 @@ object RakuHighlighter {
 
     @JvmField
     val SELF = key(
-        "RAKU_SELF", DefaultLanguageHighlighterColors.INSTANCE_FIELD,
+        "RAKU_SELF", DefaultLanguageHighlighterColors.MARKUP_ENTITY,
         Group.NAMES_AND_TYPES, "Current Object (self, sigil in \$.foo(...))"
     )
 
@@ -405,13 +405,13 @@ object RakuHighlighter {
 
     @JvmField
     val CAPTURE_TERM = key(
-        "RAKU_CAPTURE_TERM", DefaultLanguageHighlighterColors.PARENTHESES,
+        "RAKU_CAPTURE_TERM", DefaultLanguageHighlighterColors.MARKUP_TAG,
         Group.NAMES_AND_TYPES, "Argument Capture (\\\$foo, \\(\$a, \$b))"
     )
 
     @JvmField
     val TERM_DECLARATION_BACKSLASH = key(
-        "RAKU_TERM_DECLARATION_BACKSLASH", DefaultLanguageHighlighterColors.COMMA,
+        "RAKU_TERM_DECLARATION_BACKSLASH", DefaultLanguageHighlighterColors.MARKUP_TAG,
         Group.NAMES_AND_TYPES, "Term Declaration Backslash (my \\answer = 42)"
     )
 
@@ -443,7 +443,7 @@ object RakuHighlighter {
 
     @JvmField
     val NAMED_PARAMETER_SYNTAX = key(
-        "RAKU_NAMED_PARAMETER_SYNTAX", DefaultLanguageHighlighterColors.PREDEFINED_SYMBOL,
+        "RAKU_NAMED_PARAMETER_SYNTAX", DefaultLanguageHighlighterColors.METADATA,
         Group.SIGNATURES, "Named parameter colon and parentheses"
     )
 
@@ -509,7 +509,7 @@ object RakuHighlighter {
 
     @JvmField
     val PAIR_KEY = key(
-        "RAKU_PAIR_KEY", DefaultLanguageHighlighterColors.STRING,
+        "RAKU_PAIR_KEY", DefaultLanguageHighlighterColors.METADATA,
         Group.LITERALS, "Pair (colon pair or key before =>)"
     )
 
@@ -535,7 +535,7 @@ object RakuHighlighter {
 
     @JvmField
     val STUB_CODE = key(
-        "RAKU_STUB_CODE", DefaultLanguageHighlighterColors.CONSTANT,
+        "RAKU_STUB_CODE", DefaultLanguageHighlighterColors.GLOBAL_VARIABLE,
         Group.LITERALS, "Stub Code (..., ???, !!!)"
     )
 
@@ -610,13 +610,13 @@ object RakuHighlighter {
 
     @JvmField
     val REGEX_CAPTURE = key(
-        "RAKU_REGEX_CAPTURE", DefaultLanguageHighlighterColors.LOCAL_VARIABLE,
+        "RAKU_REGEX_CAPTURE", DefaultLanguageHighlighterColors.METADATA,
         Group.REGEX, "Capture"
     )
 
     @JvmField
     val REGEX_BUILTIN_CCLASS = key(
-        "RAKU_REGEX_BUILTIN_CCLASS", DefaultLanguageHighlighterColors.VALID_STRING_ESCAPE,
+        "RAKU_REGEX_BUILTIN_CCLASS", DefaultLanguageHighlighterColors.GLOBAL_VARIABLE,
         Group.REGEX, "Built-in character class"
     )
 
@@ -628,7 +628,7 @@ object RakuHighlighter {
 
     @JvmField
     val REGEX_SIG_SPACE = key(
-        "RAKU_REGEX_SIG_SPACE", DefaultLanguageHighlighterColors.FUNCTION_CALL,
+        "RAKU_REGEX_SIG_SPACE", DefaultLanguageHighlighterColors.INLINE_PARAMETER_HINT_HIGHLIGHTED,
         Group.REGEX, "Rule Sigspace (implicit <.ws> call)"
     )
 
@@ -691,7 +691,7 @@ object RakuHighlighter {
 
     @JvmField
     val POD_TEXT = key(
-        "RAKU_TEXT", DefaultLanguageHighlighterColors.DOC_COMMENT,
+        "RAKU_TEXT", DefaultLanguageHighlighterColors.DOC_COMMENT_MARKUP,
         Group.POD, "Text"
     )
 
@@ -715,13 +715,13 @@ object RakuHighlighter {
 
     @JvmField
     val POD_CODE = key(
-        "RAKU_CODE", DefaultLanguageHighlighterColors.DOC_COMMENT_MARKUP,
+        "RAKU_CODE", DefaultLanguageHighlighterColors.INTERFACE_NAME,
         Group.POD, "Code block"
     )
 
     @JvmField
     val POD_FORMAT_CODE = key(
-        "RAKU_FORMAT_CODE", DefaultLanguageHighlighterColors.DOC_COMMENT_TAG,
+        "RAKU_FORMAT_CODE", DefaultLanguageHighlighterColors.INTERFACE_NAME,
         Group.POD, "Format code"
     )
 
