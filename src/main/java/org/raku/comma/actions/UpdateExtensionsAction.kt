@@ -155,24 +155,23 @@ class UpdateExtensionsAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     companion object {
-        // The pattern is built from this list, not kept in step with it by
-        // hand -- these two drifting apart would mean a file matched by one
-        // and invisible to the other.
-        private val LEGACY_EXTENSIONS = listOf("p6", "pl6", "pm6", "pm", "pod6", "pod", "t")
+        // One source of truth: the keys drive the extension list, which drives
+        // the pattern. Previously all three were maintained by hand, and a
+        // legacy extension missing from this map renamed a file to `*.null` --
+        // no exception, and irreversible. Declaration order matters:
+        // companion properties initialise top to bottom, and the alternation
+        // order matters too (pm6 before pm, pod6 before pod), which is why
+        // this is a linkedMapOf.
+        private val nonLegacyExts: Map<String, String> = linkedMapOf(
+            "p6" to "raku", "pl6" to "raku",
+            "pm6" to "rakumod", "pm" to "rakumod",
+            "pod6" to "rakudoc", "pod" to "rakudoc",
+            "t" to "rakutest",
+        )
+        private val LEGACY_EXTENSIONS = nonLegacyExts.keys.toList()
 
         val FULL_LEGACY_EXTENSION_PATTERN: Pattern =
             Pattern.compile(".+?\\.(" + LEGACY_EXTENSIONS.joinToString("|") + ")")
-        private val nonLegacyExts: MutableMap<String?, String?> = HashMap<String?, String?>()
-
-        init {
-            nonLegacyExts.put("p6", "raku")
-            nonLegacyExts.put("pl6", "raku")
-            nonLegacyExts.put("pm6", "rakumod")
-            nonLegacyExts.put("pm", "rakumod")
-            nonLegacyExts.put("pod6", "rakudoc")
-            nonLegacyExts.put("pod", "rakudoc")
-            nonLegacyExts.put("t", "rakutest")
-        }
 
         /**
          * Index-backed, so it honours excluded folders. The previous
