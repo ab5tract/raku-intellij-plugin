@@ -83,7 +83,6 @@
               extensions="pod6;rakudoc"/>
     <fileTypeDetector order="FIRST" implementation="org.raku.comma.filetypes.RakuFileTypeDetector"/>
     <fileTypeDetector implementation="org.raku.comma.filetypes.RakuFileShebangTypeDetector"/>
-    <fileTypeDetector implementation="org.raku.comma.filetypes.RakuFileShebangTypeDetector"/>
     <fileTypeDetector implementation="org.raku.comma.filetypes.RakudoFileShebangTypeDetector"/>
     <moduleType id="RAKU_MODULE_TYPE" implementationClass="org.raku.comma.module.RakuModuleType"/>
     <moduleBuilder id="RAKU_MODULE_TYPE" builderClass="org.raku.comma.project.wizard.RakuModuleWizardBuilder"/>

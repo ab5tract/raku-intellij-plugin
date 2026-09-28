@@ -4,6 +4,7 @@ import com.intellij.testFramework.DumbModeTestUtils
 import kotlinx.coroutines.runBlocking
 import org.raku.comma.CommaFixtureTestCase
 import org.raku.comma.filetypes.RakuScriptFileType
+import java.util.concurrent.atomic.AtomicReference
 
 class RakuProjectKindTest : CommaFixtureTestCase() {
 
@@ -122,8 +123,12 @@ class RakuProjectKindTest : CommaFixtureTestCase() {
 
     fun testAwaitRakuFilesWaitsForTheIndexInsteadOfAnsweringNo() {
         myFixture.addFileToProject("lib/Waited.rakumod", "unit module Waited;")
-        var answered: Boolean? = null
-        val worker = Thread { answered = runBlocking { RakuProjectKind.awaitRakuFiles(project) } }
+        // AtomicReference, not a plain var: the worker writes this and the
+        // test thread reads it after a join(500) that is *expected* to time
+        // out, so there is no happens-before edge for the assertNull and a
+        // plain field could report a stale null however the worker had raced.
+        val answered = AtomicReference<Boolean?>(null)
+        val worker = Thread { answered.set(runBlocking { RakuProjectKind.awaitRakuFiles(project) }) }
         val token = DumbModeTestUtils.startEternalDumbModeTask(project)
         try {
             assertFalse("precondition: the plain predicate gives up while indexing",
@@ -131,11 +136,11 @@ class RakuProjectKindTest : CommaFixtureTestCase() {
             worker.start()
             worker.join(500)
             assertNull("awaitRakuFiles must not answer while the index is unavailable",
-                       answered)
+                       answered.get())
         } finally {
             DumbModeTestUtils.endEternalDumbModeTaskAndWaitForSmartMode(project, token)
         }
         worker.join(10_000)
-        assertEquals("it should answer once the index is ready", true, answered)
+        assertEquals("it should answer once the index is ready", true, answered.get())
     }
 }
