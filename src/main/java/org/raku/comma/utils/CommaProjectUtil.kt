@@ -69,14 +69,30 @@ object CommaProjectUtil {
     fun pathContainsRakuCode(path: VirtualFile): Boolean {
         val foundFiles = mutableListOf<VirtualFile>()
         val filter = VirtualFileFilter { file ->
-            // No content sniffing: an extensionless file whose first line merely
-            // contained "raku" used to make a whole project Raku, and reading
-            // every such file made the walk expensive as well as wrong. The
-            // registered shebang file-type detectors handle real
-            // `#!/usr/bin/env raku` scripts properly, for the callers that have
-            // a project to index.
+            // The shebang clause is narrower than the one it replaces, not
+            // absent. The registered HashBang detectors do handle
+            // `#!/usr/bin/env raku` properly -- but only for callers that have
+            // a project and an index, and this is precisely the caller that
+            // has neither: canOpenFileAsProject runs before a project exists,
+            // and scriptOnlyProject shares the predicate, so with no clause at
+            // all a project of shebang-only scripts tripped notifyMissingMETA
+            // and lost DependencyDetails' installed-modules branch.
+            //
+            // The false positive the substring version had -- any extensionless
+            // file whose first line merely mentioned raku -- is gone, because
+            // the line now has to start with `#!`. That makes this agree
+            // exactly with what the detectors match.
+            //
+            // lineSequence(), not lines(): every extensionless file in the
+            // tree reaches this, compiled binaries in bin/ included, and
+            // lines() splits the whole of one into a list to look at its
+            // first element. (It does not throw on an empty file -- Kotlin's
+            // "".lines() is listOf("") -- so that is not the reason.)
             (file.isDirectory && !file.path.endsWith(".idea"))
                     || rakuExtensions.contains(file.extension)
+                    || (file.isFile && file.extension.isNullOrEmpty()
+                        && file.readText().lineSequence().firstOrNull()
+                               .orEmpty().let { it.startsWith("#!") && it.contains("raku") })
         }
         VfsUtilCore.iterateChildrenRecursively(path, filter) {
             if (it.isFile) foundFiles.add(it)
