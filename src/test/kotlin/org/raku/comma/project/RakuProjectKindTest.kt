@@ -1,10 +1,31 @@
 package org.raku.comma.project
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.testFramework.DumbModeTestUtils
 import kotlinx.coroutines.runBlocking
 import org.raku.comma.CommaFixtureTestCase
+import org.raku.comma.filetypes.RakuScriptFileType
 
 class RakuProjectKindTest : CommaFixtureTestCase() {
+
+    /**
+     * Clears whatever the light project's descriptor stubbed into the source
+     * roots (`lib/Module/Outer.rakumod`, `t/00-sanity.rakutest`).
+     *
+     * The light project is a JVM-wide singleton and its source roots are only
+     * swept on teardown, so those stubs are visible to whichever test happens
+     * to run FIRST and to no other. Any assertion of the form "this project
+     * has no Raku in it" has to start from a known state or it is
+     * order-dependent.
+     */
+    private fun emptyTheSourceRoots() {
+        ApplicationManager.getApplication().runWriteAction {
+            ProjectRootManager.getInstance(project).contentSourceRoots.forEach { root ->
+                root.children.forEach { it.delete(this) }
+            }
+        }
+    }
 
     fun testAModuleFileMakesItRaku() {
         myFixture.addFileToProject("lib/Thing.rakumod", "unit module Thing;")
@@ -21,6 +42,34 @@ class RakuProjectKindTest : CommaFixtureTestCase() {
     fun testTestFilesAloneDoNotMakeItRaku() {
         myFixture.addFileToProject("t/01-basic.t", "use Test;")
         assertFalse("a .t file alone must not wake the plugin",
+                    RakuProjectKind.hasRakuFiles(project))
+    }
+
+    /**
+     * An extensionless file used to be typed as a Raku script on the strength
+     * of its parent directory's URL ending in the letters `bin` -- content
+     * never read, and registered `order="FIRST"` so it beat the shebang
+     * detectors. Cosmetic while nothing depended on it; decisive now that
+     * `hasRakuFiles` asks the file-type index, because it made every Perl
+     * distribution, Python venv, node project and Go repo with an
+     * extensionless executable in `bin/` into a Raku project.
+     *
+     * The fixture writes under the source root, so `bin/tool` lands at
+     * `<basePath>/lib/bin/tool` -- the scaffolded `<basePath>/META6.json` is
+     * NOT beside that `bin`, which is exactly the negative case.
+     */
+    fun testAnExtensionlessBinFileOutsideADistributionIsNotRaku() {
+        emptyTheSourceRoots()
+        val tool = myFixture.addFileToProject("bin/tool", "echo hello\n")
+        val binDir = tool.virtualFile.parent
+        assertEquals("precondition: the file must really sit in a bin/ directory",
+                     "bin", binDir.name)
+        assertNull("precondition: nothing may make this bin/ part of a distribution",
+                   binDir.parent.findChild("META6.json"))
+
+        assertNotSame("an extensionless bin/ file outside a distribution is not a Raku script",
+                      RakuScriptFileType.INSTANCE, tool.virtualFile.fileType)
+        assertFalse("and so it must not wake the plugin",
                     RakuProjectKind.hasRakuFiles(project))
     }
 
