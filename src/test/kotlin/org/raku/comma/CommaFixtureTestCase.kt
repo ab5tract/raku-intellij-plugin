@@ -23,6 +23,25 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
         ensureSetting()
     }
 
+    /**
+     * Clears whatever the light project's descriptor stubbed into the source
+     * roots (`lib/Module/Outer.rakumod`, `t/00-sanity.rakutest`).
+     *
+     * The light project is a JVM-wide singleton and its source roots are only
+     * swept on teardown, so those stubs are visible to whichever test happens
+     * to run FIRST in a given JVM and to no other. Any assertion of the form
+     * "this project has no Raku in it" has to start from a known state or it
+     * is order-dependent -- green or red according to which test the runner
+     * reached first.
+     */
+    protected fun emptyTheSourceRoots() {
+        com.intellij.openapi.application.ApplicationManager.getApplication().runWriteAction {
+            com.intellij.openapi.roots.ProjectRootManager.getInstance(project)
+                .contentSourceRoots
+                .forEach { root -> root.children.forEach { it.delete(this) } }
+        }
+    }
+
     private fun suggestSdkHome(): String? {
         return System.getenv("PATH")
             .split(File.pathSeparator)

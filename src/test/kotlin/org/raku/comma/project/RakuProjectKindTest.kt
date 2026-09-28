@@ -1,31 +1,11 @@
 package org.raku.comma.project
 
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.testFramework.DumbModeTestUtils
 import kotlinx.coroutines.runBlocking
 import org.raku.comma.CommaFixtureTestCase
 import org.raku.comma.filetypes.RakuScriptFileType
 
 class RakuProjectKindTest : CommaFixtureTestCase() {
-
-    /**
-     * Clears whatever the light project's descriptor stubbed into the source
-     * roots (`lib/Module/Outer.rakumod`, `t/00-sanity.rakutest`).
-     *
-     * The light project is a JVM-wide singleton and its source roots are only
-     * swept on teardown, so those stubs are visible to whichever test happens
-     * to run FIRST and to no other. Any assertion of the form "this project
-     * has no Raku in it" has to start from a known state or it is
-     * order-dependent.
-     */
-    private fun emptyTheSourceRoots() {
-        ApplicationManager.getApplication().runWriteAction {
-            ProjectRootManager.getInstance(project).contentSourceRoots.forEach { root ->
-                root.children.forEach { it.delete(this) }
-            }
-        }
-    }
 
     fun testAModuleFileMakesItRaku() {
         myFixture.addFileToProject("lib/Thing.rakumod", "unit module Thing;")
@@ -35,6 +15,39 @@ class RakuProjectKindTest : CommaFixtureTestCase() {
     fun testAScriptFileMakesItRaku() {
         myFixture.addFileToProject("bin/go.raku", "say 42;")
         assertTrue(RakuProjectKind.hasRakuFiles(project))
+    }
+
+    /**
+     * The spec's sole justification for deleting the substring clause from
+     * `pathContainsRakuCode` was that the shebang detectors already handle
+     * this, and nothing verified it.
+     *
+     * Deliberately NOT in a `bin` directory: RakuFileTypeDetector runs
+     * order="FIRST" and would answer for the file there, so a `bin/` fixture
+     * would prove nothing about shebangs.
+     */
+    fun testAnExtensionlessShebangScriptMakesItRaku() {
+        val runner = myFixture.addFileToProject("scripts/runner", "#!/usr/bin/env raku\nsay 42;\n")
+        assertFalse("precondition: this must not be answered by the bin/ detector",
+                    runner.virtualFile.parent.name == "bin")
+        assertSame("a `#!/usr/bin/env raku` script is a Raku script wherever it lives",
+                   RakuScriptFileType.INSTANCE, runner.virtualFile.fileType)
+        assertTrue(RakuProjectKind.hasRakuFiles(project))
+    }
+
+    fun testAnEmptyProjectIsNeitherRakuNorADistribution() {
+        emptyTheSourceRoots()
+        val meta = meta6File()
+        val existing = if (meta.exists()) meta.readText() else null
+        if (existing != null) meta.delete()
+        try {
+            assertFalse("nothing in the project, so nothing to wake the plugin for",
+                        RakuProjectKind.hasRakuFiles(project))
+            assertFalse("and no META6.json, so not a distribution either",
+                        RakuProjectKind.isRakuDistribution(project))
+        } finally {
+            if (existing != null) meta.writeText(existing)
+        }
     }
 
     // The Perl 5 collision. Raku Test claims bare `.t`, so counting that file
