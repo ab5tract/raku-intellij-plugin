@@ -19,6 +19,32 @@ class RakuProjectKindTest : CommaFixtureTestCase() {
     }
 
     /**
+     * A distribution is allowed to be old. `canOpenFileAsProject` and
+     * `RakuMetaDataComponent.checkOldMetaFile` both honour the obsolete
+     * `META.info`, so a bin/ check that recognised only `META6.json` would
+     * quietly stop typing an old-style distribution's scripts as Raku --
+     * C1's fix taking away more than the bug it removed.
+     *
+     * The meta file goes in FIRST: the platform caches a detected file type,
+     * so adding `bin/tool` before its distribution marker would pin the
+     * answer computed without one.
+     */
+    fun testABinFileBesideAnObsoleteMetaInfoIsStillRaku() {
+        myFixture.addFileToProject("META.info", """{"name":"Old::Dist"}""")
+        val tool = myFixture.addFileToProject("bin/tool", "echo hello\n")
+        val binDir = tool.virtualFile.parent
+        assertEquals("precondition: the file must really sit in a bin/ directory",
+                     "bin", binDir.name)
+        assertNull("precondition: this distribution must be marked only by META.info",
+                   binDir.parent.findChild("META6.json"))
+        assertNotNull("precondition: the obsolete marker must be beside bin/",
+                      binDir.parent.findChild("META.info"))
+
+        assertSame("an extensionless bin/ script in a META.info distribution is a Raku script",
+                   RakuScriptFileType.INSTANCE, tool.virtualFile.fileType)
+    }
+
+    /**
      * The spec's sole justification for deleting the substring clause from
      * `pathContainsRakuCode` was that the shebang detectors already handle
      * this, and nothing verified it.

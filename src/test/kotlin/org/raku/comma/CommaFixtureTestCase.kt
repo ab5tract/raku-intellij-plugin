@@ -24,21 +24,32 @@ abstract class CommaFixtureTestCase : BasePlatformTestCase() {
     }
 
     /**
-     * Clears whatever the light project's descriptor stubbed into the source
-     * roots (`lib/Module/Outer.rakumod`, `t/00-sanity.rakutest`).
+     * Clears the descriptor's stub (`lib/Module/Outer.rakumod`) out of the
+     * single source root the platform itself sweeps.
      *
-     * The light project is a JVM-wide singleton and its source roots are only
-     * swept on teardown, so those stubs are visible to whichever test happens
-     * to run FIRST in a given JVM and to no other. Any assertion of the form
-     * "this project has no Raku in it" has to start from a known state or it
-     * is order-dependent -- green or red according to which test the runner
-     * reached first.
+     * The light project is a JVM-wide singleton, and its stubs are created
+     * once at project creation and never re-created, so they are visible to
+     * whichever test runs FIRST in a given JVM and to no other. Any assertion
+     * of the form "this project has no Raku in it" has to start from a known
+     * state or it is order-dependent -- green or red according to which test
+     * the runner reached first.
+     *
+     * Deliberately NOT every content source root. `LightPlatformTestCase
+     * .tearDownSourceRoot` sweeps only `getSourceRoot()`, which is the `lib`
+     * root the descriptor hands to `sourceRootCreated`; `t` is also a content
+     * source root, is never swept and is never re-stubbed. Deleting
+     * `t/00-sanity.rakutest` would therefore be permanent for the whole JVM,
+     * and every later test would see `projectContainsRakuCode` and
+     * `scriptOnlyProject` answer false for the shared project -- flipping
+     * `DependencyDetails.fillState`'s branch and `notifyMissingMETA`. That is
+     * the same order dependence this helper exists to remove, with the sign
+     * reversed and no way back. Sweeping exactly what the platform restores
+     * keeps the helper idempotent across tests.
      */
     protected fun emptyTheSourceRoots() {
+        val root = com.intellij.testFramework.LightPlatformTestCase.getSourceRoot() ?: return
         com.intellij.openapi.application.ApplicationManager.getApplication().runWriteAction {
-            com.intellij.openapi.roots.ProjectRootManager.getInstance(project)
-                .contentSourceRoots
-                .forEach { root -> root.children.forEach { it.delete(this) } }
+            root.children.forEach { it.delete(this) }
         }
     }
 
